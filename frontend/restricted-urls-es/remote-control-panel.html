@@ -1,0 +1,992 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pannel </title>
+    <style>
+
+        *{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        input, button{
+            height: 3rem;
+            border-radius: 8px;
+            border: 1px solid #aaa;
+            padding: 1rem;
+
+        }
+       
+        h1{
+          text-align: center;
+          text-transform: uppercase;
+          color: #222;
+          margin: 20px 0;
+
+        }
+
+        .wrap{
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+
+        }
+
+        .item{
+            width: 300px;
+            min-height: 300px;
+            border: 1px solid #aaa;
+            border-radius: 20px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            text-align: center;
+            color: #444;    
+            gap: 16px;
+
+            
+        }
+
+        #modalWrap::backdrop{
+            background-color: rgba(0,0,0,0.1);
+        }
+        #modalWrap{
+            width: 90%;
+            min-height: 100dvh;
+            background-color: #fff;
+            border-radius: 12px;
+            border: 1px solid #555;
+            margin: 0 auto;
+        }
+
+    </style>
+</head>
+    <body>
+
+        <dialog id="modalWrap">
+            <h1 class="title"></h1>
+            <main>
+
+            </main>
+            <button id="closeModal">Cerrar / Cancelar</button>
+        </dialog>
+
+        <h1>Remote Control Pannel</h1>
+
+        <div class="wrap">
+
+            <!-- 
+                    IMPORTANTE
+                        - lOS ID DE LOS DISTINTOS BOTONES 
+                        ES LO QUE SE USA PARA DIRECCIONAR LA PETICIO 
+                        EN EL SERVIDOR
+                        - !! NO SE PUEDEN CAMBIAR
+            -->
+
+            <div class="stats item">
+                <h3>STATS</h3>
+                <button id="lastHour">Última hora</button>
+                <button id="lastDay">Último dia</button>
+                <button id="oneDay">Selecciona dia</button>
+                <button id="lastMonth">Último Mes</button>
+                <button id="oneMonth">Selecciona Mes</button>
+                <button id="lastYear">Año</button>
+              
+            </div>
+    
+            <div class="promotions item">
+                <h3>PROMOTIONS</h3>
+                <button id="showPromos">Mostrar Promos</button>
+                <button id="addNewPromo">Añadir Promo</button>
+            </div>
+    
+            <div class="products item">
+                <h3>PRODUCTS</h3>
+                <button id="showProducts">Mostrar Productos</button>
+                <button id="addNewProduct">Añadir Productos</button>
+                
+            </div>
+
+            <div class="publish item">
+                <h3>PUBLICAR CONTENIDO</h3>
+                <button id="addEditEntry">Publicar/Editar Entrada</button>
+                <button id="addEditStatic">Publicar/Editar Static</button>
+                <button id="addEditCat">Publicar/Editar Categoría</button>
+                <button id="addEditHome">Publicar/Editar Home</button>
+                <button id="addEditLanding">Publicar/Editar Landing</button>
+                <button id="addEditCart">Publicar/Editar Shopping Cart</button>
+
+
+
+            </div>
+    
+            <div class="users item">
+                <h3>USERS</h3>
+                <button id="searchUser">Buscar Usuario</button>
+                <button id="searchQuestions">Buscar Consultas Realizadas</button>
+
+                
+            </div>
+    
+    
+            <div class="shutdown item">
+                <h3>CLOSE SITE</h3>
+                <button id="shutdown">Shutdown</button>
+
+                
+            </div>
+    
+            <div class="bizum item">
+                <h3>BIZUM: Solicitar Bizums + Confirmar pagos de bizum y añadir saldo a users</h3>
+                
+            </div>
+    
+            <div class="logout item">
+                <h3>LOGOUT</h3>
+                <button id="logout">Cerrar Pannel</button>
+
+                
+            </div>
+        </div>        
+
+
+        <script>
+
+           let submiting = false;
+           let modalOpenned = false;
+           let responseType = null;
+
+            const statsItem = document.querySelector(".stats")
+            const promotionsItem = document.querySelector(".promotions");
+            const productsItem = document.querySelector(".products");
+            const publishItem = document.querySelector(".publish");
+            const usersItem = document.querySelector(".users");
+            const shutdownItem = document.querySelector(".shutdown");
+            const logoutItem = document.querySelector(".logout");
+
+            const modal = document.querySelector("#modalWrap")
+            const modalContent = modal.querySelector("main")
+            const modalTitle = modal.querySelector(".title")
+            const closeModalBtn = document.querySelector("#closeModal")
+
+            statsItem.addEventListener("click", async (e)=>{
+                e.preventDefault();
+                console.log(e.target.id)
+                if(!e.target.id || submiting){
+                    return
+                }
+                submiting = true;
+
+                const data = {
+                    task:  e.target.id,
+                    cat: "getSiteStats",
+                    options: {period: e.target.id}
+                }
+                const result = await fetchRequest("/remote-control-handler-post", data)
+                if(result.status !== "ok"){
+                    console.log(result.mesage)
+                    alert("Error en la peticion de Stats")
+                    return;
+                }
+
+                alert("Datos Recibidos !!")
+                console.log(result)
+                // renderSiteStats(result)
+            });
+
+            promotionsItem.addEventListener("click", async (e)=>{
+                e.preventDefault();
+                console.log(e.target.id)
+                if(!e.target.id || submiting){
+                    return
+                }
+                const data = {
+                    task:  e.target.id,
+                    cat: "promotions",
+                    options: {}
+                }
+                const response = await fetchRequest("/remote-control-handler-post", data)
+                if(response.status !== "ok"){
+                    console.log(response.message)
+                    alert("Error en la peticion de Promotions")
+                    return closeModal("PROMOTIONS")
+                }
+                responseType = response.type;
+                // alert("Datos Recibidos !!")
+                // console.log(response)
+                showModal(response)
+                if(response.type === "SHOW_PROMOTIONS"){
+
+                    renderItems(response)
+                }else if(response.type === "ADD_PROMOTION"){
+                    modalContent.innerHTML = response.html
+                }
+                
+                modalContent.addEventListener("click", manageModal)
+
+            })
+            
+            productsItem.addEventListener("click", async (e)=>{
+                e.preventDefault();
+                console.log(e.target.id)
+                if(!e.target.id || submiting){
+                    return
+                }
+                const data = {
+                    task:  e.target.id,
+                    cat: "products",
+                    options: {}
+                }
+                const response = await fetchRequest("/remote-control-handler-post", data)
+                if(response.status !== "ok"){
+                    console.log(response.message)
+
+                    alert("Error en la peticion de Products")
+                    return;
+                }
+
+                alert("Datos Recibidos !!")
+                console.log(response)
+                responseType = response.type;
+                // alert("Datos Recibidos !!")
+                // console.log(response)
+                showModal(response)
+                if(response.type === "SHOW_PRODUCTS"){
+
+                    renderItems(response)
+                }else if(response.type === "ADD_PRODUCT"){
+                    modalContent.innerHTML = response.html
+                }
+                
+                modalContent.addEventListener("click", manageModal)
+
+
+            })
+
+            publishItem.addEventListener("click", async (e)=>{
+                e.preventDefault();
+                console.log(e.target.id)
+                if(!e.target.id || submiting){
+                    return
+                }
+                const data = {
+                    task:  e.target.id,
+                    cat: "publishContent",
+                    options: {}
+                }
+                const result = await fetchRequest("/remote-control-handler-post", data)
+                if(result.status !== "ok"){
+                    console.log(result.message)
+
+                    alert("Error en la peticion de Publish")
+                    return;
+                }
+
+                
+                renderResult(result)
+            })
+
+            usersItem.addEventListener("click", async (e)=>{
+                e.preventDefault();
+                console.log(e.target.id)
+                if(!e.target.id || submiting){
+                    return
+                }
+                const data = {
+                    task:  e.target.id,
+                    cat: "usersData",
+                    options: {}
+                }
+                const response= await fetchRequest("/remote-control-handler-post", data)
+                
+                if(response.status !== "ok"){
+                    console.log(response.message)
+
+                    alert(response.message)
+                    return;
+                }
+
+                alert("Datos Recibidos !!")
+                console.log(response)
+
+                responseType = response.type;
+                // alert("Datos Recibidos !!")
+                // console.log(response)
+                if(responseType === "SEARCH_USER"){
+                    showModal(response)
+                    renderItems(response)
+                }else if(responseType === "SEARCH_USER_QUESTIONS"){
+                    alert("Aun esta pendiente de DESARROLLAR")
+                }
+
+                modalContent.addEventListener("click", manageModal)
+            })
+            
+            shutdownItem.addEventListener("click", async (e)=>{
+                e.preventDefault();
+                console.log(e.target.id)
+                if(!e.target.id || submiting){
+                    return
+                }
+                const data = {
+                    task:  e.target.id,
+                    cat: "shutdown",
+                    options: {}
+                }
+                const result = await fetchRequest("/remote-control-handler-post", data)
+                if(result.status !== "ok"){
+                    console.log(result.message)
+
+                    alert("Error en la peticion de Shutdown")
+                    return;
+                }
+
+                alert("Datos Recibidos !!")
+                console.log(result)
+                // renderSiteStats(result)
+            })
+
+            logoutItem.addEventListener("click", async (e)=>{
+                e.preventDefault();
+                console.log(e.target.id)
+                if(!e.target.id || submiting){
+                    return
+                }
+                const data = {
+                    task:  e.target.id,
+                    cat: "logout",
+                    options: {}
+                }
+                const result = await fetchRequest("/remote-control-handler-post", data)
+                if(result.status !== "ok"){
+                    console.log(result.message)
+
+                    alert("Error en la Peticion de Logout")
+                    return;
+                }
+
+                alert("Datos Recibidos !!")
+                console.log(result)
+                // renderSiteStats(result)
+            })
+            
+            const closeModal = function(type){
+                responseType = null;
+                modalContent.innerHTML = "";
+                modal.close();
+                modalOpenned = false;
+                submiting = false;
+                // Eliminamos los listeners
+                modalContent.removeEventListener("click", manageModal, true)
+                closeModalBtn.removeEventListener("click", this, true)
+                
+               
+
+            }
+            const showModal = function(response){
+
+                if(modalOpenned || submiting){
+                    alert("Esta abierto o  enviando")
+                    return
+                }else {
+                    
+                    modalContent.innerHTML = "";
+                    modalTitle.textContent = response.type
+                    modal.showModal();
+                }
+                
+                modalOpenned = true;
+                submiting = false;
+
+                closeModalBtn.addEventListener("click", closeModal);
+              
+                const styles = document.createElement("style")
+                styles.textContent = response.style;
+                const script = document.createElement("script")
+                script.textContent = response.script;
+                // Insertamos Htm, Styles y Script
+                modal.appendChild(styles);
+                modal.appendChild(script)
+                return;
+
+            }
+
+            const renderItems = function(response){
+                let items = ""
+                const data = response.data;
+                let total = response.data.length;
+                let html = response.html;
+                const params = response.params;
+                
+                while(total--){
+                    let len = params.length;
+                    let item = ""
+                    item = html
+
+                    for(let i=0; i<len; i++){
+                        // console.log(params[i])
+                        // console.log(data[total][params[i]])
+                        item = item.replaceAll("{{"+params[i]+"}}", data[total][params[i]])
+                        // console.log(item)
+                    }
+                    items += item
+
+                }
+                modalContent.innerHTML = items;
+
+            }
+
+         
+            const manageModal = async function(ev){
+                
+                ev.preventDefault();
+                if(submiting){
+                    console.log("EStamos Submiting !!");
+                    return
+                }
+
+                if(responseType === "SHOW_PROMOTIONS"){
+                    manageShowPromotions(ev);
+
+                }else if(responseType === "ADD_PROMOTION"){
+                    manageAddPromotion(ev);
+                
+                }else if(responseType === "SHOW_PRODUCTS"){
+                    manageShowProducts(ev);
+
+                }else if(responseType === "ADD_PRODUCT"){
+                    manageAddProduct(ev);
+                
+                }else if(responseType === "SEARCH_USER"){
+                    manageSearchUser(ev);
+               
+                }else if(responseType === "SEARCH_USER_QUESTIONS"){
+                    manageSearchUserQuestions(ev);
+                }
+
+            }
+
+            const manageSearchUserQuestions = function(ev){
+                alert("Esta pendiente de DESARROLLAR")
+            }
+
+            const manageSearchUser = async function (ev) {
+                if(ev.target.classList.contains("edit")){
+                    const userId = ev.target.parentNode.id
+
+                    // Ocultamos el boton de edit
+                    modalContent.querySelector(`#${userId} .edit`).classList.add("hidden")
+                    
+
+                    if(!userId){
+                        alert("No USER ID")
+                        return;
+                    }
+                    console.log("edit")
+                    // mostramos LA Opcion de Editar
+                    // 
+                    modalContent.querySelector(`#${userId} .edit-user-wrap`).classList.remove("hidden")
+
+
+
+                }else if (ev.target.classList.contains("save")){
+
+                    const userId = ev.target.parentNode.getAttribute("data-id")
+
+
+                    if(!userId){
+                        alert("No USER ID")
+                        return;
+                    }
+                    const data = {
+                        task: "VERIFICATION",
+                        from: responseType,
+                        userId: userId,
+
+
+                    }
+                    submiting = true;
+                    const url = "verify-from-remote-panel"
+
+                    const result= await fetchRequest(url, data)
+                    if(result.status !== "ok"){
+                        alert(result.message)
+                        closeModal(responseType)
+                        return
+                    }
+
+                    // El codigo se ha recibido ok
+                    // Mostramos 
+                    alert("Hemos enviado un sms")
+                    console.log(result)
+                    // Mostramos el WRAP de Insertar codigo y enviar
+
+                    modalContent.querySelector(`#${userId} .save-wrap`).classList.remove("hidden")
+                    // alert("Ocultamos Verify")
+                    // Ocultamos el boton de verify
+                    modalContent.querySelector(`#${userId} .save`).classList.add("hidden")
+                    
+                    submiting = false
+
+                    return;
+
+                }else if(ev.target.classList.contains("confirm")){
+                    
+                    if(submiting){
+                        console.log("!! Submiting ...")
+                        return
+                    }
+                    // Leemos el codigo y enviamos
+                    const data = {
+                        task:  "updateUserData",
+                        cat: "usersData",
+                        product: "DAtos del USUARIO ACTUALIZADOS",
+                        verifiCationCode: "ABCDE",
+                        options: {}
+
+                    }
+                    submiting = true;
+                    const url = "/remote-control-handler-post"
+
+                    const result= await fetchRequest(url, data)
+                    if(result.status !== "ok"){
+                        alert(result.message)
+                        closeModal(responseType)
+                        return
+                    }
+
+                    // El codigo se ha recibido ok
+                    // Mostramos 
+                    alert("PRODUCT GuardadO")
+                    console.log(result)
+
+                    submiting = false;
+                    closeModal();
+
+
+                }else{
+
+                    console.log("!! Opcion no Válida ...")
+                        return
+                }
+            }
+
+            const manageShowProducts = async function (ev) {
+
+                
+                console.log(ev.target)
+
+                if(ev.target.classList.contains("edit")){
+                    const productId = ev.target.parentNode.id
+
+                    // Ocultamos el boton de edit
+                    modalContent.querySelector(`#${productId} .edit`).classList.add("hidden")
+                    
+
+                    if(!productId){
+                        alert("No PRODUCT ID")
+                        return;
+                    }
+                    console.log("edit")
+                    // mostramos LA Opcion de Editar
+                    // 
+                    modalContent.querySelector(`#${productId} .edit-product-wrap`).classList.remove("hidden")
+
+
+
+                }else if (ev.target.classList.contains("save")){
+
+                    const productId = ev.target.parentNode.getAttribute("data-id")
+
+
+                    if(!productId){
+                        alert("No PRODUCT ID")
+                        return;
+                    }
+                    const data = {
+                        task: "VERIFICATION",
+                        from: responseType,
+                        productId: productId,
+
+
+                    }
+                    submiting = true;
+                    const url = "verify-from-remote-panel"
+
+                    const result= await fetchRequest(url, data)
+                    if(result.status !== "ok"){
+                        alert(result.message)
+                        closeModal(responseType)
+                        return
+                    }
+
+                    // El codigo se ha recibido ok
+                    // Mostramos 
+                    alert("Hemos enviado un sms")
+                    console.log(result)
+                    // Mostramos el WRAP de Insertar codigo y enviar
+
+                    modalContent.querySelector(`#${productId} .save-wrap`).classList.remove("hidden")
+                    // alert("Ocultamos Verify")
+                    // Ocultamos el boton de verify
+                    modalContent.querySelector(`#${productId} .save`).classList.add("hidden")
+                    
+
+                    submiting = false
+
+                    return;
+
+                }else if(ev.target.classList.contains("confirm")){
+                    
+                    if(submiting){
+                        console.log("!! Submiting ...")
+                        return
+                    }
+                    // Leemos el codigo y enviamos
+                    const data = {
+                        task:  "saveProduct",
+                        cat: "products",
+                        product: "DAtos del nuevo producto",
+                        verifiCationCode: "ABCDE",
+                        options: {}
+
+                    }
+                    submiting = true;
+                    const url = "/remote-control-handler-post"
+
+                    const result= await fetchRequest(url, data)
+                    if(result.status !== "ok"){
+                        alert(result.message)
+                        closeModal(responseType)
+                        return
+                    }
+
+                    // El codigo se ha recibido ok
+                    // Mostramos 
+                    alert("PRODUCT GuardadO")
+                    console.log(result)
+
+                    submiting = false;
+                    closeModal();
+
+
+                }else{
+
+                    console.log("!! Opcion no Válida ...")
+                        return
+                }
+
+            }
+            
+            const manageAddProduct = async function(ev){
+
+                if(ev.target.classList.contains("save")){
+                
+                    if(submiting){
+                        return
+                    }
+                    submiting = true;
+                    const data = {
+                            task: "VERIFICATION",
+                            from: responseType,
+
+                        }
+                    const url = "verify-from-remote-panel"
+
+                    const result= await fetchRequest(url, data)
+                    if(result.status !== "ok"){
+                        alert(result.message)
+                        closeModal(responseType)
+                        return
+                    }
+
+                    // El codigo se ha recibido ok
+                    // Mostramos 
+                    alert("Hemos enviado un sms")
+                    console.log(result)
+                    // Mostramos el WRAP de Insertar codigo y enviar
+
+                    modalContent.querySelector(`.new-product-form .save-wrap`).classList.remove("hidden")
+                    alert("Ocultamos Verify")
+                    // Ocultamos el boton de verify
+                    modalContent.querySelector(`.new-product-form .save`).classList.add("hidden")
+
+                    submiting = false
+
+                }else if(ev.target.classList.contains("confirm")){
+                    console.log("Estamos en SAVE")
+                        if(submiting){
+                            console.log("!! Submiting ...")
+                            return
+                        }
+                        // Leemos el codigo y enviamos
+                        const data = {
+                            task:  "saveProduct",
+                            cat: "products",
+                            product: "DAtos del formulario del PRODUCTO",
+                            verifiCationCode: "ABCDE",
+                            options: {}
+
+                        }
+                        submiting = true;
+                        const url = "/remote-control-handler-post"
+
+                        const result= await fetchRequest(url, data)
+                        if(result.status !== "ok"){
+                            alert(result.message)
+                            closeModal(responseType)
+                            return
+                        }
+
+                        // El codigo se ha recibido ok
+                        // Mostramos 
+                        alert("PRmmo Guardada")
+                        console.log(result)
+
+
+                        submiting = false;
+                        closeModal();
+
+
+                    }else{
+
+                        console.log("!! Opcion no Válida ...")
+                            return
+                    }
+                }
+
+            const manageAddPromotion = async function(ev){
+
+                if(ev.target.classList.contains("save")){
+                   
+                    if(submiting){
+                        return
+                    }
+                    submiting = true;
+                    const data = {
+                            task: "VERIFICATION",
+                            from: responseType,
+    
+                        }
+                    const url = "verify-from-remote-panel"
+    
+                    const result= await fetchRequest(url, data)
+                    if(result.status !== "ok"){
+                        alert(result.message)
+                        closeModal(responseType)
+                        return
+                    }
+
+                    // El codigo se ha recibido ok
+                    // Mostramos 
+                    alert("Hemos enviado un sms")
+                    console.log(result)
+                    // Mostramos el WRAP de Insertar codigo y enviar
+
+                    modalContent.querySelector(`.new-promo-form .save-wrap`).classList.remove("hidden")
+                    alert("Ocultamos Verify")
+                    // Ocultamos el boton de verify
+                    modalContent.querySelector(`.new-promo-form .save`).classList.add("hidden")
+
+                    submiting = false
+
+                }else if(ev.target.classList.contains("confirm")){
+                    console.log("Estamos en CONFIMR")
+                        if(submiting){
+                            console.log("!! Submiting ...")
+                            return
+                        }
+                        // Leemos el codigo y enviamos
+                        const data = {
+                            task:  "savePromo",
+                            cat: "promotions",
+                            promotion: "DAtos del formulario de la NUEVA Promo",
+                            verifiCationCode: "ABCDE",
+                            options: {}
+    
+                        }
+                        submiting = true;
+                        const url = "/remote-control-handler-post"
+    
+                        const result= await fetchRequest(url, data)
+                        if(result.status !== "ok"){
+                            alert(result.message)
+                            closeModal(responseType)
+                            return
+                        }
+    
+                        // El codigo se ha recibido ok
+                        // Mostramos 
+                        alert("PRmmo Guardada")
+                        console.log(result)
+
+
+                        submiting = false;
+                        closeModal();
+
+
+                    }else{
+
+                        console.log("!! Opcion no Válida ...")
+                            return
+                    }
+            }
+
+            const manageShowPromotions = async function (ev) {
+
+                
+                console.log(ev.target)
+                if(ev.target.classList.contains("edit")){
+
+                        const promoId = ev.target.parentNode.id
+
+                        if(!promoId){
+                            alert("No Promo ID")
+                            return;
+                        }
+                        console.log("edit")
+                        // Ocultamos el boton de edit
+                        modalContent.querySelector(`#${promoId} .edit`).classList.add("hidden")
+                        // mostramos LA Opcion de Editar
+                        modalContent.querySelector(`#${promoId} .edit-promo-wrap`).classList.remove("hidden")
+
+
+
+                    }else if (ev.target.classList.contains("save")){
+                        const promoId = ev.target.parentNode.getAttribute("data-id")
+
+                        if(!promoId){
+                            alert("No Promo ID")
+                            return;
+                        }
+                        const data = {
+                            task: "VERIFICATION",
+                            from: responseType,
+                            promoId: promoId,
+    
+    
+                        }
+                        submiting = true;
+                        const url = "verify-from-remote-panel"
+    
+                        const result= await fetchRequest(url, data)
+                        if(result.status !== "ok"){
+                            alert(result.message)
+                            closeModal(responseType)
+                            return
+                        }
+    
+                        // El codigo se ha recibido ok
+                        // Mostramos 
+                        alert("Hemos enviado un sms")
+                        console.log(result)
+                        
+                        // Mostramos el WRAP de Insertar codigo y enviar
+                        modalContent.querySelector(`#${promoId} .save-wrap`).classList.remove("hidden")
+                        alert("Ocultamos Verify")
+                        // Ocultamos el boton de verify
+                        modalContent.querySelector(`#${promoId} .save`).classList.add("hidden")
+
+                        submiting = false
+
+                        return;
+
+                    }else if(ev.target.classList.contains("confirm")){
+                        
+                        if(submiting){
+                            console.log("!! Submiting ...")
+                            return
+                        }
+                        // Leemos el codigo y enviamos
+                        const data = {
+                            task:  "savePromo",
+                            cat: "promotions",
+                            promotion: "datos de la promotion modificada",
+                            verifiCationCode: "ABCDE",
+                            options: {}
+    
+                        }
+                        submiting = true;
+                        const url = "/remote-control-handler-post"
+    
+                        const result= await fetchRequest(url, data)
+                        if(result.status !== "ok"){
+                            alert(result.message)
+                            closeModal(responseType)
+                            return
+                        }
+    
+                        // El codigo se ha recibido ok
+                        // Mostramos 
+                        alert("PRmmo Guardada")
+                        console.log(result)
+
+                        submiting = false;
+                        closeModal();
+
+
+                    }else{
+
+                        console.log("!! Opcion no Válida ...")
+                            return
+                    }
+
+            }
+
+            const fetchRequest = async function(url, data){
+                
+                try{
+                    const result = await fetch(url,
+                        
+                        {
+                            method: 'POST',
+                            credentials: 'include',
+                            headers: {  "Content-Type": "application/json",
+                                        "Cookie": document.cookie
+                                    },
+                            body:  JSON.stringify(data)
+                        
+                        });
+                    
+                    // Este status no lo seteamos nosotros directamente en el server. 
+                    // 
+                    if(result.status === 200){
+
+                        try{
+
+                            const data = await result.json()
+                            return data;
+
+                        }catch(e){
+                            console.log("TRY 2 -> ERROR. INVALID JSON ??")
+                            console.log(e)
+                            return {status: "error", message: "ERROR. INVALID JSON ??"}
+                        }
+                    }else{ 
+
+                        console.log("Error en la PETICION FETCH -> status != 200")
+                        return {status: "error", message: "Error el la tramitacion de la petición"}
+                        
+                    }
+
+                }catch(e){
+                    console.log("TRY 1 -> ERROR -> error en la peticion fetch")
+                    console.log(e)
+                    return {status: "error", message: "Error el la tramitacion de la petición"}
+
+                }
+            }
+            
+
+        </script>
+    </body>
+
+
+
+</html>

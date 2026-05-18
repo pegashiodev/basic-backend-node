@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart</title>
+</head>
+<body>
+
+    <h1>Shopping Cart</h1>
+
+    <H2>PAGAR CON TARJETA</H2>
+    <h3>Recarga Creditos</h3>
+    <p>Precio: 5,00 €</p>
+    <p>Cantidad: 1</p>
+
+    <!-- <form id="form" action="/checkout.html" method="post"> -->
+    <form id="form">
+        <input type="submit"  value="Finalizar Compra" name="" id="">
+    </form>
+
+    <H2>PAGAR CON BIZUM</H2>
+    <div>
+        <p>Pagar por Bizum</p>
+        <P>INRODUCE TU TELEFONO</P>
+        <input type="phone" name="" id="" placeholder="telefono">
+        <p>Introduce tu telefono y te haremos una solicitud de XX,XX euros.</p>
+        <p>Una vez confirmado tendras los coins en tu cuenta en 24 horas</p>
+        <input type="submit"  value="Pagar con BIZUM" name="" id="">
+    </div>
+
+
+
+    <script>
+
+        const form = document.querySelector("#form");
+        const order = {
+            cart:[
+                {
+                ref: "cl_12890",
+                currency:"eur",
+                name: "Recarga de 500 creditos",
+                descrption: "",
+                unit_amount: 500, 
+                quantity: 1,
+                },
+                {
+                ref: "cl_13890",
+                currency:"eur",
+                name: "Recarga de 500 creditos",
+                descrption: "",
+                unit_amount: 1000, 
+                quantity: 1,
+                },
+            ],
+            shippingAddress:{
+                country: "",
+                cyty: "",
+                cp: "",
+                street: "",
+                number: "",
+                name: "",
+                phone: "",
+                email: "",
+                name: "",
+                lastName: "",
+            },
+            paymentMethod: "STRIPE",
+        }
+
+        async function sendData() {
+            // Associate the FormData object with the form element
+            const formData = new FormData(form);
+
+            try {
+
+                // OJO -> IMPORTANTE EN PETICIONES POST QUE PUEDEN REQUERIR INICIAR SESION
+                // ENVIAMOS TAMBIEN LA RUTA EL LA QUE ESTAMOS POR SI NOS REENVIAN AL LOGIN
+                let post_endpoint = `http://localhost:3000/checkout.html/?from=${location.pathname}/`
+                if(location.search.length > 2){
+                    post_endpoint += `@@&${location.search.slice(1)}`;
+                }
+                
+                const response = await fetch(post_endpoint, {
+                method: "POST",
+                credentials: "include",
+                headers: {"content-type": "application/json"},
+                // Set the FormData instance as the request body
+                // body: formData,
+                body: JSON.stringify({order:order}),
+
+                });
+                const data = await response.json()
+                console.log(data)
+                if(data.status === 'ok'){
+                    if(data.location){
+                        document.location.href =  data.location
+                    }else{
+                        document.location.href =  "/"
+                    }
+                }else{
+                    // Un error en el checkout: Productos no disponibles, erroes de ref, ...
+                    // if(data.listCodes && data.code){
+                    //     const message = data.listCodes[data.code];
+                    //     if(!message){message="ERROR EN EL CHECKOUT"}
+                    //     alert(message)
+                    // }
+                   
+                    alert(data.message + ", CODE: " + data.code)
+                    // Segun el codigo devuelto daremos un mensaje u otro
+                    if(data.location){
+                            document.location.href =  data.location
+                    }else{
+                        document.location.href =  "/"
+                    }
+                }
+                
+
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // Take over form submission
+        form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        console.log("Pulsado submit!!!")
+        // console.log(FormData)
+        sendData();
+        });
+
+    </script>
+    
+</body>
+</html>
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,437 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Client</title>
+    <style>
+        .wrap{
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            gap: 30px;
+        }
+        .form{
+            padding: 20px;
+            border: 1px solid #ddd;
+        }
+
+        .signup_form .fa2{
+            display: block;
+            display: none;
+        }
+
+        .login_form .fa2{
+            display: block;
+            display: none;
+        }
+        
+    </style>
+    <!-- <link rel="stylesheet" href="./styles.css"> -->
+</head>
+<body>
+
+    <H1>acceso-plataforma.html --- > ESPAÑOL</H1>
+
+    <dic class="wrap">
+        <div class="form signup_form">
+            <div class="top_data">
+                <p><input class="username" type="text" placeholder="username"></p>
+                <p><input class="email" type="text" placeholder="email"></p>
+                <p><input class="password" type="text" placeholder="password"></p>
+
+                <button id="btn_signup">ENVIAR CODIGO</button>
+            </div>
+            <div id="promo_code_wrap">
+                <input id="promo_code" type="text" placeholder="BIENVENIDA">
+            </div>
+            <div class="fa2">
+                <p><input id="signup_validation_token" type="text" placeholder="CODIGO"></p>
+                <button id="btn_verify_signup">CREAR CUENTA</button>
+            </div>
+        </div>
+    
+        <div class="form login_form">
+            <div class="top_data">
+                <p><input class="username" type="text" placeholder="username"></p>
+                <p><input class="email" type="text" placeholder="Email"></p>
+                <p><input class="password" type="text" placeholder="Password"></p>
+                <button id="btn_login">LOGIN</button>
+            </div>
+            <div class="fa2">
+                <p><input id="login_validation_token" type="text" placeholder="CODIGO"></p>
+                <button id="btn_verify_login">VERIFICAR</button>
+            </div>
+            <div id="forgot-password-wrap">
+                <p>¿Olvidó su contraseña?</p>
+                <div id="forgot-password-content">
+                    <p><input type="email" value="Introduzca su Email"></p>
+                    <button id="btn_forgot_password">Renovar Contraseña</button>
+                </div>
+            </div>
+        </div>
+    
+        <div class="form logout_form">
+            <button id="btn_logout">LOGOUT</button>
+        </div>
+    </dic>
+    
+
+    <script>
+        const btn_signup = document.querySelector('#btn_signup');
+        const btn_login = document.querySelector('#btn_login');
+        const btn_logout = document.querySelector('#btn_logout');
+        const btn_forgot_password = document.querySelector('#btn_forgot_password')
+        const btn_verify_signup = document.querySelector("#btn_verify_signup")
+        const btn_verify_login = document.querySelector("#btn_verify_login")
+
+        const data_signup = {
+            name: '',
+            email: "pegashio@gmail.com",
+            password: "12345",
+            pin: 1234,
+            fa2: "SEND",     // required -> se controla en el servidor si se envia codigo o no
+           
+        }
+
+        const data_login = {
+            name: '',
+            email: "pegashio@gmail.com",
+            password: '12345',
+            // forgot_password: false,
+            fa2: "SEND",        // // required -> se controla en el servidor si se envia codigo o no
+
+        }
+        data_forgot_password = {
+            email: "pegashio@gmail.com",
+        }
+
+        btn_signup.addEventListener('click', async (ev)=>{
+            ev.preventDefault();
+            data_signup.name = document.querySelector('.signup_form .username').value;
+            // data_signup.email = document.querySelector(".signup_form .email").value;
+            // data_signup.password = document.querySelector(".signup_form .password").value;
+
+            if(data_signup.name.length <2){
+                alert("Al menos 2 Caracteres en el Nombre")
+                return;
+            }
+
+            // Añadimos el Endpoint que le llevo al signup para luego devolverle a el
+            // Habiamos colocado "@@&" en el endpoint desde donde llegabamos y AHora lo sustituimos por "?" para hacer el serach si lo hubiese
+            // Si viene del carrito, por ejemplo, es posible que haya parametros en la url con info del carrito
+            // Si viene de un "restrictedEndpoint", seguramente no habra search
+            // ...
+            if(location.search.split("?from=")[1]){
+
+                data_signup.previous_endpoint = location.search.split("?from=")[1].replace("@@&", "?");
+            }
+
+            const result = await fetchRequest("http://localhost:3000/signup.html", data_signup)
+
+            console.log(result)
+           
+            if(!result){
+                alert("ERROR EN EL SIGNUP")
+
+            }else if(result.status !== "ok"){
+                // Erroes con el formato de los Campos
+                // o disponibilidad de Nombres
+                // ...
+
+                alert("ERROR con los campos del SignUp")
+                
+            }else if(result.fa2_required){
+                // mOSTRAMOS EL RESTO DEL FORM
+                document.querySelector(".signup_form .fa2").style = "display: block"
+                // oCULTAMOS LO ANTERIOR
+                // document.querySelector(".signup_form .top_data #btn_signup").style = "display:none"
+                btn_signup.parentNode.removeChild(btn_signup)
+                alert(result.message)   // Le hemos enviado un codigo por Email, ....
+                btn_verify_signup.addEventListener("click", async (ev)=>{
+                    ev.preventDefault();
+                    
+                    // capturamos el valor del input CODE_VERIFICATION_ENVIADO
+                    // AÑADIMOS EL CODE
+                    // Y EL AVISO DE QUE YA HEMOS RECIBIDO EL TOKEN
+                    data_signup.fa2 = "RECIBED"
+                    // leemos el valor del token del input
+                    // data_signup.token = "ABCDE"
+                    // Leemos el valor del promo_code, si lo hay
+                    data_signup.promo_code = ""
+                    data_signup.token = document.querySelector(".signup_form .fa2 #signup_validation_token").value;
+                    const result2 = await fetchRequest(`http://localhost:3000/signup.html`, data_signup)
+                    console.log(result2)
+
+                    /***
+                     *      status = "ok"  -> SignUP concluido.
+                     *      redirigimos a location
+                     * 
+                     *      status !== 'ok'
+                     *      code = 466 -> El token introducido no es correcto -> Volver a hacer el SignUp
+                     *      code = 465 -> Token Expirado -> Volver ha hacer el signup por completo
+                     *      Limpiar los forms y dejarlos como al principio
+                     */
+                    
+                    if(!result2){
+                        alert('ERROR EN EL SIGNUP -> 2º FETCH')
+                    }else if(result2.status === "ok"){
+                    
+
+                        document.location.href =  result2.location
+
+                    }else{
+                        // FALTA
+                        // Manejar los codigos de error
+
+                        // Error en el promo_code
+                        // Error en el Codigo de Verificación
+                        // Error 
+                        alert(result2.message)
+                    }
+                })
+
+            }else{
+                if(result.location){
+
+                    document.location.href =  result.location
+                }else{
+                    // FALTA
+                    // Manejar los codigos de error
+                    alert("ERROR en la Peticion Fetch")
+                }
+
+            }
+            
+        })
+        
+        
+        btn_login.addEventListener('click', async (ev)=>{
+            ev.preventDefault();
+            data_login.name = document.querySelector('.login_form .username').value;
+            // data_login.email = document.querySelector(".login_form .email").value;
+            // data_login.password = document.querySelector(".login_form .password").value;
+
+            if(data_login.name.length <2){
+                alert("Name is < than 2 chars")
+                return;
+            }
+
+              // Añadimos el Endpoint que le llevo al signup para luego devolverle a el
+            data_login.previous_endpoint = location.search.split("=")[1];
+            console.log(data_login);
+
+            ev.preventDefault();
+
+            const result = await fetchRequest("http://localhost:3000/login.html", data_login)
+
+            console.log(result)
+
+            if(!result){
+                alert("ERROR EN EL SIGNUP")
+
+            }else if(result.fa2_required){
+                 // mOSTRAMOS EL RESTO DEL FORM
+                 document.querySelector(".login_form .fa2").style = "display: block"
+                // oCULTAMOS LO ANTERIOR
+                // document.querySelector(".login_form .top_data #btn_login").style = "display:none"
+                
+                btn_login.parentNode.removeChild(btn_login)
+                alert(result.message)
+                btn_verify_login.addEventListener("click", async (ev)=>{
+                    ev.preventDefault();
+                    
+                    // capturamos el valor del input CODE_VERIFICATION_ENVIADO
+                    // AÑADIMOS EL CODE
+                    // Y EL AVISO DE QUE YA HEMOS RECIBIDO EL TOKEN
+                    data_login.fa2 = "RECIBED"
+                    // data_login.token = "ABCDE"
+                    data_login.token = document.querySelector(".login_form .fa2 #login_validation_token").value;
+                    const result2 = await fetchRequest("http://localhost:3000/login.html", data_login)
+                    console.log(result2)
+
+                    if(!result2){
+                        alert('ERROR EN EL LOGIN -> 2º FETCH')
+                    }else if(result2.status === "ok"){
+                    
+                        document.location.href =  result2.location
+                    }else{
+                        console.log(result2.code)
+                        alert(result2.message)
+                    }
+
+                });
+
+            }else{
+
+                // console.log(result)
+                if(result.status === 'ok'){
+                    document.location.href =  result.location
+                
+                }else{
+                    if(result.code === 475){
+                        alert("Password Incorrecto")
+                    }else if(result.code === 435 ){
+                        alert("Email Incorrecto")
+                    }else if(result.code === 480 ){
+                        alert("Usuario Bloqueado")
+                    }else{
+                        alert("Mantenimientto -> Prueba pasado unos minutos")
+                    }
+                                        
+                }
+
+
+            }
+
+
+
+            
+            
+            
+        })
+
+        btn_forgot_password.addEventListener('click', (ev)=>{
+            ev.preventDefault();
+            console.log(data_forgot_password);
+
+            fetch("http://localhost:3000/forgot-password.html", 
+            
+            {
+                method: 'POST',
+                credentials: 'include',
+                headers: {  "Content-Type": "application/json",
+                            "cookie": document.cookie,
+                        },
+                body:  JSON.stringify(data_forgot_password)
+            
+            })
+            .then(response=>{
+
+                if(response.ok){
+                    return response.json()
+                }else{
+                    throw new Error("Error en la solicitud de cambio de password-> MAs tarde!!");
+                }   
+
+            }).then(result=>{
+                console.log(result);
+
+                if(result.status === 'ok'){
+                    alert(result.message)
+                    
+                }else{
+                    console.log('ERROR en la respuesta del LOGIN')
+                }
+            }).catch(err=>{
+                console.log(err)
+                // Redirigir a HOME
+
+            })
+            
+            
+        })
+        
+
+        btn_logout.addEventListener('click', (ev=>{
+
+            ev.preventDefault();
+            
+            fetch("http://localhost:3000/logout.html", 
+            
+            {
+                method: 'POST',
+                credentials: 'include',
+                headers: {  "Content-Type": "application/json",
+                            "cookie": document.cookie,
+                        },
+                body:  JSON.stringify({message: "logout"})
+                            
+            })
+            .then(response=>{
+
+                if(response.ok){
+                    return response.json()
+                }else{
+                    throw new Error("Error en el Alta del Usuario -> MAs tarde!!");
+                }   
+
+            }).then(result=>{
+                console.log(result);
+
+                if(result.status === 'ok'){
+                    // alert("Mira en la Consola")
+                    console.log(result)
+                    document.location.href =  result.location
+                }else{
+                    console.log('ERROR en la respuesta del SignIN')
+                }
+            }).catch(err=>{
+                console.log(err)
+                // Redirigir a HOME
+
+            })
+
+        }))
+
+
+        async function fetchRequest(url, data){
+            
+            try{
+                const result = await fetch(url,
+                
+                {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {  "Content-Type": "application/json",
+                                "Cookie": document.cookie
+                            },
+                    body:  JSON.stringify(data)
+                
+                });
+                
+                // Este status no lo seteamos nosotros directamente en el server. 
+                // 
+                if(result.status === 200){
+
+                    try{
+
+                        const data = await result.json()
+                        if(data.status !== "ok"){
+                            console.log("Error en el SignUP")
+                            console.log("Error Code: " + data.code)
+                            // Por ejemplo las cookies estan corruptas
+                            return data
+                        
+                        }else{
+
+                            console.log(data)
+                            return data;
+                        }
+
+                    }catch(e){
+                        console.log("TRY 2 -> ERROR. INVALID JSON ??")
+                        console.log(e)
+                        return null;
+                    }
+                }else{ 
+
+                    console.log("Error en la PETICION FETCH -> status != 200")
+                    return null
+                    
+                }
+
+            }catch(e){
+                console.log("TRY 1 -> ERROR -> error en la peticion fetch")
+                console.log(e)
+                return null;
+            }
+
+        }
+
+    </script>
+    
+    
+</body>
+</html>

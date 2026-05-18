@@ -1,0 +1,189 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+
+        *{
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+        body{
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .promotions-wrap{
+            border: 1px solid red;
+            padding: 1rem;
+            border-radius: 6px;
+        }
+
+        .promotion{
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+
+        }
+
+        .promotion .intro{
+            min-width: 320px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+
+
+            .metadata{
+                display: flex;
+                flex-direction: column;
+                gap: .5rem;
+                flex-grow: 1;
+
+                >p{
+                    background-color: rgb(139, 230, 162);
+                    padding: 4px;
+                    border-radius: 6px;
+                }
+
+            }
+
+            .actions{
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+                cursor: pointer;
+            }
+            
+            
+            
+            .actions > span{
+                border: 1px solid #666;
+                padding: .5rem;
+                border-radius: 6px;
+                transition: all .3s;
+            }
+            .actions >span:hover{
+                scale: 1.1;
+            }
+        }
+        .data{
+           height: 0;
+           overflow: hidden;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="promotions-wrap">
+
+        <div class="promotion">
+            <div class="intro">
+                <div class="metadata">
+                    <label for="">Code</label>
+                    <p class="promo-code">BIENVENIDA</p>
+                    <label for="">Owner</label>
+                    <p class="owner">MIDUDEV</p>
+    
+                </div>
+                <div class="actions">
+                    <span class="show">SHOW</span>
+                    <span class="edit">EDIT</span>
+                </div>
+            </div>
+            <div class="data">
+                <p>mas datos</p>
+                <label for="">Status</label>
+                <select class="promo-status">
+                    <option value="">ACTIVE</option>
+                    <option value="">PAUSED</option>
+                    <option value="">ACTIVE</option>
+                </select>
+            </div>
+        </div>
+
+
+    </div>
+
+    <template>
+        <div class="promotion">
+            <div class="metadata">
+                <div class="data">
+                    <label for="">Code</label>
+                    <p class="promo-code">BIENVENIDA</p>
+                    <label for="">Owner</label>
+                    <p class="owner">MIDUDEV</p>
+    
+                </div>
+                <div class="actions">
+                    <span class="show">SHOW</span>
+                    <span class="edit">EDIT</span>
+                </div>
+            </div>
+            <div class="more">
+                <p>mas datos</p>
+                <label for="">Status</label>
+                <select class="promo-status">
+                    <option value="">ACTIVE</option>
+                    <option value="">PAUSED</option>
+                    <option value="">ACTIVE</option>
+                </select>
+            </div>
+        </div>
+    </template>
+
+    <script>
+
+        const data = {
+            total_items: 2,
+            items: [],
+            template: ``,
+            css: "",
+            js: "",
+        }
+        
+
+        fillPromotions();
+        renderPromotions();
+
+
+        
+        const promos_wrap = document.querySelector(".promotions-wrap")
+
+        promos_wrap.addEventListener("click", (ev)=>{
+
+        let promotion = null;
+        if(ev.target.classList.contains("show")){
+            console.log("Show")
+            promotion = ev.target.parentNode.parentNode.parentNode
+          
+        }else if(ev.target.classList.contains("edit")){
+            console.log("Edit")
+            promotion = ev.target.parentNode.parentNode.parentNode
+
+        
+        }else{
+            return console.log("Nada")
+        }
+       console.log(promotion)
+       const moredata = promotion.querySelector(".more")
+
+       moredata.style.height = "auto"
+
+
+
+
+        })
+
+
+
+    </script>
+    
+</body>
+</html>

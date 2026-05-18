@@ -1,0 +1,51 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UPLOAD FILES / REQUESTS/ ... </title>
+</head>
+<body>
+
+
+    <H1>PAGINA PARA SUBIR FICHEROS: AUDIOS, CONSULTAS, ... [ RESTRICTED EN ESPAÑOL ]</H1>
+    <H3>Se comprobara cookie, tokens, session, ...</H3>
+
+    <form class='form' action="">
+        <input id="filo" type="file" name="" id="">
+        <button id="send"">Enviar</button>
+    </form>
+
+
+    <script>
+        const form = document.querySelector(".form")
+        const filo = document.querySelector(".form #filo")
+        const send = document.querySelector(".form #send")
+
+        const doc = JSON.stringify({name: "CArlos", message: "fichero de texto", date: Date.now()})
+
+
+        send.addEventListener("click", sendFile)
+        filo.addEventListener("change", getFile)
+       
+       
+       
+        const getFile = function(e){
+            console.log(e.files)
+
+        }
+
+
+        const sendFile = function(){}
+        
+
+
+
+    </script>
+    
+
+    
+</body>
+</html>

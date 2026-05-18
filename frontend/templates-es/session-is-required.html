@@ -1,0 +1,26 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+
+    <h2>Aún no has iniciado Sesion</h2>
+    <h2>Es necesario Iniciar Sesion</h2>
+
+    <button><a id="initSession" href="#">Iniciar Session</a></button>
+
+    <script>
+
+
+        console.log(location.search)
+        // AÑADIMOS EL LOCATION.SEARCH PARA DESPUES ENVIARLE A DONDE ESTABA ANTES DE INICIAR SESSION
+        document.querySelector("#initSession").href = `/${location.search}`
+    </script>
+
+    
+</body>
+</html>

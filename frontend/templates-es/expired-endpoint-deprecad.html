@@ -1,0 +1,80 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    
+
+    <h1>La ruta de este enlace ya ha expirado.</h1>
+
+    <button class="btn">ENVIAR NUEVO EMAIL DE VERIFICACION</button>
+
+
+    <script>
+        const btn = document.querySelector('.btn')
+
+        const data = {
+            href: document.location.href,
+            endpoint: document.location.pathname,
+        }
+
+
+   
+        btn.addEventListener('click', (ev)=>{
+            ev.preventDefault();
+
+            fetch("http://localhost:3000/expired-endpoint.html", 
+            
+            {
+                method: 'POST',
+                credentials: 'include',
+                headers: {  "Content-Type": "application/json",
+                        },
+                body:  JSON.stringify(data)
+            
+            })
+            .then(response=>{
+
+                if(response.ok){
+                    return response.json()
+                }else{
+                    throw new Error("Error en la solicitud de cambio de password-> MAs tarde!!");
+                }   
+
+            }).then(result=>{
+                console.log(result);
+
+    // SI HAY ERROR ENVIAMOS UN CODIGO 250 PARA NO ENTRAR EN EL CATCH DEL FETCH
+    // Y ASI PODEMOS ENVIAR UNA REDIRECCION DESDE EL SERVIDOR
+
+                if(result.status === 'ok'){
+                    alert(result.message)
+                    
+                }else{
+                    alert(result.message)
+                }
+                document.location.href =  result.location
+
+            }).catch(err=>{
+                console.log(err)
+                // Redirigir a HOME
+                // document.location.href =  "/acceso-plataforma.html"
+
+
+            })
+            
+            
+        })
+
+</script>
+
+
+ 
+</body>
+</html>

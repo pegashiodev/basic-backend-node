@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+
+    <h1>ACCOUNT-RECOVERY -> ESPAÑOL !!!</h1>
+    <h2>Aqui cambiaremos el passwORd por un posible HACKEO</h2>
+
+    <h2>HAY QUE DAR LA OPCION DE FORGOT-PASSWORD ???</h2>
+
+    <form action="">
+        <P><input type="text" placeholder="email"></P>
+        <p><input type="text" placeholder="ANTIGUO PASSWORD"></p>
+        <P><BUtton>FORGOT PASSWORD</BUtton></P>
+        <p><input type="text" placeholder="password"></p>
+        <p><input type="text" placeholder="repetir-password"></p>
+
+        <button id="send_form">enviar</button>
+    </form>
+    
+
+    <script>
+
+        // LO SACAMOS DE LA URL DE ESTA PAGINA midominio.com/renove-password.html/?tk=url_token
+        const url_token = "67890A"
+
+        let data_form_simple = {
+            email: "email",
+            tk: url_token,
+            password: "12345",
+            "2fa": false,
+        }
+
+        let send_2fa = {
+            "2fa": {
+                status: "SEND",
+                mode_notify: "EMAIL", //"SMS"
+                url_token: url_token,
+            }
+
+        }
+
+
+        let data_form_complet = {
+            "tk": url_token,
+            "password": "12345",
+           
+            "2fa": {
+                status: "RECIBED",
+                mode_notify: "EMAIL", //"SMS"
+                code: "Code-recibed",
+                url_token: url_token,
+            }
+        }
+
+        const btn = document.querySelector("#send_form")
+
+        btn.addEventListener('click', function(e){
+            e.preventDefault();
+            
+
+            fetch(`http://localhost:3000/recovery-account.html`, 
+            
+            {
+                method: 'POST',
+                credentials: "include",
+                headers: {  "Content-Type": "application/json",
+                            "Cookie": document.cookie
+                        },
+                body:  JSON.stringify(data_form_simple)
+            
+            })
+            .then(response=>{
+
+                if(response.ok){
+                    return response.json()
+                }else{
+                    throw new Error("Error en el cambio de PASSWORD -> MAs tarde!!");
+                }   
+
+            }).then(result=>{
+                console.log(result);
+                const host = document.location.host;
+                const pathname = document.location.pathname;
+
+                if(result.status === 'ok'){
+                    console.log('CAMBIO DE PASSWORD REALIZADO ')
+                    alert("Enviamos a BOTS.hmlt")
+                    document.location.href =  result.location
+                }else{
+                    console.log('ERROR en la respuesta del CaMBIO ')
+                    console.log(result.code)
+                    alert("ERROR ->> Enviamos a algun lado")
+                    if(result.location){
+
+                        document.location.href =  result.location
+                    }
+                }
+            }).catch(err=>{
+                console.log(err)
+                // Redirigir a HOME
+
+            })
+
+
+
+        })
+
+    </script>
+    
+</body>
+</html>

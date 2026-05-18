@@ -1,0 +1,304 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        :root{
+            --primary-color: #11121a;
+            --hover-color: #272823;
+            --accent-color: #0071ff;
+            --text-color: #c9c9c9;
+        }
+        *{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html{
+            font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color)
+        }
+
+        body{
+            min-height: 100vh;
+            min-height: 100dvh;
+            background-color: var(--primary-color);
+        }
+        main{
+            padding: min(5em, 7%);
+
+        }
+        main p{
+            margin-top: .35em;
+        }
+        header{
+            position: sticky;
+            top: 0px;
+        }
+#main-header{
+    display: flex;
+}
+
+        nav{
+            background-color: var(--primary-color);
+            border-bottom: 1px solid var(--hover-color);
+            display: flex;
+            /* flex-direction: row; */
+            /* max-height: 50px; */
+           
+        }
+        nav ul{
+            list-style: none;
+            display: flex;
+        }
+        nav .first-lu{
+            margin-right: auto;
+        }
+        nav li{
+            display: flex;
+        }
+        nav a{
+            display: flex;
+            text-decoration: none;
+            color: var(--text-color);
+            padding: 1em 1em;
+            transition: background-color 200ms ease;
+            border-radius: 12px;
+
+        }
+        nav a:hover{
+            background-color: var(--hover-color);
+        }
+        nav .active-link{
+            /* border-bottom: 3px solid var(--text-color); */
+        }
+        nav .accent-link{
+            background-color: var(--accent-color);
+            border-radius: 12px;
+        }
+        nav .user-zone-wrap{
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            z-index: 5;
+            /* border: 1px solid var(--text-color);
+            border-radius: 12px; */
+            /* width: 90%;
+            margin: 0 auto; */
+
+        }
+        nav .user-zone-wrap:hover  > .user-zone{
+            position: absolute;
+            top: 0;
+            display: block;
+        }
+
+        nav ul .user-zone{
+            display: none;
+            flex-direction: column;
+            background-color: var(--primary-color);
+            border: 1px solid var(--text-color);
+            border-radius: 12px;
+        }
+        nav ul .user-zone a{
+            width: 100%;
+        }
+
+
+        #open-sidebar-button{
+            display: none;
+            background: none;
+            border: none;
+            padding: 1em;
+            margin-left: auto;
+            cursor: pointer;
+            /* font-size: 2em; */
+            color: green;
+        }
+        #close-sidebar-button{
+            display: none;
+            background: none;
+            border: none;
+            padding: 1em;
+            cursor: pointer;
+            /* font-size: 2em; */
+            color: green;
+        }
+
+        #overlay{
+            display: none;
+            background-color: rgba(0, 0, 0, 0.5);
+            position: fixed;
+            inset: 0;
+            z-index: 8;
+
+        }
+
+
+
+        /* @media screen and (max-width: 940px) { */
+        @media screen and (max-width: 1020px) {
+
+
+            #open-sidebar-button, #close-sidebar-button{
+                display: block;
+            }
+            #open-sidebar-button{
+                position: fixed;
+                top: 0;
+                right: 10px;
+            }
+
+            nav{
+                position: fixed;
+                top: 0;
+                right: -100%;
+                height: 100dvh;
+                width: min(18em, 100%);
+                z-index: 10;
+                border-left: 2px solid var(--hover-color);
+                transition: right 400ms ease-out;
+                background-color: var(--primary-color);
+                display: flex;
+                flex-direction: column;
+                
+            }
+            nav.show{
+                right: 0;
+            }
+            nav.show ~ #overlay{
+                display: block;
+               
+            }
+ 
+            nav ul{
+                flex-direction: column;
+                width: 100%;
+            }
+            nav .user-zone-wrap:hover  > .user-zone{
+                position: relative;
+                top: 0;
+
+            }
+            nav ul .user-zone{
+                display: flex;
+                width: 90%;
+                margin: 0 auto;
+            }
+            nav a{
+                width: 100%;
+                /* padding-left: 2.5rem; */
+            }
+            nav .first-lu{
+                margin-right: unset;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <header id="main-header">
+        <div id="main-nav"></div>
+       
+    </header>
+
+    <body>
+        <button id="getMainMenu">GET MENU</button>
+        <h1>Pagina de Pruebas</h1>
+
+        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ullam iste qui ut hic eligendi cumque nihil asperiores quae unde. Voluptatum eum assumenda explicabo, ex nisi non harum dignissimos porro magnam recusandae dolores voluptas accusamus autem, corporis repudiandae iusto ipsam cupiditate ab soluta quod numquam rerum unde. Maiores iste deserunt sequi optio dicta nisi nulla totam non facere sit odio ratione saepe quidem numquam laborum suscipit maxime hic voluptate labore quisquam similique molestiae excepturi, earum dolor. Ducimus hic sed aliquid omnis veritatis tempora quos possimus ad adipisci, modi tempore officiis, in est maxime error. Dolores ipsum totam sapiente quis inventore, illum doloribus eveniet vero provident asperiores? Consectetur nemo possimus ipsum adipisci consequatur cumque dicta neque impedit. Itaque officia iusto, incidunt similique numquam quaerat ipsum labore est delectus, aspernatur adipisci nisi debitis, nesciunt cumque! Dolores numquam ex fugit excepturi sint, ipsam quisquam sunt quidem! Labore modi laudantium earum, deleniti eligendi suscipit assumenda eius dolores iste harum quaerat, numquam repudiandae exercitationem ea. Illo ducimus consequuntur laboriosam nemo at inventore officia rem veritatis. Eligendi doloribus, ipsum illum laborum tempora vero modi odit hic? Beatae eius veritatis minima cumque iste itaque maxime quos doloribus. Iure explicabo dolore obcaecati, ad tempore ipsa minus praesentium deserunt incidunt!</p>
+   
+        <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quae ipsam excepturi suscipit repellat dolores similique tempore hic aut pariatur reprehenderit eius, natus incidunt id explicabo? Laborum adipisci harum tempora cum accusantium non alias tenetur necessitatibus incidunt minus quas quam iusto maxime in odio a optio atque ipsum, repudiandae eos culpa suscipit voluptates sed. Vel quibusdam debitis cumque explicabo, ullam iure reiciendis eligendi aliquid ad sed dolores! Expedita, enim laudantium eum ipsa excepturi optio necessitatibus voluptas doloremque deserunt veritatis qui accusantium officia magnam, cumque temporibus minus ipsam eligendi. Architecto voluptate voluptatum nihil, expedita cupiditate at repellat cum dolorum ducimus quisquam incidunt.</p>
+   
+   
+    </body>
+
+    <script>
+
+        const button = document.getElementById("getMainMenu")
+        let main_menu_render = false;
+        button.addEventListener("click", async (e)=>{
+            e.preventDefault();
+
+
+            const data_main_menu = {from: "get-main-menu.html"}
+    
+            const result = await fetch("/get-main-menu", {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "content-type": "application/json"
+    
+                },
+                body: JSON.stringify(data_main_menu)
+                
+            })
+            if(result.status === 200){
+    
+                try{
+    
+                    const response = await result.json();
+    
+                    if(response.status !== "ok"){
+                        alert("Error eN LA PETICION")
+                        console.log(response)
+                    
+                    }else{
+                        // ha habido un error con las cookies -> Enviamos al Login
+                        if(response.location){
+                            document.location.href =  response.location
+                            
+                            return
+                        }
+                        if(!main_menu_render){
+
+                            console.log(response)
+                            
+                            return;
+                            
+                            document.querySelector("#main-header #main-nav").innerHTML = response.menu.html
+                            if(response.menu.styles){
+                                const style = document.createElement("style")
+                                style.innerHTML = response.menu.style
+                                document.querySelector("head").appendChild(style)
+                            }
+                            if(response.menu.script){
+    
+                                const script = document.createElement("script")
+                                script.innerHTML = response.menu.script
+        
+                                document.querySelector("script").appendChild(script)
+                            }
+                            main_menu_render = true;
+                       
+                        }else{
+                            console.log("Menu ya renderizado")
+                        }
+                    }
+    
+                }catch(e){
+                    alert("TRY 2 -> ERROR. INVALID JSON ??")
+                    console.log(e)
+                }
+    
+            }else{ 
+    
+                alert("Error en la PETICION FETCH -> status != 200")
+    
+            }
+
+        })
+
+
+
+
+
+    </script>
+    
+</body>
+</html>

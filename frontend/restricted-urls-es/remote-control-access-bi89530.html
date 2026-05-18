@@ -1,0 +1,198 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Access</title>
+</head>
+<body>
+
+    <h1>Acceso Remoto</h1>
+    <div id="accessFromWrap">
+
+        <form action="">
+            <button id="sendAccessCode">ENVIAR CODIGO</button>
+            <p><input type="text" placeholder="CODIGO ENVIADO"></p>
+            <p></p><input type="text" placeholder="MANUAL KEY"></p>
+            <button id="accessButton">ACCEDER</button>
+    
+            <P>RECIBIMOS UNA LOCACION PARA HACER UNA REDIRECCION CON LAS NUEVAS COOKIES</P>
+            
+        </form>
+    </div>
+
+    
+
+    <script>
+        
+        const send_code_button = document.getElementById("sendAccessCode")
+        
+        const access_button = document.getElementById("accessButton")
+
+        const data_access = {
+            name: "Carlos",
+            // EL EMAIL HA DE SER UNO DE LOS FIJADOS EN systemConfig para recibir este tipo de token
+            email: "pegashio@gmail.com",   
+            // Este es el valor del token enviado por email     
+            token: "ABCDE",
+
+            // accessKey: ""  -> este valor es un password adicional que se muestra cuando se recibe el token y estan en systemConfig
+           
+            task: "ACCESS",
+            fa2: "SEND"
+        }
+
+        const url = "/remote-control-access-post"
+
+        send_code_button.addEventListener('click', async (ev)=>{
+            ev.preventDefault();
+
+            // OBTENEMOS LOS VALORES DEL FORMULARIO
+
+            
+            console.log(data_access);
+            const result = await fetchRequest(url, data_access)
+
+            console.log(result)
+           
+            if(!result){
+                alert("ERROR EN EL ACCESS !!")
+
+            }else if(result.status !== "ok"){
+                // Erroes con el formato de los Campos
+                // o disponibilidad de Nombres
+                // ...
+
+                alert("ERROR con los campos del Formulario")
+                
+            }else if(result.fa2_required){
+                // mOSTRAMOS EL RESTO DEL FORM
+                // con el campo para el accessKey
+
+                // oCULTAMOS LO ANTERIOR
+
+                alert(result.message)   // Le hemos enviado un codigo por Email, ....
+                access_button.addEventListener("click", async (ev)=>{
+                    ev.preventDefault();
+                    
+                    // capturamos el valor del input CODE_VERIFICATION_ENVIADO
+                    // AÑADIMOS EL CODE
+                    // Y EL AVISO DE QUE YA HEMOS RECIBIDO EL TOKEN
+                    data_access.fa2 = "RECIBED"
+                    
+                    // leemos el valor del token enviado por email y del ACCESS KEY
+                    // data_acces.token = "ABCDE"
+                    // data_access.token = document.querySelector(".signup_form .fa2 #signup_validation_token").value;
+                    // data.accessKey = document.querySelector .....
+                    data_access.accessKey = "PANNEL_ACCESS_KEY_1"
+
+                    const result2 = await fetchRequest(url, data_access)
+                    console.log(result2)
+
+                    /***
+                     *      status = "ok"  -> SignUP concluido.
+                     *      redirigimos a location
+                     * 
+                     *      status !== 'ok'
+                     *      code = 466 -> El token introducido no es correcto -> Volver a hacer el SignUp
+                     *      code = 465 -> Token Expirado -> Volver ha hacer el signup por completo
+                     *      Limpiar los forms y dejarlos como al principio
+                     */
+                    
+                    if(!result2){
+                        alert('ERROR EN EL SIGNUP -> 2º FETCH')
+                    }else if(result2.status === "ok"){
+                        if(result2.location){
+                            document.location.href =  result2.location
+                        }else{
+                            alert("Acceso Corecto pero a donde voy ??")
+                        }
+
+                    }else{
+                        // FALTA
+                        // Manejar los codigos de error
+
+                        // Error en el promo_code
+                        // Error en el Codigo de Verificación
+                        // Error 
+                        alert(result2.message)
+                    }
+                })
+
+            }else{
+                if(result.location){
+
+                    document.location.href =  result.location
+                }else{
+                    // FALTA
+                    // Manejar los codigos de error
+                    alert("ERROR en la Peticion Fetch")
+                }
+
+            }
+            
+        })
+
+
+        async function fetchRequest(url, data){
+            
+            try{
+                const result = await fetch(url,
+                
+                {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {  "Content-Type": "application/json",
+                                "Cookie": document.cookie
+                            },
+                    body:  JSON.stringify(data)
+                
+                });
+                
+                // Este status no lo seteamos nosotros directamente en el server. 
+                // 
+                if(result.status === 200){
+
+                    try{
+
+                        const data = await result.json()
+                        if(data.status !== "ok"){
+                            alert("Ocurrió un Error en el Acceso al Pannel")
+                            console.log("Error Code: " + data.code)
+                            // Por ejemplo las cookies estan corruptas
+                            return data
+                        
+                        }else{
+                            console.log(data)
+                            return data;
+                        }
+
+                    }catch(e){
+                        console.log("TRY 2 -> ERROR. INVALID JSON ??")
+                        console.log(e)
+                        return null;
+                    }
+                }else{ 
+
+                    console.log("Error en la PETICION FETCH -> status != 200")
+                    return null
+                    
+                }
+
+            }catch(e){
+                console.log("TRY 1 -> ERROR -> error en la peticion fetch")
+                console.log(e)
+                return null;
+            }
+
+        }
+    
+
+
+
+    </script>
+    
+    
+</body>
+</html>

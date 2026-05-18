@@ -1,0 +1,6 @@
+.env
+request.http
+prueba.js
+tips.js
+ses-smtp-test_credentials.csv
+node_modules/
