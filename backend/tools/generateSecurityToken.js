@@ -1,10 +1,23 @@
 
 
+/**
+ * 
+ *  generamos el SecurityToken de la Cookie del sistema para acceder al panel de control
+ * 
+ */
 
 
 import {randomUUID} from 'crypto'
-import { hashToken } from '../tools/tokenGenerator.js'
+import { hashToken } from './tools/tokenGenerator.js'
 import systemConfig from '../globalData/systemConfig.js';
+
+/**
+ * 
+ * @param {String} name  -> NOMBRE DEL USUARIO
+ * @param {String} email -> EMAIL DEL USUARIO
+ * @param {String} stamp -> 
+ * @returns {Object} -> {status, stk, securityToken, expireTime}
+ */
 
 
 export default function(name, email, stamp){

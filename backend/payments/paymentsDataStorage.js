@@ -1,24 +1,33 @@
 
+/**
+ *  ALMACENAMOS LOS DATOS DE LOS PAGOS EN LA BASE DE DATOSS
+ *  PRIMERO SE ALMACENAN CON ESTADO "PENDING"
+ * 
+ *  DESPUES SI EL PAGO SE HA EFECTUADO SE ACTUALIZA SU ESCADO A "SUCCESS" 
+ */
 
 import dbCrudHandler from "../db/dbCrudHandler.js";
 import systemConfig from "../globalData/systemConfig.js";
 
+// LAS BASES DE DATOS DE ESTA CONTABILIDAD TIENEN EN SU NOMBRE EL AÑO EN CURSO
+// LA COLECCION DE ESA BASE DE DATOS TIENE EN SU NOMBRE EL MES EN CURSO
 
 const months = ['ene', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dec' ]
-
 const [week_day, month, day, year, time] = new Date().toString().split(' ')
-// [ 'Sun', 'Jun','29', '2025','20:09:25', 'GMT+0200','(hora',    'de','verano',   'de','Europa',   'central)'  ]
+
+// EJ: [ 'Sun', 'Jun','29', '2025','20:09:25', 'GMT+0200','(hora',    'de','verano',   'de','Europa',   'central)'  ]
+
 const [hour, min, sec] = time.split(":")
 
-/**
- *  data = {
- *      stripeId,
- *      status: "PENDING",  ...
- *      user: {},
- *      cart: {},
- * }
- * 
- */
+/*
+* @params {
+*      stripeId,
+*      status: "PENDING", "SUCCESS" ...
+*      user: {},
+*      cart: {},
+*  } data
+* 
+*/
 export const insertOne = async (data)=>{
     console.log("Payment -> insertOne")
     // console.log(data)
@@ -27,13 +36,15 @@ export const insertOne = async (data)=>{
         collection: months[month],
         await: true
     }
+
+    // EN EL _ID INCLUYO VARIOS CAMPOS PARA NO CREAR MAS INDICES EN LA DB. 
     const data_db = {
         ...data, 
         date:  {day: day, hour: hour, min: min, sec: sec}, 
         _id: {
             _id: data.stripeId,
             date: {day: day, hour: hour, min: min, sec: sec},
-            method: "STRIPE",
+            method: "STRIPE-CARD",
             userId: data.userId,
             email: data.email,
         }
@@ -55,10 +66,10 @@ export const updateOne = async (data)=>{
     console.log("Payment-> updateOne")
 
     if(data.task === "UPDATE_STATUS_PAYMENT"){
-        if(data.paymentMethod === "STRIPE"){
-
+        if(data.paymentMethod === "STRIPE-CARD"){
             const filter = {"_id._id": data.stripeId}
-        }else if(paymentMethod === "BIZUM"){
+
+        }else if(paymentMethod === "STRIPE-BIZUM"){
             const filter = {"_id._id": data.bizumId}
 
         }
@@ -81,7 +92,7 @@ export const updateOne = async (data)=>{
 
     }else if(data.task === "UPDATE_STATUS_PAYMENT_AND_RETURN_DOCUMENT"){
         
-        const filter = {_id: data.stripeId}
+        const filter = {"_id._id": data.stripeId}
         const data_db = {$set: data.new_value}
        
         const params = {
@@ -92,6 +103,7 @@ export const updateOne = async (data)=>{
             returnDocument: true
         }
 
+        
         if(data.await){
 
             let result = await dbCrudHandler.findOneAndUpdate(filter, data_db, params)

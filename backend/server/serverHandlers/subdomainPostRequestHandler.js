@@ -14,7 +14,12 @@
 
 import systemConfig from "../../globalData/systemConfig.js"
 
-
+/**
+ * 
+ * @param {object} Objeto Request de NodeJS 
+ * @param {object} Objeto Response de NodeJS
+ * @returns 
+ */
 export default (req, res)=>{
 
     console.log('SUBDOMAIN_POST_REQUEST_HANDLER !!!!')

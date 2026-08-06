@@ -1,6 +1,6 @@
 
 /**
- *  OBTIENE NUESTRA COOKIE DE LA COOKI ENVIADA POR EL NAVEGADOR
+ *  OBTIENE NUESTRA COOKIE DE  ENVIADA POR EL NAVEGADOR
  * 
  *      - SI FALTA ALGUNOS DE LOS VALORES, MANDA ENVIAR AL LOGIN
  *      PARA SETEAR NUEVA COOKIE
@@ -13,7 +13,10 @@ import cookieParser from "./cookieParser.js";
 import systemConfig from "../globalData/systemConfig.js";
 import { decodeToken } from "./tokenGenerator.js";
 
-
+/**
+ * 
+ * @param {Object} req  -> Objeto Request de Node
+ */
 export default (req)=>{
 
     console.log("getOurCookie.js !!")
@@ -65,7 +68,7 @@ export default (req)=>{
 
         }
     
-        // Falta ALGUNO -> SE HA MANIPULADO -> BORRAR Y AL LOGIN
+    // Falta ALGUNO -> SE HA MANIPULADO -> BORRAR Y AL LOGIN
     }else if(!req.cookie_parsed.atk ||  !req.cookie_parsed.rtk || !req.cookie_parsed.deviceId){
         console.log('ERROR FALTA ALGUNA DE LAS COOKIES')
 

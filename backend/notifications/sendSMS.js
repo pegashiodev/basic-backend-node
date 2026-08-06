@@ -4,6 +4,11 @@
 
 /**
  * 
+ *      ENVIAMOS UN SMS AL TEELEFONO DEL USUARIO VIA AWS. 
+ * 
+ *      ESTO ESTA MUY VERDE. NO SE LLEGO A PROBAR CON USUARIOS 
+ * 
+ * 
  *      @param
  *      data: {
  *          task, sender, destination, name, lastName, await
@@ -68,7 +73,7 @@ export default async (data, user)=>{
 
         //     }
         // }
-        // userHandler.updateUser()
+        // userHandler.updateUser(data, user)
 
     // ENVIAMOS UN SMS PARA VERICFICAR ALGO: PAGO, ACCESO A UN ENDPOINT, ...
     // ESTE CODIGO HAY QUE GUARDARLO EN CACHE PARA VERIFICAR 

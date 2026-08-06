@@ -1,10 +1,23 @@
 
 
+/**
+ * 
+ *  generamos el AccessToken de la Cookie del sistema
+ * 
+ */
+
+
 import {randomUUID} from 'crypto'
-import { hashToken } from '../tools/tokenGenerator.js'
+import { hashToken } from './tools/tokenGenerator.js'
 import systemConfig from '../globalData/systemConfig.js';
 
-
+/**
+ * 
+ * @param {} name  -> NOMBRE DEL USUARIO
+ * @param {*} email -> EMAIL DEL USUARIO
+ * @param {*} rtk -> REFRESH TOKEN 
+ * @returns {Object} -> {status, atk, accessToken, expireTime}
+ */
 export default function(name, email, rtk){
 
     const atk = randomUUID();

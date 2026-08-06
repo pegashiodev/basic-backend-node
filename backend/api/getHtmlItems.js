@@ -1,4 +1,13 @@
 
+/**
+ * ENTREGAMOS ITEMS HTML AL FRONTEND YA RENDERIZADOS
+ * DESDE AQUI SE LLAMA AL GET CORRESPONDIENTE (getProducts, getExamples, ...)
+ * UNA VEZ OBTENIDOS LOS DATOS, SE RENDERIZAN Y SE ENVIAN AL FRONTEND
+ * 
+ * LOS ITEMS PUEDEN SER: CARDS, PRODUCTS, EJEMPLOS, ... 
+ * 
+ */
+
 
 import renderHtml from "../dinamic-views/renderHtml.js";
 import getProducts from "../db/getProducts.js";
@@ -6,6 +15,14 @@ import getMyBots from "../db/getMyBots.js"
 import getClExamples from "../db/getClExamples.js";
 import getBots from "../db/getBots.js";
 import getMyQuestions from "../db/getMyQuestions.js";
+
+
+
+/**
+ * 
+ * @param {object} Objeto Request de NodeJS 
+ * @param {object} Objeto Response de NodeJS
+ */
 
 export default async function(req, res){
 

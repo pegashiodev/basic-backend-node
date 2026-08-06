@@ -1,8 +1,13 @@
 
+/**
+ *  manejador de las peticiones GET que llegan al servidor HTTP
+ * 
+ */
+
 
 import sendStaticFile from './sendStaticFile.js';
 import systemConfig from '../../globalData/systemConfig.js';
-import getRequestData from "../../router/routerTools/getUrlData.js"
+import getUrlData from "../serverTools/getUrlData.js"
 import routerVerificationEndpoints from '../../router/routerVerificationEndpoints.js'
 import routerRestrictedEndpoints from '../../router/routerRestrictedEndpoints.js';
 import routerDinamicEndpoints from '../../router/routerDinamicEndpoints.js';
@@ -13,13 +18,18 @@ import routerPayEndpoints from "../../router/routerPayEndpoints.js"
 process.loadEnvFile();
 
 
+/**
+ * 
+ * @param {object} Objeto Request de NodeJS 
+ * @param {object} Objeto Response de NodeJS
+ * @returns 
+ */
 export default  async(req, res)=>{
     
-    const from = "** GetRequestHandler!!"
-    console.log("\n\nNUEVA PETICION GET ************************************")
+    console.log("\n\n NUEVA PETICION GET ************************************")
     
     // EXTRAEMOS TODA LA DATA DE LA REQUEST
-    req.urlData = getRequestData(req);
+    getUrlData(req);
     console.log(`URL: ${req.urlData.url}`)
     // console.log(req.urlData);
 
@@ -119,11 +129,6 @@ export default  async(req, res)=>{
     sendStaticFile(req, res)
     return;
     
-
-    
-    
-
-
 }
 
 

@@ -1,29 +1,39 @@
 
+
+/** PARA CREAR IDENTIFICADORES UNICOS */
 import { ObjectId } from "mongodb";
 
+/** DICCIONARIO CON LA BASES DE DATOS ABIERTAS */
 import dbsOpened from '../globalData/dbsOpened.js';
 
 
 /**
  * 
- * @param {} query 
- * @param {*} options 
+ * FIND ONE ELEMENT
+ * 
+ * @param {object} query -> condicion para buscar el elemento de la db
+ * @param {object} params -> datos para acceder a la db: nombre, colecccion, await (si se espera por la respuesta), ...
+ * EJ
+ * const params = {
+ *    "dbName": "nombre de la base de datos"
+ *    "collection": "nombre de la coleccion"
+ *    "await": "le indico si se esta esperando por el resultado, para que en el caso de que sea `false` no devuelva nada"
+ *  
+ * }
+ * 
+ * @param {object} options -> acciones a realizar sobre la respuesta: ordenas, proyeccion de elementos, ...
  * 
  * EJ
  * const options = {
-      // Sort matched documents in descending order by rating
+      //Ordena la busqueda por orden descendente
       sort: { "imdb.rating": -1 },
-      // Include only the `title` and `imdb` fields in the returned document
+      // incluye solo 2l `title`y el campo ìmdb` en el documento de respuesta
       projection: { _id: 0, title: 1, imdb: 1 },
     };
  */
-
-
 const findOne = async (query, params, options = {})=>{
   
-
   const db = dbsOpened[params.dbName];
-
   const myColl = db.collection(params.collection);
 
 
@@ -47,21 +57,31 @@ const findOne = async (query, params, options = {})=>{
 
 /**
  * 
- * @param {} query 
+ * FIND ALL ELEMENTS
+ * 
+ * @param {object} query -> condicion para buscar el elemento de la db
  * EJ
  *  const query = { runtime: { $lt: 15 } };
- * @param {*} options 
+ *  @param {} params -> datos para acceder a la db: nombre, colecccion, await (si se espera por la respuesta), ...
+ * EJ
+ * const params = {
+ *    "dbName": "nombre de la base de datos"
+ *    "collection": "nombre de la coleccion"
+ *    "await": "le indico si se esta esperando por el resultado, para que en el caso de que sea `false` no devuelva nada"
+ *  
+ * }
+ * 
+ * @param {*} options > acciones a realizar sobre la respuesta: ordenas, proyeccion de elementos, ...
+ * 
  * EJ
  * const options = {
-      // Sort matched documents in descending order by rating
+      //Ordena la busqueda por orden descendente
       sort: { "imdb.rating": -1 },
-      // Include only the `title` and `imdb` fields in the returned document
+      // incluye solo 2l `title`y el campo ìmdb` en el documento de respuesta
       projection: { _id: 0, title: 1, imdb: 1 },
     };
- * @returns 
+ * 
  */
-
-
 const find = async (query, params, options)=>{
 
   console.log(options)
@@ -74,22 +94,6 @@ const find = async (query, params, options)=>{
 
   try{
 
-      /**
-       * 
-       *  // Query for movies that have a runtime less than 15 minutes
-          const query = { runtime: { $lt: 15 } };
-          const options = {
-            // Sort returned documents in ascending order by title (A->Z)
-            sort: { title: 1 },
-            // Include only the `title` and `imdb` fields in each returned document
-            projection: { _id: 0, title: 1, imdb: 1 },
-          };
-       */
-
-
-
-    // Execute query 
-    // ***** no await ????
     const cursor = myColl.find(query, options);
 
     /*PROBAR
@@ -117,30 +121,39 @@ const find = async (query, params, options)=>{
     console.log(error)
     return { status: "error"};
 
-    // {message: 'Error FIND ONE DOC ', from: 'mongoHandlers.findOne', params: [query, options]}
-
   }
 
 }
 
 
-/*
-  doc: documento a insertar
-  params: datos para insertar: { dbname, collection, ...}
-  options: 
-
-*/
-
-
+/**
+ * 
+ * INSERTAR 1 ELEMENTO
+ * 
+ * // OBJETO A INSERTAR
+ * @param {object} data -> objeto a insertar en la DB
+ * 
+ * // DATOS PARA ACCEDER A LA BASE DE DATOS
+ * @param {} params -> datos para acceder a la db: nombre, colecccion, await (si se espera por la respuesta), ...
+ * EJ
+ * const params = {
+ *    "dbName": "nombre de la base de datos"
+ *    "collection": "nombre de la coleccion"
+ *    "await": "le indico si se esta esperando por el resultado, para que en el caso de que sea `false` no devuelva nada"
+ *  
+ * }
+ * @param {*} options -> opciones para la insercion del elemento
+ * 
+ * 
+ */
 const insertOne = async (data, params, options = {})=>{
 
   console.log({params})
   const {dbName, collection} = params;
 
-  // const dbName = params.dbName
-  // const collection = params.collection
   const db = dbsOpened[dbName];
 
+  /** SI NO TIENE _ID LO CREAMOS */
   if(!data._id){
     data._id = new ObjectId().toHexString();
   }
@@ -171,14 +184,13 @@ const insertOne = async (data, params, options = {})=>{
 
       const result = await myColl.insertOne(data);
     
-      // console.log('One doc Inserted on MongoDB!!')
+      // console.log('One doc Inserted on MongoDB!! CON EL ID _id: ${result.insertedId}`')
       return {status: "ok"}
       
     }else{
       myColl.insertOne(data);
     }
     
-    // Print the ID of the inserted document
     //console.log(`A document was inserted with the _id: ${result.insertedId}`);
   } catch(error){
 
@@ -200,22 +212,20 @@ const insertOne = async (data, params, options = {})=>{
 /**
  * INSERT MANY DOCS IN  DE SAME COLLECTION
  * 
- * @param {*} data [array ] docs a insertar
+ * @param {object} data [array ] docs a insertar
+ * EJ
  * const docs = [
       { name: "cake", healthy: false },
       { name: "lettuce", healthy: true },
       { name: "donut", healthy: false }
     ];
- * @param {*} params // dbName, collection, ...
- * @param {*} options 
+ * @param {object} params // dbName, collectionName, await, ...
+ * @param {object} options 
  * // Prevent additional documents from being inserted if one fails
     const options = { ordered: true };
  */
-
 const insertMany = async (data, params, options={})=>{
 
-  // const dbName = params.dbName;
-  // const coll = params.collection;
   const {dbName, collection} = params;
 
   const db = dbsOpened[dbName];
@@ -223,21 +233,10 @@ const insertMany = async (data, params, options={})=>{
 
 
   try {
-
     
-    // Execute insert operation
     const result = await myColl.insertMany(data, options);
-    // console.log('MANY DOCS Inserted on MongoDB!!')
-    // console.log(`${result.insertedCount} documents were inserted`);
+    console.log(`MANY DOCS Inserted on MongoDB!! -> ${result.insertedCount} DOCUMENTOS INSERTADOS`)
     return result;
-
-    /**
-     *  let ids = insertManyresult.insertedIds;
-        console.log(`${insertManyresult.insertedCount} documents were inserted.`);
-        for (let id of Object.values(ids)) {
-          console.log(`Inserted a document with id ${id}`);
-        }
-     */
   
   } catch(error) {
     console.log('ERROR insertando Many Doc')
@@ -250,21 +249,15 @@ const insertMany = async (data, params, options={})=>{
 
 /**
  * 
- * @param {dbName, collection, ...} params 
- * @param {*query to delete document} query 
+ * DELETE ONE DOCUMENT
  * 
- * EJ.
- * {_id: '010102ddf},
- * { pageViews: {
-   * $gt: 10,
-  *$lt: 32768
-  *}}
+ * @param {object} params -> datos para acceder a la db: nombre, colecccion, await (si se espera por la respuesta), ...
+ * 
+ * @param {object} query -> query para localizar el elemento a eliminar
+ * 
  */
-
 const deleteOne = async (params, query)=>{
 
-  // const dbName = params.dbName;
-  // const coll = params.collection;
   const {dbName, collection} = params;
   const db = dbsOpened[dbName];
   const myColl = db.collection(collection);
@@ -272,13 +265,12 @@ const deleteOne = async (params, query)=>{
   try{
     const result = await myColl.deleteOne(query);
     
-    // console.log(result.deletedCount);
+    //console.log(`Documentos borrados: ${result.deletedCount}`);
     return result
 
   }catch(error){
-    console.log('ERROR Deleting One  Doc')
+    console.log(`ERROR Deleting One  Doc: ID DEL DOCUMENTO:  ${query._id}`)
     console.log(error)
-       // {message: 'Error borrando One doc', from: 'mongoHandlers.deleteOne', params: [params, query]}
 
   }
 
@@ -287,18 +279,13 @@ const deleteOne = async (params, query)=>{
 
 /**
  * 
- * @param {dbName, collection, ...} params 
- * @param {*query to delete document} query 
+ * DELETE MANY DOCS 
  * 
- * EJ.
- * {_id: '010102ddf},
- * { pageViews: {
-  *  $gt: 10,
-   * $lt: 32768
-  *}}
-*
+ * 
+ * @param {object} params -> datos para acceder a la db: nombre, colecccion, await (si se espera por la respuesta), ...
+ * @param {object} query -> query para localizar el elemento a eliminar
+ * 
  */
-
   const deleteMany = async (params, query)=>{
 
     // const dbName = params.dbName;
@@ -325,22 +312,26 @@ const deleteOne = async (params, query)=>{
 
 /**
  * 
- * @param {_id: 2323} filter // para la busqueda del doc
+ * ACTUALIZAR 1 DOCUMENTO
+ * 
+ * @param {_id: 2323, ...} filter // para la busqueda del doc
  * EJ
  * { name: "Deli Llama" };
- * @param {*} updateData // datos a actualizar
+ * @param {object} updateData // datos a actualizar
  * EJ
  * {$inc: { "entries.$.y": 33 }}
  * { $unset: { "calls.$[].duration": "" }},
  * { $set: { name: "Deli Llama", address: "3 Nassau St" }};
- * @param {*upsert: true} options 
+ * @param {upsert: true, dbName: "nombre_de_la_db", collection: "nombre de la collecion", await: "true"}  
+ * 
+ * upsert -> Si no exite ese documento, se crea.
+ * await -> indica si se esta esperando o no una respuesta del resultado del updateOne
  */
-
-  const updateOne = async (filter, update_data, params)=>{
+  const updateOne = async (filter, updateData, params)=>{
 
     // console.log({filter})
     // console.log({params})
-    // console.log({update_data})
+    // console.log({updateData})
 
     const db = dbsOpened[params.dbName];
     const myColl = db.collection(params.collection);
@@ -353,12 +344,12 @@ const deleteOne = async (params, query)=>{
 
       if(params.await){
 
-        const result = await myColl.updateOne(filter, update_data, options);
+        const result = await myColl.updateOne(filter, updateData, options);
         // console.log(' DATA ACTUALIZADO EN DB')
         return {status: "ok"}
      
       }else{
-        myColl.updateOne(filter, update_data, options);
+        myColl.updateOne(filter, updateData, options);
       }
 
 
@@ -379,8 +370,27 @@ const deleteOne = async (params, query)=>{
 
   }
 
-  
-const updateMany = async (filter, update_data, params)=>{
+
+
+
+/**
+ * 
+ * ACTUALIZAR MANY DOCUMENTOS
+ * 
+ * @param {_id: 2323} filter // para la busqueda del doc
+ * EJ
+ * { name: "Deli Llama" };
+ * @param {} updateData // datos a actualizar
+ * EJ
+ * {$inc: { "entries.$.y": 33 }}
+ * { $unset: { "calls.$[].duration": "" }},
+ * { $set: { name: "Deli Llama", address: "3 Nassau St" }};
+ * @param {upsert: true, dbName: "nombre_de_la_db", collection: "nombre de la collecion", await: "true"}  
+ * 
+ * upsert -> Si no exite ese documento, se crea.
+ * await -> indica si se esta esperando o no una respuesta del resultado del updateOne
+ */
+const updateMany = async (filter, updateData, params)=>{
 
   const db = dbsOpened[params.dbName];
   const myColl = db.collection(params.collection);
@@ -395,7 +405,7 @@ const updateMany = async (filter, update_data, params)=>{
   
   try{
 
-    const result = await myColl.updateMany(filter, update_data, options);
+    const result = await myColl.updateMany(filter, updateData, options);
     // console.log(' DATA ACTUALIZADO EN DB')
     return {ststaus: "ok"}
     
@@ -406,46 +416,54 @@ const updateMany = async (filter, update_data, params)=>{
   }
 }
 
+/**
+ * REMPLAZAR DOCUMENTO
+ * 
+ * @param {object} filter -> para localizar el documento en la db
+ * @param {object} replaceDoc -> documento que susutituye al que se localizo
+ * @returns 
+ */
 
-  const replaceOne = async (filter, replaceDoc)=>{
-    
-    const db = dbsOpened[params.dbName];
-    const myColl = db.collection(params.collection);
+const replaceOne = async (filter, replaceDoc)=>{
+  
+  const db = dbsOpened[params.dbName];
+  const myColl = db.collection(params.collection);
 
-    try{
-      const result = await myColl.replaceOne(filter, replaceDoc);
-      // console.log('DOCUMENTO REEMPLAZADO !!')
-      // console.log(result)
-      return result;
+  try{
+    const result = await myColl.replaceOne(filter, replaceDoc);
+    // console.log('DOCUMENTO REEMPLAZADO !!')
+    // console.log(result)
+    return result;
 
 
-    }catch(error){
-      console.log('ERROR replace Doc')
-      console.log(error)
-
-    }
+  }catch(error){
+    console.log('ERROR replace Doc')
+    console.log(error)
 
   }
+
+}
 
 
 /**
  * 
+ * BUSCAR Y ACTUALIZAR 1 DOCUMENTO
+ * 
  * @param {_id: 2323} filter // para la busqueda del doc
  * EJ
  * { name: "Deli Llama" };
- * @param {*} updateData // datos a actualizar
+ * @param {object} updateData // datos a actualizar
  * EJ
  * {$inc: { "entries.$.y": 33 }}
  * { $unset: { "calls.$[].duration": "" }},
  * { $set: { name: "Deli Llama", address: "3 Nassau St" }};
- * @param {*upsert: true} options 
+ * @param {*upsert: true, dbName: "nombre_de_la_db", collection: "nombre de la collecion", await: "true"} options 
  */
-
-const findOneAndUpdate = async (filter, update_data, params)=>{
+const findOneAndUpdate = async (filter, updateData, params)=>{
   
   // console.log({filter})
   // console.log({params})
-  // console.log({update_data})
+  // console.log({updateData})
 
   const db = dbsOpened[params.dbName];
   const myColl = db.collection(params.collection);
@@ -461,16 +479,15 @@ const findOneAndUpdate = async (filter, update_data, params)=>{
 
     if(params.await){
 
-      const result = await myColl.findOneAndUpdate(filter, update_data, options);
+      const result = await myColl.findOneAndUpdate(filter, updateData, options);
       // console.log(' DATA ACTUALIZADO Y RETORNADO EN DB')
       // console.log(result)
       return {status: "ok"}
     
     }else{
 
-      myColl.findOneAndUpdate(filter, update_data, options);
+      myColl.findOneAndUpdate(filter, updateData, options);
     }
-
 
   }catch(error){
     console.log('ERROR actualizando Doc')
@@ -482,11 +499,15 @@ const findOneAndUpdate = async (filter, update_data, params)=>{
     }
 
   }
-
-
-
 }
 
+/**
+ * 
+ * MULTIPLES INSERCIONES EN DB
+ * 
+ * @param {object} data 
+ * @param {object} params 
+ */
 const writeBulk = async (data, params)=>{
 
   // console.log(params)

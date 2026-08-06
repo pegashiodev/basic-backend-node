@@ -1,7 +1,15 @@
 
+/**
+ * 
+ *  recibimos un string con las cookies y aqui las decodificamos y las convertimos en un objeto
+ * 
+ */
 
 
 
+/**
+ * @param {String} cookies -> String con las cookies que hemos recibido
+ */
 export default (cookies)=>{
     console.log('cookieParser!!!')
     //console.log(cookies)

@@ -1,4 +1,16 @@
 
+/**
+ * 
+ *  CACHEO DE ARCHIVOS ESTATICOS DEL SITIO HASTA EL LIMITE FIJADO EN "systemConfig.js"
+ * 
+ *  SE ALMACENAN EN 1 DICCIONARIO "staticFilesCached.js"
+ * 
+ * 
+ */
+
+
+
+
 import systemConfig from "../../globalData/systemConfig.js"
 import { readdirSync, readFileSync, stat, statSync }  from  'node:fs'
 import staticsFilesCached from "../../globalData/staticsFilesCached.js"

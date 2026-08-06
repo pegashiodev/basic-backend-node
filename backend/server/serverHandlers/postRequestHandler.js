@@ -1,27 +1,36 @@
 
 
-// RECIBIMOS LA PETICION POST
-// 
-// EXTRAEMOS LOS DATOS DE LA URL Y DEL BODY
-//      - req.data
-//      - req.body
-//
-// DEJAMOS PASAR SIN COOKIE ESOS ENDPOINTS QUE LO PERMITEN
-//
-// CAPTURAMOS NUESTRA COOKIE -> 
-//      - req.has_our_cookie
-//      - req.our_cookie
+/***
+ * 
+ *  MANEJADOR DE LAS PETICIONES POST QUE LLEGAN EL SERVIDOR HTTP
+ * 
+ * 
+ * - OBTENEMOS LOS DATOS DE LA PETICION : urlData y body
+ * - COMPROBAMOS SI ES UNA PETICION PARA ALGUN SUBDOMINIO: SI ES ASI LA TRAMITAMOS
+ * - COMPROBAMOS SI ES UN ENDPOINT QUE NO REQUIERE COOKIE DE LA PLATAFORMA: TRAMITAMOS SI PROCEDE
+ * - COMPROBAMOS LA COOKIE: SI NO CORRECTA ENVIAMOS MESAJE DE REDIRECCION AL LOGIN O SIGNUP
+ * - TRAMITAMOS LA PETICION -> routerPostRequest.js
+ * 
+ * 
+ */
+
+
 
 
 import getRequestBody from "../serverTools/getRequestBody.js";
-import getUrlData from "../../router/routerTools/getUrlData.js";
+import getUrlData from "../serverTools/getUrlData.js";
 import routerPostRequest from "../../router/routerPostRequest.js";
 import systemConfig from "../../globalData/systemConfig.js";
 import getOurCookie from "../../tools/getOurCookie.js";
 import subdomainPostRequestHandler from "./subdomainPostRequestHandler.js";
+import sessionsCached from "../../globalData/sessionsCached.js";
 
 
-
+/**
+ * 
+ * @param {req}
+ * @param {res}
+ */
 export default  async (req, res)=>{
     
     console.log("\n\nNUEVA PETICION POST ************************************")
@@ -41,9 +50,20 @@ export default  async (req, res)=>{
 
     const contentType = req.headers['content-type']
     
-    // Datos de la URL
-    req.urlData = getUrlData(req);
-    // req.data.hasCookie = false;
+    // Obtenemos Datos de la URL
+    getUrlData(req);
+
+    if(!req.urlData.endpoint){
+        console.log('POST -> NO endpoint IN REQUEST -> devolvemos 404')
+        const response_data = {
+            message: 'NO ENDPOINT EN LA PETICION',
+            code: 450
+        }
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end(JSON.stringify(response_data))
+        return;
+    }
+    
     
     if(contentType === 'application/json'){
         req.urlData.body_type = 'JSON';
@@ -138,7 +158,7 @@ export default  async (req, res)=>{
     }
 
     
-    // PERMITIMOS EL PASO A ESOS ENDPOINTS QUE NO REQUIEREN COOKIE
+    // PERMITIMOS EL PASO DIRECTO  A ESOS ENDPOINTS QUE NO REQUIEREN COOKIE
     if(req.urlData.endpoint && systemConfig.VALID_POST_ENDPOINTS_WITHOUT_COOKIE.includes(req.urlData.endpoint)){
         // AÑADIMOS DATOS AL BODY
         console.log("Ruta valida")
@@ -147,21 +167,32 @@ export default  async (req, res)=>{
         return routerPostRequest(req, res)
     }
 
-// JOJO !!!
-// OJO DEJAMOS PASAR PARA PROBAR LAS OPCIONES DE REMOTE PANEL
-
-if(req.urlData.endpoint === "remote-control-handler-post" || req.urlData.endpoint === "verify-from-remote-panel"){
-    // AÑADIMOS DATOS AL BODY
-    req.body.language = req.urlData.language;
-    req.body.ip = req.urlData.ip;
-console.log(req.urlData.endpoint)
-    routerPostRequest(req, res)
-    return;
-}
+    // PERMITIMOS EL PASO DIRECTO  A ESOS ENDPOINTS QUE NO REQUIEREN SESSION
+    if(req.urlData.endpoint && systemConfig.VALID_POST_ENDPOINTS_WITHOUT_SESSION.includes(req.urlData.endpoint)){
+        // AÑADIMOS DATOS AL BODY
+        console.log("Ruta valida")
+        req.body.language = req.urlData.language;
+        req.body.ip = req.urlData.ip;
+        return routerPostRequest(req, res)
+    }
 
 
 
-    // COMPROBAMOS COOKIE
+    // OJO !!!
+    // OJO DEJAMOS PASAR PARA PROBAR LAS OPCIONES DE REMOTE PANEL
+
+    // if(req.urlData.endpoint === "remote-control-handler-post" || req.urlData.endpoint === "verify-from-remote-panel"){
+    //     // AÑADIMOS DATOS AL BODY
+    //     req.body.language = req.urlData.language;
+    //     req.body.ip = req.urlData.ip;
+    // console.log(req.urlData.endpoint)
+    //     routerPostRequest(req, res)
+    //     return;
+    // }
+
+   
+
+    // PARA EL RESTO DE ENDPOINTS COMPROBAMOS COOKIE
     if(req.urlData.hasCookie){
 
         const result_getOurCookie = getOurCookie(req)
@@ -176,26 +207,24 @@ console.log(req.urlData.endpoint)
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({status: "error", message: "Error Obteniendo Cookie desde postRequestHandler"}));
                 return;
-                
             }
-        
         }
     }
+    let session = sessionsCached[req.body.email]
 
-    // SI NUESTRA COOKIE 
-    if(req.has_our_cookie){
+    // PERMITIMOS SEGUIR SI HAY NUESTRA COOKIE Y HAY SESION
+    if(req.has_our_cookie && session){
 
         // AÑADIMOS DATOS AL BODY
         req.body.language = req.urlData.language;
         req.body.ip = req.urlData.ip;
-    
         routerPostRequest(req, res)
-        
+      
     }else{
 
         let location = systemConfig.PAGES.SESSION_IS_REQUIRED
 
-        // SI LA HAY, AÑADIMOS LA RUTA DESDE LA QUE SE LE ENVIO AL LOGUEARSE
+        // SI LA HAY, AÑADIMOS LA RUTA DESDE LA QUE SE LE ENVIO AL LOGUEARSE: "req.urlData.search"
         if(req.urlData.searchParams?.from){
             location = `${systemConfig.PAGES.SESSION_IS_REQUIRED}/?${req.urlData.search}`;
             // if(req.urlData.searchParams.search){
@@ -213,7 +242,6 @@ console.log(req.urlData.endpoint)
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(response_data));
         return;
-
 
     }
      

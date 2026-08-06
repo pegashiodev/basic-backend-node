@@ -1,5 +1,17 @@
 
 
+/**
+ * 
+ *  catalogo de productos a la venta en el sitio web
+ * 
+ *  "strategy": ["addSaldoCoins", "addSaldoTrainning", "eProduct", "eService", "tangible" ...] -> indica que tipo de  producto o servicio ha contratado
+ *      
+ *  DEPENDIENDO DE "strategy" se actuara de una manera u otra al tramitar el pedido
+ *              
+ * 
+ * 
+ */
+
 export default [
 
     {
@@ -12,7 +24,8 @@ export default [
         description: "Descripcion detallada del producto o servicio",
         galery: [],
         poster: "",
-        unit_amount: 500,
+        unit_cost: 500,
+        strategy: "addSaldoCoins",
         saldoCoins: 500,
         stock: "infinite",
         promo: false,
@@ -28,7 +41,8 @@ export default [
         description: "Descripcion detallada del producto o servicio",
         galery: [],
         poster: "",
-        unit_amount: 1000,
+        unit_cost: 1000,
+        strategy: "addSaldoCoins",
         saldoCoins: 1500,
         stock: "infinite",
         promo: false,
@@ -44,7 +58,8 @@ export default [
         description: "Descripcion detallada del producto o servicio",
         galery: [],
         poster: "",
-        unit_amount: 2000,
+        unit_cost: 2000,
+        strategy: "addSaldoCoins",
         saldoCoins: 4000,
         stock: "infinite",
         promo: false,

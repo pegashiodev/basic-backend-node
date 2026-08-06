@@ -1,4 +1,16 @@
 
+/**
+ * 
+ *  CACHEAMOS LOS FICHEROS HTML ESTATICOS EN OS DISTINTOS LENGUAJES DEL SITIO.
+ *  
+ *  - LOS ALMACENAMOS EN OBJETOS CATALOGADOS POR IDIOMAS
+ * 
+ * 
+ */
+
+
+
+
 import systemConfig from "../../globalData/systemConfig.js"
 import { readdirSync, readFileSync, stat, statSync }  from  'node:fs'
 import {Buffer} from 'node:buffer'
@@ -19,7 +31,7 @@ export default function(){
     }
         
     const FOLDERS = systemConfig.CATCH_HTML_FILES_FOLDERS;
-    const MAX_SIZE_CATCH_FILES = systemConfig.MAX_SIZE_CATCH_HTML_FILES;
+   
     const BASE_URL = process.env.MODE === "PROD" ? systemConfig.BASE_URL_CATCH_FILES_PROD : systemConfig.BASE_URL_CATCH_FILES_DEV;
     let max_size_catched = 0
 
@@ -70,14 +82,9 @@ export default function(){
 
                 // CACHEO EN ESPAÑOL O INGLES SEGUN CORRESPONDA
                 languages[language].HTML_FILES_CACHED[files[files_len]] = Buffer.alloc(stats.size, readFileSync(file_url))
-    
-                // if(language === systemConfig.LANGUAGE_EN){
-                //     htmlFilesCachedEN[files[files_len]] = Buffer.alloc(stats.size, readFileSync(file_url))
-                // }else{
-                //     htmlFilesCachedES[files[files_len]] = Buffer.alloc(stats.size, readFileSync(file_url))
-                // }
                 
-                if(max_size_catched > MAX_SIZE_CATCH_FILES){
+                // CACHEAMOS HASTA UN MAXIMO ASIGNADO EN "systemConfig.js"
+                if(max_size_catched > systemConfig.MAX_SIZE_CATCH_HTML_FILES){
         
                     files_len = 0
                 }
@@ -87,7 +94,9 @@ export default function(){
             }
 
         }
-        if(max_size_catched > MAX_SIZE_CATCH_FILES){
+
+        // CACHEAMOS HASTA UN MAXIMO ASIGNADO EN "systemConfig.js"
+        if(max_size_catched > systemConfig.MAX_SIZE_CATCH_HTML_FILES){
     
             i = folders_len
         }
@@ -98,10 +107,5 @@ export default function(){
     console.log("HTML_FILESCATCHED_EN: " + Object.keys(htmlFilesCachedEN).length)
     
     console.log({max_size_catched})
-
-
-
-
-
 
 }

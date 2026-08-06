@@ -1,4 +1,9 @@
 
+/**
+ * PROCESOS QUE SE REALIZAN ANTES DE LANZAR EL SERVIDOR HTTP
+ * 
+ */
+
 
 
 // import {openAllDbs} from './handlers/openDbs.js';

@@ -1,4 +1,16 @@
 
+/**
+ *  AQUI TENEMOS LOS DISTINTOS REMPLATES DE LOS MENUS DEL FRONTEND: SE ENTREGA UNO U OTRO DEPENDIENDO SDE SI EL USUARIO ESTA LOGUEADO O NO
+ * 
+ * 
+ * 
+ */
+
+
+
+/**
+ * MENU BASICO: USUARIO NO LOGUEADO
+ */
 
 export const main_menu_basic = {
 
@@ -51,7 +63,9 @@ export const main_menu_basic = {
 
 }
 
-
+/**
+ * MENU COMPETO: USUARIO LOGUEADO
+ */
 export const main_menu_full = {
 
     html: `<button id="open-sidebar-button" onclick="openSidebar()" aria-label="open sidebar" aria-expanded="false" aria-controls="navbar">OPEN</button>

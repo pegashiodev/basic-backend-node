@@ -1,6 +1,7 @@
 .env
 request.http
-prueba.js
+addProductstoDb.js
 tips.js
+dbs_doc.md
 ses-smtp-test_credentials.csv
 node_modules/

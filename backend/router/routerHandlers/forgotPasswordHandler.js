@@ -3,21 +3,24 @@
 /**
  * 
  * 
- *  EL USER HA CLICADO EN QUE "FORGOT PASSWORD"
+ *      EL USER HA CLICADO EN QUE "FORGOT PASSWORD"
  * 
  *      LE ENVIAMOS UN EMAIL CON UNA URL + URL_TOKEN 
  *      PARA CAMBIAR EL PASSWORD
  * 
  */
 
-
-
-// import generateVerificationEndpoint from "../../tools/generateVerificationEndpoint.js";
 import sendEmail from "../../notifications/sendEmail.js";
 import systemConfig from "../../globalData/systemConfig.js";
 import usersByEmail from "../../globalData/usersByEmail.js";
 
 
+/**
+ * 
+ * @param {object} Objeto Request de NodeJS
+ * @param {object} Objeto Response de NodeJS
+ * 
+ */
 export default async function(req, res){
 
     const from = "FORGOT_PASSWORD"
@@ -47,29 +50,6 @@ export default async function(req, res){
     }
     
     req.user = usersByEmail[req.body.email]
-
-    // HAY QUE ENVIAR UN EMAIL CON LA URL /renove-password/ + url_token con los datos del usuario
-
-    // const data_gen_endpoint = {
-    //     email: req.body.email,
-    //     name: req.body.name,
-    //     lastName: req.body.lastName,
-    //     from: "FORGOT_PASSWORD",
-    //     await: true
-    // }
-    // const gen_url_token = await generateVerificationEndpoint(data_gen_endpoint);
- 
-    // if(gen_url_token.status !== "ok"){
-    //     console.log("ERROR generando el url_toke")
-    //     res.code = 500
-    //     res.headers = {}
-    //     if(!req.data){
-    //         req.data = {}
-    //     }
-    //     req.data.fileName = systemConfig.PAGES.SEND_EMAIL_ERROR
-    //     req.data.ext = systemConfig.EXTENSION_STATIC_VIEWS
-    //     return sendStaticFile(req, res)
-    // }
 
     // ENVIAR EMAIL --> 
     let data_email = {

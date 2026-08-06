@@ -1,13 +1,33 @@
 
+/****
+ * 
+ * GENERA EL CODIGO QUE SE ENVIA POR EL SMS
+ * 
+ * SE ALMACENAN EN RAM EN "verificationSMS.js"
+ * 
+ * 
+ *  RECIBE POR PARAMETROS: 
+ * 
+ *  data = {task: "tarea a raalizar"},
+ *  user = un objeto con los datos del user 
+ * 
+ * 
+ * LO HABIA IMPLEMENTADO PARA VERIFICAR QUE EL NUMERO PARA EL PAGO POR BIZUM ERA CORRECTO, 
+ * PERO NUNCA SE HA USADO
+ * 
+ */
+
 
 
 import systemConfig from "../../globalData/systemConfig.js"
 import verificationSMS from "../../globalData/verificationSMS.js"
 
 
+/**
+ * @param {object} data -> datos para crear el Code
+ * @param {object} user -> objeto user con sus datos
+ */
 export default (data, user)=>{
-
-
 
     if(data.task === "BIZUM_PHONE_VERIFICATION"){
 

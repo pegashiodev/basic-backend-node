@@ -17,17 +17,24 @@
 
 
 import systemConfig from '../globalData/systemConfig.js';
-import myBotsTemplateHandler from '../restrictedEndpoints/myBotsTemplateHandler.js'
-import userTemplateHandler from '../restrictedEndpoints/userTemplateHandler.js'
 import sessionsCached from '../globalData/sessionsCached.js';
 import sendStaticFile from '../server/serverHandlers/sendStaticFile.js';
 import sessionHandler from '../sessions/sessionHandler.js';
 import usersByEmail from '../globalData/usersByEmail.js';
-import verifyTokensAndSetCookie from '../tools/verifyTokensAndSetCookie.js';
+/**
+ * MANEJADORES "GET" DE RESTRICTED-ENDPOINT 
+*/
+import userTemplateHandler from '../restrictedEndpoints/userTemplateHandler.js'
+import myBotsTemplateHandler from '../restrictedEndpoints/myBotsTemplateHandler.js'
+import remoteControlPanelHandler from '../restrictedEndpoints/remoteControlPanelHandler.js';
 import remoteControlAccessHandler from '../restrictedEndpoints/remoteControlAccessHandler.js';
 import uploadFilesHandler from './routerHandlers/uploadFilesHandler.js';
+/**
+ * VERIFICADORES DE LA COOKIE Y DE LOS TOKENS QUE CONTIENEN
+ */
 import getOurCookie from '../tools/getOurCookie.js';
-import remoteControlPanelHandler from '../restrictedEndpoints/remoteControlPanelHandler.js';
+import verifyTokensAndSetCookie from '../tools/verifyTokensAndSetCookie.js';
+
 
 
 const REMOTE_CONTROL_ACCESS_ENDPOINT_GET = systemConfig.REMOTE_CONTROL_ACCESS_ENDPOINT_GET;
@@ -139,7 +146,7 @@ if(req.urlData.searchParams){
     req.body.userAgent = req.headers['user-agent'],
     req.body.deviceId = req.body.deviceId
 
-    // req.our_cookie = {atk_decoded, rtk_decoded, id}
+    // FORMATO DE req.our_cookie = {atk_decoded, rtk_decoded, id}
 
     let session = sessionsCached[req.our_cookie.atk_decoded.email];
 
@@ -194,22 +201,26 @@ if(req.urlData.searchParams){
         verifyTokensAndSetCookie(req, req.user, "ROUTER_RESTRICTED_ENDPOINTS")
 
         
-    
+    // NO HAY SESION: TAL VEZ CADUCO Y SE ELIMINO -> REENVIAMOS AL LOGIN
     }else{
 
-        console.log('*** NO HAY SESSION ABIERTA -> caduco y  se elimino' );
-    //   console.log(req.user)  
-        // NUEVA SESSION -> AHI SE CREA TODO: SESSION, NUEVA COOKIE, ...
+        console.log('*** ES UN RESTRICTED-ENDPOINT: NO HAY SESSION ABIERTA -> caduco y  RECOLECTO Y se elimino' );
         
-        let result_session = await sessionHandler.addSession(req, from)
+        // CREAMOS UNA NUEVA SESION -> NO ES BUENA IDEA
+        // let result_session = await sessionHandler.addSession(req, from)
 
-        if(result_session.status !== 'ok'){
-            console.log("NO HEMOA PODIDO CREAR LA NUEVA SESSION DEL USUARIO -> FROM: ROUTER-RESTRICTED-ENDPOINTS")
-            // REDIRIGIMOS A LOGIN
-            res.code = 302,
-            res.headers = {"Location" : systemConfig.PAGES.SYSTEM_ERROR_OCURRED}
-            return sendStaticFile(req, res)
-        }
+        // if(result_session.status !== 'ok'){
+        //     console.log("NO HEMOA PODIDO CREAR LA NUEVA SESSION DEL USUARIO -> FROM: ROUTER-RESTRICTED-ENDPOINTS")
+        //     // REDIRIGIMOS A LOGIN
+        //     res.code = 302,
+        //     res.headers = {"Location" : systemConfig.PAGES.SYSTEM_ERROR_OCURRED}
+        //     return sendStaticFile(req, res)
+        // }
+
+        // REDIRIGIMOS A LOGIN
+        res.code = 302,
+        res.headers = {"Location" : systemConfig.PAGES.ACCESS_PLATFORM}
+        return sendStaticFile(req, res)
 
                 
     }

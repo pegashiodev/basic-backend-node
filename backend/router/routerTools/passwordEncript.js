@@ -21,7 +21,7 @@ export const passwordEncript = (plainText) => {
     
     let result = iv.toString('hex') + ':' + encrypted.toString('hex');
     
-    // MODEIFICAMOS EL RESULTADO
+    // MODIFICAMOS EL RESULTADO
     let arr = result.split('')
     arr[32] = arr[23]
     return arr.reverse().join('')

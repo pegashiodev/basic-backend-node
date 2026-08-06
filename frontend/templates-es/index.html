@@ -89,6 +89,7 @@
         const data_signup = {
             name: '',
             email: "pegashio@gmail.com",
+            signup_method: "USER-EMAIL",
             password: "12345",
             pin: 1234,
             fa2: "SEND",     // required -> se controla en el servidor si se envia codigo o no
@@ -98,6 +99,7 @@
         const data_login = {
             name: '',
             email: "pegashio@gmail.com",
+            signup_method: "USER-EMAIL",
             password: '12345',
             // forgot_password: false,
             fa2: "SEND",        // // required -> se controla en el servidor si se envia codigo o no
@@ -128,7 +130,7 @@
                 data_signup.previous_endpoint = location.search.split("?from=")[1].replace("@@&", "?");
             }
 
-            const result = await fetchRequest("http://localhost:3000/signup.html", data_signup)
+            const result = await fetchRequest("http://localhost:3000/signupEmail.html", data_signup)
 
             console.log(result)
            
@@ -161,7 +163,7 @@
                     // Leemos el valor del promo_code, si lo hay
                     data_signup.promo_code = ""
                     data_signup.token = document.querySelector(".signup_form .fa2 #signup_validation_token").value;
-                    const result2 = await fetchRequest(`http://localhost:3000/signup.html`, data_signup)
+                    const result2 = await fetchRequest(`http://localhost:3000/signupEmail.html`, data_signup)
                     console.log(result2)
 
                     /***
@@ -224,7 +226,7 @@
 
             ev.preventDefault();
 
-            const result = await fetchRequest("http://localhost:3000/login.html", data_login)
+            const result = await fetchRequest("http://localhost:3000/loginEmail.html", data_login)
 
             console.log(result)
 
@@ -248,7 +250,7 @@
                     data_login.fa2 = "RECIBED"
                     // data_login.token = "ABCDE"
                     data_login.token = document.querySelector(".login_form .fa2 #login_validation_token").value;
-                    const result2 = await fetchRequest("http://localhost:3000/login.html", data_login)
+                    const result2 = await fetchRequest("http://localhost:3000/loginEmail.html", data_login)
                     console.log(result2)
 
                     if(!result2){

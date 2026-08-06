@@ -1,11 +1,21 @@
+
+/**
+ *  LOGOUT DEL USUARIO DESDE EL FRONTEND
+ * 
+ */
+
 import systemConfig from "../../globalData/systemConfig.js";
-import { decodeToken } from "../../tools/tokenGenerator.js";
-import cookieParser from "../../tools/cookieParser.js";
 import sessionsCached from "../../globalData/sessionsCached.js";
 import sessionHandler from "../../sessions/sessionHandler.js";
 import getOurCookie from "../../tools/getOurCookie.js";
 
 
+/**
+ * 
+ * @param {object} Objeto Request de NodeJS
+ * @param {object} Objeto Response de NodeJS
+ * 
+ */
 export default function(req, res){
     console.log(" ** LogOutHandler !!")
 
@@ -53,28 +63,6 @@ export default function(req, res){
         res.end(JSON.stringify(response_data));
         return;   
     }
-
-    // let {atk, rtk, deviceId: id} = cookieParser(req.headers.cookie);
-    // console.log({atk, rtk, id});
-
-    // let atk_decoded = JSON.parse(decodeToken(atk))
-    // let rtk_decoded = JSON.parse(decodeToken(rtk))
-    // let deviceId = id
-
-    // if(!atk_decoded || !rtk_decoded || !deviceId){
-    //     console.log('! No todos los tokens')
-    //     const response_data = {
-    //         "status": "ok",
-    //         "location": systemConfig.PAGES.MAIN_CAT_ENPOINT,   
-    //         "message": "NO COOKIE EN EL LOGOUT. -> ENVIAMOS A /HOME"
-    //     }
-    //     res.writeHead(200, 
-    //         {   'Content-Type': 'application/json'
-    //         });
-            
-    //     res.end(JSON.stringify(response_data));
-    //     return;  
-    // }
 
     let session = sessionsCached[req.our_cookie.atk_decoded.email];
     

@@ -1,4 +1,13 @@
 
+/**
+ *  RECIBIMOS EL PEDIDO DEL CLIENTE Y SE TRAMITA. 
+ * 
+ *  - AÑADIMOS EL PEDIDO A LA BASE DE DATOS
+ *  - LO ACTUALIZAMOS, CUANDO SE SOLICITE
+ *  - LO ELIMINAMOS, CUANDO SE SOLICITE
+ *  - CUANDO ESTA PAGADO, LANZAMOS EL PROCESO DE "afterPayOrder" (envio, habilitamos descarga, permitimos acceso a endpoints, ...)
+ * 
+ */
 
 
 
@@ -10,6 +19,11 @@ import userHandler from "../users/userHandler.js"
 const months = ['ene', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dec' ]
 
 
+
+/**
+ * 
+ * @param {data} data -> datos del pedido  
+ */
 export const manageOrder = async (data)=>{
 
 
@@ -18,36 +32,33 @@ export const manageOrder = async (data)=>{
         cart: data.order,
         shipping_address: data.shipping_address,
         userId: data.userId,
-        date_order: ata.date,
+        date_order: data.date,
+        await: true,
         billed: false,
     }
 
-    addOrder(data_order);
+    await addOrder(data_order);
 
-    const data_user = {
-        user: usersByEmail[data.email],
-        task: "ADD",
-        key_to_change: "saldoCoins",
-        quantity: data.saldoCoins,
-        await: false,
-    }
+   
 
-    userHandler.updateUserSaldo(data_user)
+
+    // PROCESAMOS EL ENVIO O DESCARGA DEL PEDIDO
+    await afterPayOrder(data)
     
 
 }
 
 
-export const addOrder =  async (data)=>{
+const addOrder =  async (data_order)=>{
 
     console.log("ordersHandler -> addOrder !!")
-    console.log(data)
+    console.log(data_order)
     const now = Date.now()
 
     const params = {
         dbName: systemConfig.DBS.ORDERS + new Date(now).getFullYear(),       // dbName = users_ + año de alta del usuario
         collection: months[new Date(now).getMonth()],                          // collection = Mes de alta el usuario
-        await: data.await
+        await: data_order.await
     }
         
     if(data.await){
@@ -73,7 +84,37 @@ export const deleteOrder = async (data)=>{
 
 }
 
-export const afterOrder = async (data)=>{
+
+/**
+ * 
+ * 
+ * 
+ * @param {*} data 
+ */
+
+
+const afterPayOrder = async (data)=>{
+
+     /**
+     * ACTUALIZAMOS EL SALDO DEL USER: 
+     */
+
+    // DEPENDIENDO DE LA ESTRATEGIA DE CADA PRODUCTO DEL CARRITO 
+    // HAY QUE DEFINIR QUE SE HACE: "addSaldoCoins", "addSaldoTrainning", "decargar PDF", enviar producto fisico, ...
+
+    // const data_updateSaldo = {
+    //     task: "ADD",
+    //     key_to_change: "saldoCoins",
+    //     quantity: data.saldoCoins,
+    //     await: true,
+    // }
+    // const user = usersByEmail[data.email]
+
+    // userHandler.updateUserSaldo(data_updateSaldo, user)
+
+
+
+
 
 }
 
@@ -84,6 +125,6 @@ export default  {
     addOrder,
     updateOrder,
     deleteOrder,
-    afterOrder,
+    afterPayOrder,
    
 }

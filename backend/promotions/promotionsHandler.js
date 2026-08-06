@@ -1,11 +1,27 @@
 
+/****
+ * 
+ *  CUANDO UN USARIO SE REGISTRA EN LA PLATAFORMA SE 
+ *  PASA POR AQUI PARA REVISAR SI ENVIA UN CODIGO PROMOCIONAL
+ * 
+ *      - SI ES CORRECTO SE REALIZA LA ACCION QUE SEA EN CADA CASO
+ * 
+ */
+
+
+
 
 import dbCrudHandler from "../db/dbCrudHandler.js"
 import promotionsCached from "../globalData/promotionsCached.js"
 import systemConfig from "../globalData/systemConfig.js";
 
 
-
+/**
+ *  APLICA EL CODIGO DE LA PROMO QUE VIENE EN SU PETICION SI ES CORRECTO
+ * 
+ * @param {*} req 
+ * @returns 
+ */
 
 export const applyPromoCode = (req)=>{
 
@@ -52,22 +68,25 @@ export const applyPromoCode = (req)=>{
 
 }
 
-/***
+/**
+ * PARA CREAR UNA NUEVA PROMOCION
  * 
- *  - ANTES DE CREAR UNA PROMO COMPROBAMOS SI EL CODIGO YA EXISTE
- *  PORQUE NO BORRAMOS CUANDO FINALIZA.
- *  - ASI QUE BUSCAMOS SI EXISTE Y LA REACTIVAMOS 
- *  Y ACTUALIZAMOS LOS DATOS
- * 
+ * @param {*} promo 
  */
 
 export const addPromo = (promo)=>{
 
     console.log("ADD_PROMO")
 
-
-
 }
+
+
+
+/**
+ * ACTUALIZA LOS DATOS DE LA PROMOCION (Ampliar duracion, aumentar el numero de codigos, ...)
+ * 
+ * @param {*} promo 
+ */
 
 export const updatePromo = (promo)=>{
 
@@ -85,6 +104,12 @@ export const updatePromo = (promo)=>{
 
 }
 
+
+/**
+ * ELIMINA UNA PROMOCION
+ * 
+ * @param {*} promo 
+ */
 export const deletePromo = (promo)=>{
 
     console.log("DELETE_PROMO_CODE")

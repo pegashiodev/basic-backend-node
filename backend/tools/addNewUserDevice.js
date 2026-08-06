@@ -1,9 +1,20 @@
+/**
+ *  AÑADE UN NIEVO DEVIDE AL USUARIO DESDE EL QUE SE HA LOGUEADO EN LA PLATAFORMA
+ * 
+ * ¡OJO -> REVISAR ESTO!!!
+ * 
+ */
+
 
 import userHandler from "../users/userHandler.js";
 import { randomUUID } from "node:crypto"
 
 
 
+/**
+ * @param{Object} -> Obleto Request de NodeJs
+ * @returns{object} -> session
+ */
 export default function (req){
 
     console.log('** Login desde NUEVO DISPOSITIVO')
@@ -23,11 +34,10 @@ export default function (req){
         // ALMACENAMOS CAMBIOS EN USER
         let data = {
             task: 'UPDATE_USER_DEVICES',
-            user: req.user,
             new_value: new_device,
             await: false
         }
-        userHandler.updateUser(data);
+        userHandler.updateUser(data, user);
     
         // SEND EMAIL !!! (ALERTA DE INICIO DE SESSION DESDE OTRO DISPOSITIVO)
     }

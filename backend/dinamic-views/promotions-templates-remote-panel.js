@@ -1,11 +1,21 @@
 
+
 /**
- * 
- *  HAN DE MANTENERSE EXACTAMENTE LA ESTRUCTURA DE WRAPS, LAS CLASES Y LOS DATA-???
- * 
+ * TEMPLATES PARA MOSTRAR LAS PROMOCIONES EN EL FRONTEND
+ * - TIENE SU PLANTILLA  HTML
+ * - LOS ESTILOS CSS
+ * - EL JAVASCRIPT SI ES NECESARIO
+ * - LOS PARAMETROS A CAMBIAR CON LOS DATOS DE LA BASE DE DATOS
+ * - Y UN "data_for_params", que ahora no recuerdo para que lo usaba.
  * 
  */
 
+
+
+
+/**
+ * TEMPLATE PARA UNA PROMOCION
+ */
 
 
 export const promotion_template = {
@@ -29,6 +39,11 @@ export const promotion_template = {
     params: ["promo_code", "saldoCoins"],
     data_for_params: "PROMOTION"
 } 
+
+
+/**
+ * TEMPLATE PARA UNA PROMOCION NUEVA
+ */
 
 export const new_promotion_template = {
 

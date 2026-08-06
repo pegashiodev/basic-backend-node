@@ -5,6 +5,9 @@
  *      - La almacena en DB
  *      - deja siteStatsCatched Limpia = {} 
  * 
+ *      - EL OBJEC¡TIVO ES PODER LISTARLOS POR URL,  HORA, DIA, MES, ...
+ *      - ¡¡ HAY QUE REVISAR ESTO: TAL VEZ SEA MEJOR DEJARLO PARA GOOGLE ANALITICS EN VEZ DE TENER LAS NUESTRAS PROPIAS !!
+ * 
  *      - FORMATO: siteStatsCatched
  * 
  *          {

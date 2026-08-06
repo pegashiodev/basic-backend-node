@@ -1,13 +1,19 @@
 
 /**
  * 
- * 
+ *  - ESTO ESTA SIN  TERMINAR !!!!! 
  * 
  */
 
 
 import sendStaticFile from "../../server/serverHandlers/sendStaticFile.js"
 
+/**
+ * 
+ * @param {object} Objeto Request de NodeJS
+ * @param {object} Objeto Response de NodeJS
+ * 
+ */
 export default (req, res)=>{
     
     console.log("uploadFilesHandler.js !!")
@@ -40,13 +46,11 @@ export default (req, res)=>{
         return sendStaticFile(req, res)
     
     
-    
-    
-    
     }else if(method === "POST"){
 
 
-        
+        console.log("uploadFilesHandler, POST esta sin terminar")
+        res.end("ESta sin terminar de hacer")
     }
 
 

@@ -1,13 +1,13 @@
 
 /***
  * 
- *      OBTIENE LOS DATOS QUE VIENEN EN UNA PETICIO GET 
+ *      OBTIENE LOS DATOS QUE VIENEN EN UNA PETICION 
  *      EN LA URL Y LOS HEADERS DE LA PETICION
  *      ( endpoint, url, ext, cookie, host, ...)
  * 
  * 
- * 
- *      host/domain.com/language/url_to_verify/endpoint/?search
+ *      PETICION: 
+ *      host/domain.com/language/url_to_verify/.../.../endpoint/?search
  * 
  */
 
@@ -65,11 +65,10 @@ export default (req)=>{
         data.url_to_verify = "";
 
     }else {
-        // hay language en la url o endpoint
-
+        
+        // hay language en la url o endpoint: Entonces se desplaza la url_to_verify
         if(data.url_parts[1].length === 2){
-            // la url viene con el lenguage
-            // Entonces se desplaza la url_to_verify
+           
             data.url_language = data.url_parts[1].toLowerCase();
            
             if(data.url_parts[2]){
@@ -78,15 +77,15 @@ export default (req)=>{
                 data.url_to_verify = "";
             }
 
+        // no hay language en la url: ES UN ENDPOINT
         }else if(data.url_parts[1].length > 2){
-            // no hay language en la url
-            // eS UN ENDPOINT
+            
             data.url_to_verify = data.url_parts[1]
             data.language = systemConfig.MAIN_LANGUAGE;
 
 
+        // el length es menos que 2 -> NO PUEDE SER A PROPOSITO
         }else{
-            // el length es menos que 2 -> NO PUEDE SER A PROPOSITO
             data.language = systemConfig.MAIN_LANGUAGE;
             data.url_to_verify = "";
 
@@ -94,14 +93,13 @@ export default (req)=>{
    
     }
 
-    // Eliminamo la extension si la tiene
+    // Eliminamos la extension si la tiene
     data.url_to_verify = data.url_to_verify.split('.')[0]
 
-    // REVISAMOS EL LENGUAJE DE LA PETICION PARA RESPONDE EN EL QUE SE SOLICITA
+    // REVISAMOS EL LENGUAJE DE LA PETICION PARA RESPONDER CON EL QUE SE SOLICITA
     if(!data.url_language){
 
         // si no hay language en la url enviamos la lengua del browser
-
         if(req.headers['accept-language']){
             const browser_language = req.headers['accept-language'].split(",")[0].split("-")[0].toLowerCase()
            
@@ -122,8 +120,8 @@ export default (req)=>{
         if(data.url_language && systemConfig.LANGUAGES_AVAILABLE.includes(data.url_language)){
             data.language = data.url_language
        
+        //si lenguaje no admitido enviamos el main_language
         }else{
-            //si lenguaje no admitido enviamos el main_language
             data.language = systemConfig.MAIN_LANGUAGE;
         }
 
@@ -139,7 +137,6 @@ export default (req)=>{
         .join('/')
         .toLowerCase();
 
-    //data.endpoint = data.endpoint.toLowerCase();
     // Comprobamos si es home, home en distintos idioma, o una ruta completa
     if(data.endpoint === '/' || data.endpoint === '' || systemConfig.LANGUAGES_AVAILABLE.includes(data.endpoint)){
         data.fileName = data.endpoint = systemConfig.HOME_STATIC_FILE
@@ -154,7 +151,6 @@ export default (req)=>{
 
 
     // Obtenemos los parametros del Search
-
     if(arr[1]){
 
         data.search = arr[1]
@@ -195,6 +191,7 @@ export default (req)=>{
     
     console.log(data)
 
-    return data;
-
+    // Añadimos los datos de la url a Request Object
+    req.urlData = data
+    return 
 }

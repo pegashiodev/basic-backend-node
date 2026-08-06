@@ -1,7 +1,27 @@
+
+/**
+ * 
+ * MANEJADOR PARA EL ENVIO DE ARCHIVOS MEDIA: AUDIO, VIDEO, ...
+ * 
+ * ESTA SIN TERMINAR !!! 
+ * 
+ * - DE MOMENTO NO SE USA. PODEMOS USARLO PARA SERVIR LOS AUDIO POR WEBSOCKETS MAS ADELANTE ??? 
+ * 
+ * 
+ */
+
+
 import { createReadStream, existsSync, access, constants  }  from  'node:fs'
 
 
 
+
+/**
+ * 
+ * @param {object} Objeto Request de NodeJS 
+ * @param {object} Objeto Response de NodeJS
+ * @returns 
+ */
 export const sendMediaFile = (data, res)=>{
 
     console.log("Sending Media File")

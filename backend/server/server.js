@@ -15,6 +15,7 @@ export default createServer((req, res) => {
 
         
     // ANALIZAMOS  LA PETICION Y LA IP PARA EVITAR ATAQUES
+
     if(systemConfig.HAS_OWN_PROXY_DDOS){
         proxy(req);
     }
@@ -39,9 +40,7 @@ export default createServer((req, res) => {
         }
     }
 
-    
-    // AUTH
-    // SESSION -> 
+  
 
     if(req.method === 'GET'){
         getRequestHandler(req,res);

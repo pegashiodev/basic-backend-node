@@ -11,11 +11,8 @@
  */
 
 
-import systemConfig from "../../globalData/systemConfig.js";
 import sendStaticFile from "../../server/serverHandlers/sendStaticFile.js";
-import payments from "../../payments/paymentsData.js";
-import userHandler from "../../users/userHandler.js";
-import usersByEmail from "../../globalData/usersByEmail.js";
+import paymentsDataStorage from "../../payments/paymentsDataStorage.js";
 import ordersHandler from "../../orders/ordersHandler.js";
 
 process.loadEnvFile();
@@ -23,18 +20,26 @@ import Stripe from "stripe"
 const stripe = Stripe(process.env.STRIPE_PRIVATE_KEY_TEST)
 
 
+/**
+ * 
+ * @param {object} Objeto Request de NodeJS
+ * @param {object} Objeto Response de NodeJS
+ * 
+ */
 export default async (req, res)=>{
 
     console.log("success_CHECKOUT  !!")
-    // Enviamos pagina al user
+    // Enviamos pagina DE SUCCESS AL USUARIO Y SEGUIMOS CON LA TRAMITACION DEL PEDIDO
     res.code = 200;
     sendStaticFile(req, res)
+    
+    // console.log(req.urlData)
 
+    // OBTENEMOS LOS DATOS DE LA TRANSACCION DE LA URL 
     const retrieve = await stripe.checkout.sessions.retrieve(req.urlData.searchParams.session_id, {expand:["payment_intent.payment_method"]})
     // Nos da la informacion de como se ha hecho el pago: Tarjeta, revolut, ...
 
-    // console.log("Tengo que dar la compra por CANCEL")
-// console.log(req.urlData)
+    // HABIAMOS ALMACENADO EN LA URL EL "session:id" de STRIPE
     const stripeId = req.urlData.searchParams.session_id
 
     // ACTUALIZAMOS LA COMPRA A "SUCCESS"
@@ -49,58 +54,56 @@ export default async (req, res)=>{
         
     }
 
-    // ACTUALIZAMOS CON LA CONSULTA A STRIPE DE DATOS DEL PAGO
+    // ACTUALIZAMOS LOS DATOS DEL PEDIDO EN NUESTRA BASE DE DATOS  
+    // CON LA CONSULTA A STRIPE DE DATOS DEL PAGO
     if(retrieve?.payment_intent?.payment_method){
         data_payment.new_value = {status: "SUCCESS", payment_method: retrieve.payment_intent.payment_method}
-        data_payment.upsert = true
+        
+    }else{
+         data_payment.new_value = {status: "SUCCESS"}
+
     }
 
 // console.log(data_payment)
 // return;
 
-// RECUPERAMOS EL PAGO DONDE ESTAN LOS DATOS DEL PEDIDO PARA
-    // ACTUALIZAMOS EL PAGO A SUCCESS E INCLUIMOS EL METODO DE PAGO
-    // ACTUALIZAR DB->PEDIDOS Y DB->USER
-    let payment_data;
+
+
+    let payment_order;
+    // "stripeId" es el filtro para encontrar el documento
     if(stripeId){
 
-        payment_data = await payments.updateOne(data_payment)
+        payment_order = await paymentsDataStorage.updateOne(data_payment)
     }
 
-    console.log("*** PAYMENT DATA -> RECUPERADO DE DB !!!")
-    console.log(payment_data)
 
-    const data_order = {
-        _id: payment_data._id,
-        cart: payment_data.order,
-        shipping_address: payment_data.shipping_address,
-        userId: payment_data.userId,
-        email: payment_data.email,
-        saldoCoins: payment_data.saldoCoins,
-        date_order: payment_data.date,
-        billed: false,
-    }
-    ordersHandler.manageOrder(data_order)
+    // SI HAY ERROR NO TENEMOS ACCESO AL PEDIDO -> 
+    if(payment_order.status === "error"){
 
-    // ordersHandler.addOrder(data_order);
+// OJO -> QUE HACEMOS SI NO HEMOS PODIDO ACCEDER
+// ENVIAMOS A UNA LISTA DE TAREAS DE DB NO ACABADAS Y URGENTES ??? 
+   
+   
+   
+    // TODO OK -> TRAMITAMOS EL PEDIDO
+    }else{
 
-
-
-    // FALTARIA EMITIR FACTURA ???
-
+        console.log("*** PAYMENT DATA -> RECUPERADO DE DB !!!")
+        console.log(payment_data)
     
-    // if(result_payment.status !== 'ok'){
-    //     console.log("ERROR en cancelcheckOutHandler -> INSERTANFO PAGO EN DB")
-    //     // ENVIAMOS PAGINA DE ERROR DE CONEXION CON PASARELA DE PAGOS
-    //     // res.data.fileName = systemConfig.PAGES.PAGE_NOT_FOUND
-    //     // req.data.ext = "html";
-    //     res.code = 200
-    //     return sendStaticFile(req, res)
-    // }
-
-    // // console.log("Tengo que dar la compra por CANCEL")
-    // res.code = 200;
-    // return sendStaticFile(req, res)
+        // CREAMOS EL PEDIDO PARA SU ALMACENAMIENTO Y TRAMITACION
+        const data_order = {
+            _id: payment_data._id,
+            cart: payment_data.order,
+            shipping_address: payment_data.shipping_address,
+            userId: payment_data.userId,
+            email: payment_data.email,
+            saldoCoins: payment_data.saldoCoins,
+            date_order: payment_data.date,
+            billed: false,
+        }
+        ordersHandler.manageOrder(data_order)
+    }
 
 
 }

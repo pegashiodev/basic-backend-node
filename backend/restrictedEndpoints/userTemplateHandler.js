@@ -1,5 +1,22 @@
 
+
+/**
+ *  MANEJADOR DE UN ENDPOINT RESTRINGIDO
+ *  EN ESTE CASO SE TRATA DE LA URL "host:/user/... "
+ * 
+ * 
+ */
+
+
+
 import sendStaticFile from "../server/serverHandlers/sendStaticFile.js"
+
+/**
+ * 
+ * @param {} req 
+ * @param {*} res 
+ * @returns 
+ */
 
 export default function(req, res){
 

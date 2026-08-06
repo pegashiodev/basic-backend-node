@@ -2,6 +2,8 @@
 
 /**
  * 
+ *  ALMACENAMOS ESTADISTICAS DEL SITIO CON EL SIGUIENTE FORMATO
+ * 
  *      
  *      "hour_1": {
  *          enpoints: {
@@ -21,7 +23,7 @@
  *  
  *  
  * 
- * keys = [ hour_1, hour_2, ...]
+ *  keys = [ hour_1, hour_2, ...]
  * 
  */
 

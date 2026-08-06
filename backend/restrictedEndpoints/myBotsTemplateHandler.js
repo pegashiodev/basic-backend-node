@@ -1,29 +1,29 @@
 
+/**
+*      MANEJADOR DE UN ENDPOINT RESTRINGIDO "mis-bots"
+*      EN ESTE CASO SE TRATA DE LA URL "host:/mis-bots/... "
+* 
+* 
+*/
+
+
 
 import systemConfig from "../globalData/systemConfig.js";
 import sendStaticFile from "../server/serverHandlers/sendStaticFile.js";
 
 
-
-// HAY ENDPOINTS CONDE HABRA QUE RENDERZAR ALGUNOS CONTENIDOS DESDE EL SERVER, 
-const render_endpoints = {
-
-    "mis-bots":     {template: "mis-bots", ext:"html", render: ""},
-    "my-bots":      {template: "my-bots", ext: "html", render: ""},
-    "users":        {},
-
-}
-
-// EL RESTO DE ENDPOINTS SERAN STAICS O 404
-
+/**
+ * 
+ * @param {object} Objeto Request de NodeJS 
+ * @param {object} Objeto Response de NodeJS
+ * @returns 
+ */
 
 export default function(req, res){
 
     console.log('In MY-BOTS TEMPLATE HANDLER')
 
-    const template = "mis-bots.html"
-    const template_ext = "html"
-
+    // SI NO TIENE NUESTRA COOKIE REDIRECCIONAMOS A "ACCESS PLATFORM"
     if(!req.our_cookie){            // req.our_cookie = {atk_decoded, rtk_decoded, id}
         
         // No cookie y es restricted_url -> Enviamos a login/signin
@@ -36,6 +36,7 @@ export default function(req, res){
         }
         return sendStaticFile(req, res)
 
+    // TIENE NUESTRA COOKIE Y VERIFICAMOS SI HAY QUE ACTUALIZARLA, PARA AÑADIRLA A LOS HEADERS
     }else{
        
         if(req.set_new_cookie){
@@ -52,17 +53,8 @@ export default function(req, res){
             }
         }
 
-        // AQUI HABRA RUTAS DONDE HABRA QUE RENDERIZAR HTML Y OTRAS STATICS 
-        // EL RECURSO A SERVIR ESTA en searchParams -> Para que siempre entren por "/mis-bots/"
-
-        if(!req.urlData.searchParams?.botId){
-            
-            // en req.data ya esta el endpoint, filename y ext
-            return sendStaticFile(req, res)
-        }
-
-        // Comprobamos que el bot pertenece al usuario que lo solicita
-        // Si el usuario esta ACTIVE, ...
+        // enviamos el html que corresponde
+        return sendStaticFile(req, res)
         
         
     }

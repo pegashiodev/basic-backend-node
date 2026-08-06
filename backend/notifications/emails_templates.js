@@ -1,5 +1,9 @@
-// <!-- SIGNUP SEND VALIDATION CODE -->
 
+
+/**
+ * TEMPLATES PARA ENVIAR LOS EMAILS
+ * 
+ */
 
 
 

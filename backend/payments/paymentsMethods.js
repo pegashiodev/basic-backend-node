@@ -1,12 +1,14 @@
 
 /***
  * 
- *      AQUI SE REALIZAN LOS PAGOS SEGUN EL METODO SELECCIONADO
+ *  AQUI SE REALIZAN LAS LLAMADAS A LAS DISTINTAS API DE PROVEEDORES DE PAGO
+ *  PARA REALIZAR EL QUE CORRESPONDA EN CADA CASO
+ * 
+ * @param {} cart , con los datos de la compra
+ * @param method, un string con el meto de pago seleccionado en la web (STRIPE-CARD, STRIPE-BIZUM)
  * 
  * 
  */
-
-
 
 
 import Stripe from "stripe"
@@ -14,23 +16,19 @@ import Stripe from "stripe"
 process.loadEnvFile();
 const stripe = Stripe(process.env.STRIPE_PRIVATE_KEY_TEST)
 
-
-
 export default async (cart, method)=>{
 
-    if(method === "STRIPE"){
-        let result_payment = await stripePayment(cart)
+    if(method === "STRIPE-CARD"){
+        let result_payment = await stripePaymentCard(cart)
         return result_payment;
 
-    }else if(method === "BIZUM"){
+    }else if(method === "STRIPE-BIZUM"){
 
     }
 
 }
 
-
-
-async function stripePayment(cart){
+async function stripePaymentCard(cart){
 
     const line_items_stripe = getLineItemsStripe(cart)
 
@@ -38,19 +36,6 @@ async function stripePayment(cart){
     try{
         stripe_sesion = await stripe.checkout.sessions.create({
             line_items : line_items_stripe,
-            // line_items: [
-            //     {
-            //         price_data:{
-            //             currency: "eur",
-            //             product_data: {
-            //                 name: "Recarga 500"
-            //             }, 
-            //             unit_amount: 5 * 100,       // Precio unitario en centimos
-    
-            //         },
-            //         quantity: 1
-            //     }
-            // ],
             mode: "payment",
             success_url: `${process.env.BASE_URL}/success-checkout.html?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${process.env.BASE_URL}/cancel-checkout.html?session_id={CHECKOUT_SESSION_ID}`,
@@ -77,13 +62,11 @@ async function stripePayment(cart){
     stripe_sesion.status = "ok"
     return stripe_sesion;
 
-
-    
-
-
-
+   
+    // creamos la lista de items para la peticion a STRIPE
     function getLineItemsStripe(products){
-        // {
+        // line_items: [
+        //   {
         //     price_data:{
         //         currency: "eur",
         //         product_data: {
@@ -94,6 +77,7 @@ async function stripePayment(cart){
         //     },
         //     quantity: 1
         // }
+        // ]
 
         const line_items = []
 
@@ -106,7 +90,7 @@ async function stripePayment(cart){
                     product_data: {
                         name: products[i].title,
                     },
-                    unit_amount: products[i].unit_amount,
+                    unit_amount: products[i].unit_cost,
                 },
                 quantity: products[i].quantity
             }   

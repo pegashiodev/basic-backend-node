@@ -2,56 +2,52 @@
 
 /***
  * 
- * 
- *      HEMOOS CLICADO EN PAGAR EL CARRITO
- * 
- *          - VERIFICCAMOS EL CARRITO (PRODUCTOS, DISPONIBILIDAD, ...)
-            - SOLICITAMOS SESSION DE STRIPE O BIZUM ,...
-            - ALMACENAMOS LE PAGO COMO PENDING A LA ESPERA DEL SUCCESS O DEL CANCEL
-            
-* 
- * 
+ * ATENDEMOS LA PETICION DE CHECKOUT DESDE EL FRONTED
+ * - VALIDAMOS QUE EL CARRO DE COMPRA ES CORRECTO
+ * - SOLICITAMOS EL PAGO
+ * - ALMACENAMOS LOS DATOS DE LA COMPRA CON ESTADO "PENDING"
+ * - ALMACENAMOS PARA ESTADISTICAS DEL SITIO 
  */
 
-
-
-
 import systemConfig from "../../globalData/systemConfig.js";
-import paymentsData from "../../payments/paymentsData.js";
+import paymentsDataStorage from "../../payments/paymentsDataStorage.js";
 import paymentsMethods from "../../payments/paymentsMethods.js";
 import errorsCodes from "../../tools/errorsCodes.js"
 import siteStats from "../routerTools/siteStats.js";
-// import isValidCookieAndSession from "../../tools/isValidCookieAndSession.js";
-import verifyCartConsultaLegal from "../../orders/verifyCartConsultaLegal.js";
+import verifyCart from "../../orders/verifyCart.js";
 
 
+
+/**
+ * 
+ * @param {object} Objeto Request de NodeJS
+ * @param {object} Objeto Response de NodeJS
+ * 
+ */
 export default async (req, res)=>{
 
     console.log("CHECK_OUT_HANDLER --> POST !!")
 
 // ¡¡¡¡¡ IMPORTANTE
+// LA COOKIE Y SESSION YA SE HAN VERIFICADO EN postRequestHandler
+// HA DE LLEGAR CON searchParams.from que he es la url del carrito, por si no hay session para poder reenviarlo despues de loguearse.
 
-// HA DE LLEGAR CON searchParams.from que he es la url del carrito, por si no hay session para poder reenviarlo despues de loguearse. !!!!
 
-// DEBE DE HABER COOKIE (ATK) Y EL PEDIDO
-// LA COOKIE Y SESSION SEMVERIFICAN EN POSTREQUESThANDLER
-// if(! await isValidCookieAndSession(req, res)){
-//     return
-// }
+
     
     // console.log(req.body.order)
     let order = req.body.order;
     let payment_result;
     let paymentMethod = req.body.order.paymentMethod.toUpperCase()
 
-// VERIFICAMOS EL CARRO
-    let cart_verified = verifyCartConsultaLegal(order)
+    // VERIFICAMOS EL CARRO DE LA COMPRA ES CORRECTO CON LOS DATOS DEL SERVIDOR
+    let cart_verified = verifyCart(order)
 
     if(cart_verified.status !== 'ok'){
         const response_data = {
             status: systemConfig.STATUS.ERROR_FETCH,
             code: errorsCodes.c560.code,
-            message: "ERROR EN EL CHECKOUT",            //errorCodes.c531.message,
+            message: "ERROR EN EL CHECKOUT",            
         }
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -61,12 +57,12 @@ export default async (req, res)=>{
 
 // INICIAMOS EL PROCESO DE PAGO
 
-    if( paymentMethod === "STRIPE"){
+    if( paymentMethod === "STRIPE-CARD"){
        
         // OBTENEMOS LA SESSION DE STRIPE -> SE COMPLETA EL PAGO DESDE SUSSCESS-CHECKOUT O CANCEL-CHECKOUT
         try{
            
-            payment_result = await paymentsMethods(cart_verified.products, "STRIPE")
+            payment_result = await paymentsMethods(cart_verified.products, "STRIPE-CARD")
        
        
         }catch(e){
@@ -87,7 +83,7 @@ export default async (req, res)=>{
         }
    
         
-    }else if(paymentMethod === "BIZUM"){
+    }else if(paymentMethod === "STRIPE-BIZUM"){
         console.log("PAGO POR BIZUM");
 
         payment_result = {}
@@ -122,7 +118,7 @@ export default async (req, res)=>{
 
 
 // ALMACENAMOS EL PAGO COMO "PENDING"
-    if(paymentMethod === "STRIPE"){
+    if(paymentMethod === "STRIPE-CARD"){
 
         const data_payment = {
             stripeId: payment_result.id,
@@ -136,7 +132,7 @@ export default async (req, res)=>{
         }
 
 
-    }else if(paymentMethod === "BIZUM"){
+    }else if(paymentMethod === "STRIPE-BIZUM"){
         console.log("PAGO POR BIZUM");
 
         const data_payment = {
@@ -155,7 +151,7 @@ export default async (req, res)=>{
 
 // GUARDAMOS EL PAGO A LA ESPERA DE SABER SI ES SUCCESS OR CANCEL
     
-    const result_insert_payment_db = await paymentsData.insertOne(data_payment)
+    const result_insert_payment_db = await paymentsDataStorage.insertOne(data_payment)
         
     if(result_insert_payment_db.status !== 'ok'){
         console.log("ERROR en checkOutHandler -> INSERTANFO PAGO EN DB")
@@ -186,8 +182,6 @@ export default async (req, res)=>{
     }
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify(response_data))
-
-    
 
 }
 

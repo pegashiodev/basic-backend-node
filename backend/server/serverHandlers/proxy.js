@@ -8,7 +8,7 @@
  *          "ip": {
  *              _id: ip,
  * 
- *               "times_by_sec"  : {sec: sec, times: 1},
+ *              "times_by_sec"  : {sec: sec, times: 1},
                 "times_by_min"  : {min: min, times: 1},
                 "times_10_min"  : {tramo: tramo, times: 1},
                 "times_hour"    : {hour: hour, times: 1},
@@ -37,6 +37,11 @@ import systemConfig from "../../globalData/systemConfig.js"
 import dbCrudHandler from "../../db/dbCrudHandler.js"
 
 
+/**
+ * 
+ * @param {object} Objeto Request de NodeJS 
+ * 
+ */
 
 export default (req)=>{
 

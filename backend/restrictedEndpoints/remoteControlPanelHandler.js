@@ -2,11 +2,13 @@
 
 
 /**
+ *      MANEJADOR DEL REMOTE PANNEL (GET y POST)
  * 
- *      GET: 
+ * 
+ *      PETIDION GET: revisa el stk de la cookie y si es correcto permite el paso
  *          
  * 
- *      POST:
+ *      PETICIION POST:
  *          - RECIBIMOS CATEGORIA [products, stats, contents, ....]
  *          - Y TAREA A REALIZAR [ getPromotioins, updateContent, ... ]
  * 
@@ -25,7 +27,11 @@ import shutdownAdmin from "../remotePanel/shutdownAdmin.js"
 import logoutAdmin from "../remotePanel/logoutAdmin.js"
 
 
-export default async (req, res)=>{4
+/**
+ * @param {object} Objeto Request de NodeJS
+ * @param {object} Objeto REsponse de NodeJS
+ */
+export default async (req, res)=>{
 
 
     const remotePanelHandlers = {

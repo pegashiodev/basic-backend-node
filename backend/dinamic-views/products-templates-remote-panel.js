@@ -1,7 +1,20 @@
 
+/**
+ * TEMPLATES PARA MOSTRAR LOS PRODUCTOS EN EL FRONTEND
+ * - TIENE SU PLANTILLA  HTML
+ * - LOS ESTILOS CSS
+ * - EL JAVASCRIPT SI ES NECESARIO
+ * - LOS PARAMETROS A CAMBIAR CON LOS DATOS DE LA BASE DE DATOS
+ * - Y UN "data_for_params", que ahora no recuerdo para que lo usaba.
+ * 
+ */
 
 
 
+
+/**
+ * TEMPLATE PARA UN PRODUCTO
+ */
 export const product_template = {
     html:   `<div class="product" id="{{ref}}">
                 <p>Referencia: {{ref}}</p>
@@ -30,6 +43,11 @@ export const product_template = {
     data_for_params: "PROMOTION"
 } 
 
+
+
+/**
+ * TEMPLATE PARA UN PRODUCTO NUEVO
+ */
 export const new_product_template = {
 
     html: ` <form class="new-product-form">

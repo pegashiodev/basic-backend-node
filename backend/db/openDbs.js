@@ -1,18 +1,25 @@
 
+/***
+ * 
+ *  ABRE LAS BASES DE DATOS CUYOS NOMBES  RECIBE  POR PARAMETRO (UN STRING O UN ARRAY) Y 
+ *  LAS AÑADE A UN DICCIONARIO PARA QUE PUEDAN SER ACCEDIDAS
+ * 
+ * 
+ * 
+ * 
+ */
+
 
 import {MongoClient} from 'mongodb'
 import dbsOpened from "../globalData/dbsOpened.js"
 process.loadEnvFile()
 
-
 export default  function (dbNames){
     console.log('Open DBS !!!')
-
-
-
+    
     if(!dbNames){
 
-        return {result: 'error', message:'DBNames es NULL'}
+        return {result: 'error', message:'DBNames NO ES VALIDO'}
 
     }
     const uri = process.env.MONGODB_URI;
@@ -33,10 +40,7 @@ export default  function (dbNames){
             return {status: 'error', message: `Error en openDbs ->  abriendo la Db ${dbNames}`}
         }
 
-    }
-    // es una Array de nombre de bases de datos
-    // Promnise.All
-    if(Array.isArray(dbNames)){
+    }else if(Array.isArray(dbNames)){
 
         dbNames.forEach((item)=>{
            

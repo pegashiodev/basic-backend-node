@@ -1,26 +1,19 @@
 
 /**
  * 
- *  Routeamos la peticion POST
- * 
- * 
- *  - SI ES UN SUBDOMINIIO LO REDIRIGIMOS
- * 
- *  - SI ES MASTER LO REDIRIGIMOS 
- * 
- *  - EL RESTO -> Routeamos al manejador que corresponda
+ *  RUTEAMOS LA PETICION POST
+*   LA ENVIAMOS AL MANEJADOR QUE TIENE ASIGNADO EN LA TABLA
  * 
  * 
  */
 
 
-import signUpHandler from "./routerHandlers/signUpHandler.js";
-import logInHandler from "./routerHandlers/logInHandler.js";
+import signUpEmailHandler from "./routerHandlers/signUpEmailHandler.js";
+import logInEmailHandler from "./routerHandlers/logInEmailHandler.js";
 import logOutHandler from "./routerHandlers/logOutHandler.js";
 import renovePasswordHandler from "./routerHandlers/renovePasswordHandler.js";
 import systemConfig from "../globalData/systemConfig.js";
 import checkOutHandler from "./routerHandlers/checkOutHandler.js";
-import mastersEndpoints from "../globalData/mastersEndpoints.js";
 import forgotPasswordHandler from "./routerHandlers/forgotPasswordHandler.js";
 import expiredEndpointHandler from "./routerHandlers/expiredEndpointHandler.js";
 import remoteControlAccessHandler from "../restrictedEndpoints/remoteControlAccessHandler.js";
@@ -43,13 +36,13 @@ export default function (req, res){
     const REMOTE_CONTROL_HANDLER_POST = systemConfig.REMOTE_CONTROL_HANDLER_ENDPOINT_POST
 
 
-    
+    // NO ACCESS IF SYSTEM HAS NO USERS
     const postHandlers = {
 
-        "signup":               {handler: signUpHandler, access: systemConfig.HAS_USERS}, // NO ACCESS IF SYSTEM HAS NO USERS
-        "signup.html":          {handler: signUpHandler, access: systemConfig.HAS_USERS},
-        "login":                {handler: logInHandler, access: systemConfig.HAS_USERS},
-        "login.html":           {handler: logInHandler, access: systemConfig.HAS_USERS},
+        "signupEmail":          {handler: signUpEmailHandler, access: systemConfig.HAS_USERS}, 
+        "signupEmail.html":     {handler: signUpEmailHandler, access: systemConfig.HAS_USERS},
+        "loginEmail":           {handler: logInEmailHandler, access: systemConfig.HAS_USERS},
+        "loginEmail.html":      {handler: logInEmailHandler, access: systemConfig.HAS_USERS},
         "logout":               {handler: logOutHandler, access: systemConfig.HAS_USERS},
         "logout.html":          {handler: logOutHandler, access: systemConfig.HAS_USERS},
         "forgot-password":      {handler: forgotPasswordHandler, access: systemConfig.HAS_USERS},
@@ -86,20 +79,14 @@ export default function (req, res){
     // Controlador de las acciones dentro del Remote Pannel
     postHandlers[REMOTE_CONTROL_HANDLER_POST] = {handler: remoteControlPanelHandler, access: systemConfig.HAS_USERS}
 
-
-
-
-
+    // ENVIAMOS AL MANEJADOR QUE CORRESPONDA
     if(postHandlers[req.urlData.endpoint] && postHandlers[req.urlData.endpoint].access){
 
         return postHandlers[req.urlData.endpoint].handler(req,res);
     
     }
-    if(mastersEndpoints[req.urlData.url_to_verify]){
-        return routerPostMasterEndpoints(req, res)
-    }
-
-
+   
+    // SI NO HAY MANEJADOR DEVOLVEMOS ERROR
     console.log('No ha manejador para este endpoint !!!')
         
     const response_data = {

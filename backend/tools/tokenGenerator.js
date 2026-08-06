@@ -1,12 +1,19 @@
 
+/**
+ *  CREA LOS TOKENS DE LAS COOKIES
+ * 
+ */
 
 
 import crypto  from 'node:crypto'
 process.loadEnvFile();
 const secret_key = process.env.SESION_TOKEN_SECRET_KEY;
-// const text = "Hello World"
 
-
+/**
+ * 
+ * @param {String} plainText -> TExto con el objeto que tiene los datos del token: email, expireTime, ... 
+ * @returns 
+ */
 export const hashToken = (plainText) => {
 
   if(!plainText || typeof(plainText)!=='string'|| plainText === undefined){
@@ -38,7 +45,11 @@ export const hashToken = (plainText) => {
 }
 
 
-
+/**
+ * 
+ * @param {String} encryptedText -> recibimos el token encriptado de la cookie para obtener la cadena de texto con los datos 
+ * @returns 
+ */
 export const decodeToken = (encryptedText) => {
     try {
         // Desacemos lo que hicimos despues de que se encriptase

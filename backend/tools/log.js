@@ -2,6 +2,9 @@
 
 
 /***
+ * 
+ *      UNA ESPECIE DE "console.log()" personalizado para almacenar logs importantes
+ * 
  *      @param type [TIPO DE MENSAJE] : "INFO", "ERROR", "SAVE"  
  *      @param from [NOMBRE DEL FICHERO QUE LO ENVIA "fileName.js"]
  *      @param data [INFORMACION QUE ENVIA]

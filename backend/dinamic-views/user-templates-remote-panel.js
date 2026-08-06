@@ -1,4 +1,20 @@
 
+/**
+ * TEMPLATES PARA MOSTRAR LAS PROMOCIONES EN EL FRONTEND
+ * - TIENE SU PLANTILLA  HTML
+ * - LOS ESTILOS CSS
+ * - EL JAVASCRIPT SI ES NECESARIO
+ * - LOS PARAMETROS A CAMBIAR CON LOS DATOS DE LA BASE DE DATOS
+ * - Y UN "data_for_params", que ahora no recuerdo para que lo usaba.
+ * 
+ */
+
+
+
+
+/**
+ * TEMPLATE PARA UN USER
+ */
 
 
 export const user_template = {

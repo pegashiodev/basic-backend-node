@@ -1,12 +1,20 @@
 
 
 import sessionsCached from "../globalData/sessionsCached.js";
-import generateAccessToken from "../sessions/generateAccessToken.js";
-import generateRefreshToken from "../sessions/generateRefreshToken.js";
-import generateSecurityToken from "../sessions/generateSecurityToken.js";
+import generateAccessToken from "./generateAccessToken.js";
+import generateRefreshToken from "./generateRefreshToken.js";
+import generateSecurityToken from "./generateSecurityToken.js";
 import systemConfig from "../globalData/systemConfig.js";
 
 
+/**
+ * 
+ * VERIFICA LOS TOKENS DE LA COOKIE Y CREA UNOS NUEVOS SI ESTAN CADUCADOS. 
+ * 
+ * @param {Object} req  -> Objeto Request de NodeJS
+ * @param {Object} user -> user
+ * @param {String} from -> Desde donde se llama a esta funcion
+ */
 export default function (req, user, from){
     
     // IMPORTANTE
@@ -21,8 +29,8 @@ export default function (req, user, from){
     const now = Date.now();
     
 
-  
-    if(from === "ADD_SESSION"){                // NO HAY SESSION 
+     // NO HAY SESSION: GENERO TODOS LOS TOKENS NUEVOS
+    if(from === "ADD_SESSION"){               
 
         req.set_new_cookie = true
         refreshData = generateRefreshToken(user.name, user.email);
@@ -38,6 +46,7 @@ export default function (req, user, from){
         // session.rtk_expireTime = refreshData.expireTime
     
 
+    // SI ES PARA EL ACCESO A REMOTE-PANNEL TENGO QUE GENERAR UN TOKEN NUEVO 
     }else if(from === "ACCESS_REMOTE_PANNEL"){          // AÑADIMOS TOKEN para el acceso al panel remoto
     
         // NO SE ACTUALIZA AUTOMATICAMENTE COMO EL RESTO DE TIOKEN DENTRO DE LA MISMA SESSION
@@ -47,8 +56,9 @@ export default function (req, user, from){
         req.pannelAccessData = pannelAccessData;
         req.set_new_cookie = true;
 
-    
-    }else if(!req.our_cookie){          // NO HAY NUESTRA COOKIE -> nuevos tokens de acceso normal
+
+    // NO HAY NUESTRA COOKIE -> nuevos tokens de acceso normal
+    }else if(!req.our_cookie){          
     
         session = sessionsCached[req.user.email]
 
@@ -69,7 +79,8 @@ export default function (req, user, from){
             console.log("NO hay SESION y estoy en VerifyTokenAndSetCookie !!! -> 1")
         }
   
-    }else{              // COMPROBAMOS SI LOS TOKENS HAN CADUCADO
+    // ES NUESTRA COOKIE: COMPROBAMOS SI LOS TOKENS HAN CADUCADO
+    }else{              
         
         session = sessionsCached[req.user.email]
         if(session){
@@ -117,6 +128,7 @@ export default function (req, user, from){
        
     }
     
+    // TENEMOS QUE SETEAR LA NUEVA COOKIE, CON LOS PARAMETROS CORRECTOS EN CADA CASO
     if(req.set_new_cookie){
         console.log("ALGUN Token SIII  EXPIRADOS !!!")
 
@@ -137,22 +149,23 @@ export default function (req, user, from){
         
             }
 
-        if(from === "ACCESS_REMOTE_PANNEL"){    // ACTUALIZAMOS UNICAMENTE cookie.stk -> Para acceso a Remote-pannel
+        // PARA EL ACCESO AL REMOTE PANNEL HEMOS DE INSRTAR UN NUEVO TOKEN EN LA COOKIE (cookie.stk)
+        if(from === "ACCESS_REMOTE_PANNEL"){    
             
             req.cookie = [`stk=${req.pannelAccessData.securityToken}; ${cookie_stk_params}`]
         
+        // SETEAMOS SOLO EL ATK
         }else if(changeOnlyAtk){    // ACTUALIZAMOS UNICAMENTE cookie.atk
 
             req.cookie = [`atk=${req.accessData.accessToken}; ${cookie_atk_params}`]
 
+        // SETEAMOS AMBOS TOKENS: ATK Y RTK
         }else{  // ACTUALIZAMOS atk y rtk -> por caducados
 
             req.cookie = [`atk=${req.accessData.accessToken}; ${cookie_atk_params}`, `rtk = ${req.refreshData.refreshToken}; ${cookie_rtk_params}`, `deviceId = ${req.body.deviceId}; ${cookie_deviceId_params}`]
+        
         }
         
-        // req.set_new_cookie = false;
-        // console.log({sessionsCached})
-        // console.log({usersByEmail})
         
         console.log('NUEVA COOKIE !!!!!')
         console.log(req.cookie)

@@ -1,4 +1,11 @@
 
+/**
+ * 
+ *  GENERADOR DEL COOKIES: YA NO SE USA !!!!
+ * 
+ */
+
+
 import systemConfig from "../globalData/systemConfig.js";
 
 export default function(req){

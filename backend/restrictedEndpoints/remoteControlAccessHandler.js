@@ -1,6 +1,10 @@
 
 
 
+/**
+ *  manejador de la peticion GET para acceder al Remote-pannel del systema
+ */
+
 
 import systemConfig from "../globalData/systemConfig.js"
 import sendStaticFile from "../server/serverHandlers/sendStaticFile.js"

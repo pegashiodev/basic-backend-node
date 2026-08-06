@@ -1,9 +1,23 @@
 
-import systemConfig from "../../globalData/systemConfig.js";
+/**
+ * 
+ * ATENDEMOS UN "CANCEL CHECKOUT"
+ * OBTENEMOS DE LA URL DEL CANCEL-CHECKOUT EL STRIPEID QUE LE FUE ASIGNADO A LA OPERACION
+ * 
+ */
+
+
+
 import sendStaticFile from "../../server/serverHandlers/sendStaticFile.js";
-import paymentsData from "../../payments/paymentsData.js";
+import paymentsDataStorage from "../../payments/paymentsDataStorage.js";
 
 
+/**
+ * 
+ * @param {object} Objeto Request de NodeJS
+ * @param {object} Objeto Response de NodeJS
+ * 
+ */
 export default async (req, res)=>{
 
     console.log("CANCEL_CHECKOUT  !!")
@@ -18,7 +32,7 @@ export default async (req, res)=>{
     // ACTUALIZAMOS LA COMPRA A "CANCEL"
     const data_payment = {
         task: "UPDATE_STATUS_PAYMENT",
-        paymentMethod: "STRIPE",
+        // paymentMethod: "STRIPE-CARD",
         stripeId: stripeId,
         update: "status",
         new_value: {status: "CANCELED"},
@@ -27,22 +41,12 @@ export default async (req, res)=>{
     }
     if(stripeId){
 
-        paymentsData.updateOne(data_payment)
-    }
-
+        paymentsDataStorage.updateOne(data_payment)
     
-    // if(result_payment.status !== 'ok'){
-    //     console.log("ERROR en cancelcheckOutHandler -> INSERTANFO PAGO EN DB")
-    //     // ENVIAMOS PAGINA DE ERROR DE CONEXION CON PASARELA DE PAGOS
-    //     // req.urlData.fileName = systemConfig.PAGES.PAGE_NOT_FOUND
-    //     // req.urlData.ext = "html";
-    //     res.code = 200
-    //     return sendStaticFile(req, res)
-    // }
+    // el "stripeId" esta si o si en la url
+    }else{
 
-    // // console.log("Tengo que dar la compra por CANCEL")
-    // res.code = 200;
-    // return sendStaticFile(req, res)
-
+        console.log("OJO ->  ERROR en cancelCheckOutHandler.js: NO hay stripeId en la URL ?? ")
+    }
 
 }

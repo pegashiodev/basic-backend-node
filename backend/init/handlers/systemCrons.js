@@ -2,7 +2,7 @@
 
 /**
  * 
- *      INICIA LAS TAREAS QUE SE HARAN DE FORMA PERIODICA EN EL SYSTEMA
+ *      INICIA LAS TAREAS QUE SE HARAN DE FORMA PERIODICA EN EL SiSTEMA
  * 
  *      1.- ALMACENAMIENTO PERIODICO DE SESSIONES DE LOS USUARIOS
  *     
@@ -15,6 +15,7 @@
  *      5.- REVISAR temporalEndpoints -> para eliminar caducados
  * 
  * 
+ *      LOS PERIODOS DE ESTOS CRONS ESTAN DETALLADOS EN "systemConfig.js"
  * 
  */
 

@@ -1,4 +1,11 @@
 
+/**
+ * 
+ * ENVIA LOS ARCHIVOS ESTATICOS DEL SITIO: 
+ * 
+ */
+
+
 import { createReadStream, access, constants  }  from  'node:fs'
 import systemConfig from "../../globalData/systemConfig.js";
 import staticsFilesCached from "../../globalData/staticsFilesCached.js"
@@ -10,6 +17,12 @@ import languages from '../../globalData/languages.js';
 process.loadEnvFile();
 
 
+/**
+ * 
+ * @param {object} Objeto Request de NodeJS 
+ * @param {object} Objeto Response de NodeJS
+ * @returns 
+ */
 export default (req, res)=>{
 
     console.log('sendStaticFile')

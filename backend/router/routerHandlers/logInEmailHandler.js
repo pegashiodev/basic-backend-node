@@ -1,5 +1,15 @@
 
 
+/**
+ * 
+ *  LOGIN CON EL EMAIL DEL USUARIO + PASSWORD
+ * 
+ *  - PUEDE SER DIRECTO O CON EL ENVIO DE UN TOKEN DE VERIFICAION A SU EMAIL
+ * 
+ */
+
+
+
 import { passwordEncript } from "../routerTools/passwordEncript.js"
 import sessionsCached from "../../globalData/sessionsCached.js"
 
@@ -10,7 +20,6 @@ import sessionHandler from "../../sessions/sessionHandler.js"
 import systemConfig from "../../globalData/systemConfig.js"
 import addNewUserDevice from "../../tools/addNewUserDevice.js"
 import verifyTokensAndSetCookie from "../../tools/verifyTokensAndSetCookie.js"
-import userHacked from "./userHacked.js"
 import log from "../../tools/log.js"
 import errorsCodes  from "../../tools/errorsCodes.js"
 // import generateValidationToken from "../../tools/generateValidationToken.js"
@@ -19,6 +28,13 @@ import validationTokens from "../../globalData/validationTokens.js"
 import getOurCookie from "../../tools/getOurCookie.js"
 
 
+
+/**
+ * 
+ * @param {object} Objeto Request de NodeJS
+ * @param {object} Objeto Response de NodeJS
+ * 
+ */
 export default async function(req, res){
    
     const FROM_LOGS = "loginHandler.js"
@@ -27,166 +43,189 @@ export default async function(req, res){
     const ERROR_LOGS = "ERROR"
 
     log(FROM_LOGS, "** LOGIN !!", INFO_LOGS)
-console.log(req.body)
-console.log(usersByEmail)
+    //console.log(req.body)
+    //console.log(usersByEmail)
     // Validamos los formatos de los datos recibidos
-    let result = bodyDataFormatVerify(req.body)
+    let result_body_format = bodyDataFormatVerify(req.body)
 
-    if(result.status !== 'ok'){
+    if(result_body_format.status !== 'ok'){
         // RES.END YA SE HA HECHO EN LA FUNCION
+        const response_data = {
+            status: "error",
+            code: 400,
+            message: "ERROR EN EL LOGIN",         
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(response_data))
         return;
     }
 
-    if(!isValidUser(req, res)){
-        // RES.END YA SE HA HECHO EN LA FUNCION
+    // VERIFICAMOS EL USUARIO RECIBIDO
+    let userVerification = verifyUser(req)
+    if(userVerification.status !== "ok"){
+       
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(userVerification.response_data))
         return;
     }
     
     // VERIFICAMOS SI PASSWORD CORRECTO
     if(!isValidPassword(req, res)){
-        // RES.END YA SE HA HECHO EN LA FUNCION
+        const response_data = {
+            status: "error",
+            code: 400,
+            message: "NO ES UN PASSWORD VALIDO",         
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(response_data))
         return;
     }
 
+    // COMPROBAMOS SU ES UN LOGIN SIN "DOBLE verificacion"
     if(!req.body["fa2"]){
         return loginUser(req, res)
-
-     // SI  O REQUIERE SEGUNDO FACTOR DE AUTENTICACION
+     
+     
+    // SI  O REQUIERE SEGUNDO FACTOR DE AUTENTICACION
     /**
      *      2fa = {
      *          status: "SEND" / "RECIBED"
      *          code:
      *          url_token: 
      *          mode_notify: "sms"/"email"
-     * 
      *      }
-     * 
      */
-
-
+    // COMPROBAMOS SI ESTAMOS EN EL PASO EN EL QUE EL CLIENTE SOLICITA ENVIAR EL CODIGO PARA HACER EL LOGIN
     }else if(req.body["fa2"] === 'SEND'){
-
-        let user = usersByEmail[req.body.email]
-
-        if(systemConfig.HAS_2FA_LOGIN || user["fa2"].endpoints.includes(req.urlData.endpoint)){
+        // COMPROBAMOS SI ESTA HABILITADO EL "DOBLE FACTOR AUTENTICACION" EN EL LOGIN
+        if(systemConfig.HAS_FA2_LOGIN || user["fa2"].endpoints.includes(req.urlData.endpoint)){
+            let user = usersByEmail[req.body.email]
             
             log(FROM_LOGS, "2fa -> SEND CODE  --->> VALIDAMOS DATOS", INFO_LOGS)
             
             // Enviamos codigo por email e informamos al frontend
-
-            if(!isValidUser(req, res)){
-                return;
-            }
-            // VERIFICAMOS SI PASSWORD CORRECTO
-            if(!isValidPassword(req, res)){
-                return;
-            }
-            return loginWhith2FA(req, res)
+            return loginWhithFA2(req, res)
 
         // NO ACTIVADO 2FA PARA ESTE USUARIO O ESTA RUTA
         }else{
             return loginUser(req, res)
         }
 
+    // ESTAMOS EN EL PASO EN EL QUE EL CLIENTE NOS ENVIA EL CODIGO QUE LE HEMOS ENVIADO PARA HACER AL LOGIN
     }else if(req.body["fa2"] === 'RECIBED'){
+
         let user = usersByEmail[req.body.email]
 
-        if(systemConfig.HAS_2FA &&  user["fa2"].endpoints.includes(req.urlData.endpoint)){
+        if(systemConfig.HAS_FA2 &&  user["fa2"].endpoints.includes(req.urlData.endpoint)){
+            
             log(FROM_LOGS, "2fa -> RECIBED  --->> VALIDAMOS DATOS", INFO_LOGS)
 
-            if(!isValidUser(req, res)){
+            // COMPROBAMOS QUE EL TOKEN ES CORRECTO
+            const token_meta = validationTokens[req.body.email]
+            
+            if(!token_meta){
+                // token invalido o Caducado
+                log(FROM_LOGS, "ERROR -> TOKEN BORRADO -> CADUCADO ??", INFO_LOGS)
+    
+                const response_data = {
+                    status: 'error',
+                    code: errorsCodes.c468.code,
+                    message: "TOKEN VERIFICACION INVALIDO",      //errorsCodes.c466.message,
+                }
+                res.writeHead(200, { 'Content-Type': 'application/json'});
+                res.end(JSON.stringify(response_data))
                 return;
             }
-            // VERIFICAMOS SI PASSWORD CORRECTO
-            if(!isValidPassword(req, res)){
+    
+            console.log({token_meta})
+            console.log(req.body)
+            
+            if(req.body.token !== token_meta.token){
+                // token invalido o Caducado
+                log(FROM_LOGS, "ERROR -> Hemos recibido un VAlidation Token NO VALIDO", INFO_LOGS)
+    
+                const response_data = {
+                    status: 'error',
+                    code: errorsCodes.c466.code,
+                    message: "ERROR EN EL SIGNUP",      //errorsCodes.c466.message,
+                    
+                }
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(response_data))
                 return;
             }
-            // SI TODO OK
-            return loginWhith2FA(req, res)
+            return loginWhithFA2(req, res)
         
-        // NO ACTIVADO 2FA PARA ESTE USUARIO O ESTA RUTA
+        
         }else{
             return loginUser(req, res)
         }
-
        
     // HAY 2FA PERO NO ES NI "SEND" NI "RECIBED"  ????
     }else{
 
-        // HAY SYSTEM.2FA ACTIVADO PERO EL LOGIN NO ESTA EN LAS RUTAS DEL USUARIO CON 2FA
-        // LOGIN SIN ENVIAR CODIGO
-        return loginUser(req, res)
+        const response_data = {
+            status: "error",
+            code: 400,
+            message: "LOGIN INCORRECTO",         
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(response_data))
+        return;
 
     }
     
 }
 
 
-function isValidUser(req, res){
+function verifyUser(req){
 
     const FROM_LOGS = "loginHandler.js -> isValidUser()"
     const INFO_LOGS = "INFO";
     const SAVE_LOGS = "SAVE";
     const ERROR_LOGS = "ERROR"
-
+    let result = {}
     
     req.user = usersByEmail[req.body.email];
 
     if(!req.user){
+       
         log(FROM_LOGS, "ERROR -> NO USER REGISTRADO CON ESE EMAIL", ERROR_LOGS)
-        const response_data = {
-            status: systemConfig.STATUS.ERROR_FETCH,
-            code: errorsCodes.c435.code,
-            message: "ERROR EN EL LOGIN",               //errorsCodes.c525.message,
+        result.status = "error"
+        result.response_data = {
+            status: "error",
+            code: 400,
+            message: "NO EXISTE USUARIO",           //errorsCodes.c480.message,
         }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(response_data))
-        return false;
+        return result;
     }
 
     if(req.user.status !== systemConfig.STATUS.ACTIVE){
 
         if(req.user.status === systemConfig.STATUS.EMAIL_NOT_VERIFIED){
             log(FROM_LOGS, "ERROR -> Email NO VERIFICADO", ERROR_LOGS)
-            const response_data = {
-                status: systemConfig.STATUS.EMAIL_NOT_VERIFIED,
-                code: errorsCodes.c471.code,
-                message: "ERROR EN EL LOGIN",           //errorsCodes.c471.message,
-                location: systemConfig.PAGES.EMAIL_VERIFICATION_INFO,
+            result.status = "error"
+            result.response_data = {
+                status: "error",
+                code: 400,
+                message: "USUARIO NO ACTIVO",           //errorsCodes.c480.message,
             }
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(response_data))
-            return false;
+            return result;
         }
-    
-        if(req.user.status === systemConfig.STATUS.HACKED){
-            log(FROM_LOGS, "ERROR -> Usuario HACKEADO", ERROR_LOGS)
 
-            // const response_data = {
-            //     status: systemConfig.STATUS.HACKED,
-            //     message: 'USUARIO HACKEADO ??? -> HEMOS ENVIADPO UN EMAIL PARA CAMBIO DE CONTRASEÑA ',
-            //     location: systemConfig.PAGES.ACCESS_PLATFORM
-            // }
-            // res.writeHead(200, { 'Content-Type': 'application/json' });
-            // res.end(JSON.stringify(response_data))
-            userHacked(req, res, "LOGIN")
-            return false;
-        }
         if(req.user.status === systemConfig.STATUS.BLOCKED){
             log(FROM_LOGS, "ERROR -> Usuario BLOQUEADO POR ALGUN MOTIVO", ERROR_LOGS)
-            const response_data = {
-                status: systemConfig.STATUS.BLOCKED,
-                code: errorsCodes.c480.code,
-                message: "ERROR EN EL LOGIN",           //errorsCodes.c480.message,
-                location: systemConfig.PAGES.ACCESS_PLATFORM
-
+            result.status = "error"
+            result.response_data = {
+                status: "error",
+                code: 400,
+                message: "USUARIO BLOQUEADO",           //errorsCodes.c480.message,
             }
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(response_data))
-            return false;
+            return result;
         }
     }
-    return true;
+    result.status = "ok"
+    return result
 }
 
 function isValidPassword(req, res){
@@ -194,39 +233,28 @@ function isValidPassword(req, res){
     const INFO_LOGS = "INFO";
     const SAVE_LOGS = "SAVE";
     const ERROR_LOGS = "ERROR"
-    // encriptar password para comparar
+
+    let result = {}
+
+    // ENCRIPTAMOS PASSWORD RECIBIDO PARA COMPARAR
     const encriptedPassword = passwordEncript(req.body.password.toString())
     
     if(!encriptedPassword){
-       log(FROM_LOGS, "ERROR -> al encriptar el Password", ERROR_LOGS)
-       const response_data = {
-           status: systemConfig.STATUS.ERROR_FETCH,
-           code: errorsCodes.c531.code,
-           message: "ERROR EN EL LOGIN",            //errorsCodes.c531.message,
-       }
-       res.writeHead(200, { 'Content-Type': 'application/json' });
-       res.end(JSON.stringify(response_data))
-       return false;
+       log(FROM_LOGS, "ERROR -> al encriptar el Password", ERROR_LOGS);
+        return false;
+       
    }
 
     if(req.user.password !== encriptedPassword){
         log(FROM_LOGS, "ERROR -> Password Incorrecto", ERROR_LOGS)
         // limpiamos el formulario del login
-        const response_data = {
-            status: systemConfig.STATUS.ERROR_FETCH,
-            code: errorsCodes.c475.code,
-            message: "ERROR EN EL LOGIN",           //errorCodes.c475.message,
-            
-        }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(response_data))
         return false;
     }
     return true;
 
 }
 
-async function loginWhith2FA(req, res) {
+async function loginWhithFA2(req, res) {
     const FROM_LOGS = "signUpHandler.js -> signupWhith2FA";
     const INFO_LOGS = "INFO";
     const SAVE_LOGS = "SAVE";
@@ -240,15 +268,12 @@ async function loginWhith2FA(req, res) {
         // const validation_token = generateValidationToken(req.body);
     
         // ENVIAR EMAIL --> 
-        let data_email = { 
-            // validation_token: validation_token,
-            name: req.body.name,
-            lastName: req.body.lastName,
-            email: req.body.email,
+        
+        let data_email = {
             task: "SEND_VALIDATION_TOKEN",
             from: "LOGIN",
-            await: true,
-        }   
+            await: true, 
+        }
     
         const result_email = await sendEmail(data_email, req.body);
     
@@ -275,8 +300,21 @@ async function loginWhith2FA(req, res) {
         return;
     
     }else if(req.body.fa2 === "RECIBED"){
+
+        if(!req.body.email || !req.body.token){
+           
+            const response_data = {
+                status: 'error',
+                code: errorsCodes.c466.code,
+                message: "ERROR EN EL LOGIN",      //errorsCodes.c466.message,
+                
+            }
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(response_data))
+            return; 
+        }
         
-        // COMPROBAMOS QUE EL TOKEN ES CORRECTO
+        // COMPROBAMOS SI EL TOKEN RECIBIDO ES CORRECTO
         const token_meta = validationTokens[req.body.email]
         
         if(req.body.token !== token_meta.token){
@@ -315,7 +353,7 @@ async function loginWhith2FA(req, res) {
     
     }else{
 
-        // 2FA NO ES "SEND" NI "RECIBED" ???
+        // F 2NO ES "SEND" NI "RECIBED" ???
         log(FROM_LOGS, "ERROR -> VALOR DE 2FA INCORRECTO", INFO_LOGS)
 
         const response_data = {
@@ -331,6 +369,7 @@ async function loginWhith2FA(req, res) {
     
 }
 
+// COMPLETAMOS EL LOGIN DEL USUARIO
 async function loginUser(req, res){
     const FROM_LOGS = "loginHandler.js -> loginUser()"
     const INFO_LOGS = "INFO";
@@ -341,15 +380,11 @@ async function loginUser(req, res){
 
     req.body.userAgent = req.headers['user-agent']
     req.body.name = req.user.name;
-
-    
-
-    // COMPROBAMOS SI HAY  COOKIE Y LOS TOKENS
-
-   
+    // INICIALIZAMOS 
     req.has_our_cookie = false;
     req.set_new_cookie = false;
-
+    
+    // COMPROBAMOS SI HAY  COOKIE Y LOS TOKENS
     if(req.headers.cookie){
         // COMPROBAMO SI ES NUESTRA
 
@@ -358,9 +393,6 @@ async function loginUser(req, res){
         if(result_getOuCookie.status !== 'ok'){
 
             if(result_getOuCookie.task === "SEND_FETCH_ERROR"){
-
-                // AQUI EN EL LOGIN NO ENVIAMOS A LA RUTA QUE NOS LLEGA
-                // PORQUE ES LA DEL LOGIN !!
 
                 // EN ESTE CASO COOKIE INCOMPLETA 
                 // ELIMINAMOS SESSION SI LA HAY 
@@ -433,16 +465,7 @@ async function loginUser(req, res){
             "username": req.user.name,
             "message": "USUARIO LOGUEADO  CON EXITO"
         }
-        /*
-            PARA AUTOMATIZABOTS.COM
-            res.writeHead(200, 
-                {   'Content-Type': 'application/json', 
-                    "Location": req.user.automates.length > 0 ? systemConfig.PAGES.URL_AFTER_LOGIN : systemConfig.PAGES.URL_AFTER_SIGNUP ,   
-                    'Set-Cookie': req.cookie,
-                    'Cache-Control': 'no-cache',
-                });
-
-        */
+        
 
         //AÑADIMOS LA COOKIE COMO UN OBJETO JSON PARA COLOCAR VARIAS VARIABLES;
         // PARA CONSULTA LEGAL
@@ -455,42 +478,13 @@ async function loginUser(req, res){
         res.end(JSON.stringify(response_data));
         return;   
 
+    
+    // HAY SESION
     }else{
-
 
         log(FROM_LOGS, "Hay session", INFO_LOGS)
 
-        // if(req.user.status === systemConfig.STATUS.HACKED){
-        //     log(FROM_LOGS, "ERROR -> Usuario HACKEADO", ERROR_LOGS)
-
-        //     const response_data = {
-        //         status: systemConfig.STATUS.HACKED,
-        //         code: errorsCodes.c481.code,
-        //         message: 'ERROR EN EL LOGIN',
-        //     }
-        //     res.writeHead(200, { 'Content-Type': 'application/json' });
-        //     res.end(JSON.stringify(response_data))
-        //     return;
-        
-        // }else if(req.user.status === systemConfig.STATUS.BLOCKED){
-        //     const error_data = {
-        //         message: "USUARIO BLOQUEADO...PONGASE EN CONTACTO CON ATENCION AL CLIENT ",
-        //         user: req.user,
-        //         session: session
-        //         }
-        //     log(FROM_LOGS, error_data, SAVE_LOGS)
-
-        //     const response_data = {
-        //         status: systemConfig.STATUS.BLOCKED,
-        //         code: errorsCodes.c480.code,
-        //         message: 'ERROR EN EL LOGIN',
-        //     }
-        //     res.writeHead(200, { 'Content-Type': 'application/json' });
-        //     return res.end(JSON.stringify(response_data))
-        // } 
-
-
-        // SI ENDED O CADUCADA, ALMACENAMOS LA ULTIMA SESSION ANTES DE CREAR LA NUEVA
+        // COMPROBAMOS SI LA SESION ESTA  "ENDED" O "EXPIRADA": ALMACENAMOS LA ULTIMA SESSION ANTES DE CREAR LA NUEVA
         if(session.status === systemConfig.STATUS.ENDED ||  now > session.expireTime){
             
             // ALMACENAMOS LA ANTIGUA SESSION EN DB Y CREAMOS UNA NUEVA
@@ -529,8 +523,6 @@ async function loginUser(req, res){
                 if(req.urlData.searchParams.search && req.urlData.searchParams.search !== "undefined"){
                     location += `?${req.urlData.searchParams.search}`
                 }
-                   
-
             }
 
             const response_data = {
@@ -551,12 +543,9 @@ async function loginUser(req, res){
             res.end(JSON.stringify(response_data));
             return;   
 
-        }
-
-       // HAY SESSION Y NO CADUCADA 
-       // COMPROBAMOS EL DEVICE ID
-
-        if(req.has_our_cookie){
+        
+        // HAY SESSION Y NO CADUCADA: COMPROBAMOS EL DEVICE ID
+        } else if(req.has_our_cookie){
 
             // COMPROBAMOS SI ES EL MISMO DISPOSITIVO
 
@@ -572,7 +561,6 @@ async function loginUser(req, res){
 
         // NO HAY NUESTRA COOKIE   
         }else{
-
             
             // COMPROBAMOS SI ES EL MISMO DISPOSITIVO
             // y CAPTURAMOS EL DEVICE ID
@@ -589,14 +577,13 @@ async function loginUser(req, res){
                 addNewUserDevice(req)
             }
 
-
             // HAY QUE CREAR TOKENS NUEVOS
             req.our_cookie = null;
             req.set_new_cookie = true;
-            verifyTokensAndSetCookie(req)
+            verifyTokensAndSetCookie(req, req.user, "LOGIN")
         }
 
-        // SI LA HAY, AÑADIMOS LA RUTA DESDE LA QUE SE LE ENVIO AL LOGUEARSE
+        // AÑADIMOS LA RUTA DESDE LA QUE SE LE ENVIO AL LOGUEARSE, SI LA HAY.
         let location = systemConfig.PAGES.URL_AFTER_LOGIN
         if(req.body.previous_endpoint){
             location = req.body.previous_endpoint
@@ -614,8 +601,6 @@ async function loginUser(req, res){
 
             res.writeHead(200, 
             {   'Content-Type': 'application/json', 
-                // "Location": req.user.automates.length === 0 ? systemConfig.PAGES.URL_AFTER_SIGNUP : systemConfig.PAGES.URL_AFTER_LOGIN, 
-                // location: location,  
                 'Set-Cookie': req.cookie,
                 'Cache-Control': 'no-cache',
             });
@@ -624,15 +609,12 @@ async function loginUser(req, res){
         }else{
             res.writeHead(200, 
                 {   'Content-Type': 'application/json', 
-                    // "Location": req.user.automates.length === 0 ? systemConfig.PAGES.URL_AFTER_SIGNUP : systemConfig.PAGES.URL_AFTER_LOGIN,
-                    // location: location, 
                     'Cache-Control': 'no-cache',
                 });
         }
 
         const response_data = {
             "status": systemConfig.STATUS.SUCCESS_FETCH,
-            // "location": req.user.automates.length === 0 ? systemConfig.PAGES.URL_AFTER_SIGNUP : systemConfig.PAGES.URL_AFTER_LOGIN ,
             location: location,
             "username": req.body.name,
             "message": "USUARIO LOGUEADO"

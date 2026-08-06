@@ -5,23 +5,11 @@ import successCheckOutHandler from "./routerHandlers/successCheckOutHandler.js"
 
 
 const endpoints_handlers = {
-    
-    // CHECKOUT ENTRA POR POST
-    // 'checkout': "",
-    // 'checkout.html': "",
   
     'success-checkout': successCheckOutHandler,
     'success-checkout.html': successCheckOutHandler,
     "cancel-checkout": cancelCheckOutHandler,
     "cancel-checkout.html": cancelCheckOutHandler,
-    
-    // "finalizar-pedido": "",
-    // "finalizar-pedido.html": "",
-    // "pedido-realizado": "",
-    // "pedido-realizado.html": "",
-    // "cancelar-checkout": "",
-    // "cancelar-checkout.html": "",
-    
 }
 
 

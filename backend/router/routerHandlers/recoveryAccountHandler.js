@@ -1,11 +1,13 @@
 
-// ENTRAMOS EN ESTA RUTA DESDE LA URL QUE HEMOS ENVIADO 
-// POR UN INICIO DESDE OTRO DISPOSITIVO 
-// O CAULQUIER SOSPECHA DE HACKEO DE LA CUENTA
+
 
 
 
 /**
+ *  ENTRAMOS EN ESTA RUTA DESDE LA URL QUE HEMOS ENVIADO
+ * 
+ *  DESDE AQUI ATENDEMOS TANTO LAS PETICIONES GET O POST
+ * 
  *  GET METHOD
  *  MOSTRAMOS UNA URL PARA EL CAMBIO DE LA CONTRASEÑA
  *  MARCAMOS EL USER  COMO HACKEADO
@@ -35,6 +37,12 @@ import addNewUserDevice from "../../tools/addNewUserDevice.js"
 
 
 
+/**
+ * 
+ * @param {object} Objeto Request de NodeJS
+ * @param {object} Objeto Response de NodeJS
+ * 
+ */
 export default async function(req, res){
 
     const from = "RECOVERY_ACCOUNT"
@@ -264,11 +272,10 @@ async function renovePassword(req, res){
     // actualizamos en USER
     const data_update_user = {
         task: "UPDATE_PASSWORD_AND_STATUS",
-        user: req.user,
         new_value: req.body.password,
         await: true
     }
-    const result_user = await userHandler.updateUser(data_update_user)
+    const result_user = await userHandler.updateUser(data_update_user, req.user)
    
     if(result_user.status != 'ok'){
         console.log('Error Actualizando UserDB')

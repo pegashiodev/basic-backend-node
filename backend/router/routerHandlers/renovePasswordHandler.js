@@ -1,4 +1,10 @@
 
+/**
+ * 
+ *  DESDE AQUI SE REALIZA EL CAMBIO DE PASSWORD SOLICITADO POR EL USUARIO
+ */
+
+
 
 import sendStaticFile from "../../server/serverHandlers/sendStaticFile.js"
 import bodyDataFormatVerify from "../routerTools/bodyDataFormatVerify.js"
@@ -11,6 +17,13 @@ import verificationEndpoints from "../../globalData/verificationEndpoints.js"
 import dbCrudHandler from "../../db/dbCrudHandler.js"
 
 
+/**
+ * 
+ * 
+ * @param {object} req -> Objeto Request de NodeJs
+ * @param {object} res -> Objeto Response de NodeJs
+ * @returns {*}
+ */
 export default async function(req, res){
 
     const from = "RENOVE_PASSWORD"
@@ -43,41 +56,11 @@ export default async function(req, res){
             return sendStaticFile(req, res)
         }
 
-    // POR AQUI ENTRA EL ENVIO DEL FORM CON LA NUEVA PASSWORD
+    // POR AQUI ENTRA EL ENVIO DEL FORMULARIO CON EL NUEVA PASSWORD
     }else if(req.method === 'POST'){
 
         req.url_token = req.body.tk;
-
         return renovePassword(req, res)
-
-        // SI NO HAY SEGUNDO FACTOR DE AUTORIZACION -> Es el password sin mas
-        if(!req.body["fa2"]){
-
-
-        // NO ES NECESARIO -> LE HEMOS ENVIADO EL LINK POR EMAIL CONLO QUE
-        // DEBERIA SER EL USUARIO CORRECTO.
-        // RECIBIMOS QUE HAY QUE ENVIAR EL SEGUNDO FACTOR DE AUTORIZACION
-        // SERIA PARA ENVIARLE UN CODIGO AL TELEFONO, YA QUE EL LIN SE ENVIA AL CORREO
-        }else if(req.body["fa2"] === 'SEND'){
-
-            // NOS INDICA QUE HEMOS DE ENVIAR UN CODIGO DE AUTORIZACION DE LA OPERACION
-            // generateSmsVerificationCode()
-            // data_sms={
-            //      country, phone, code
-            //    }
-            // sendSMS(req, res)
-
-        
-        // NO ES NECESARIO -> LE HEMOS ENVIADO EL LINK POR EMAIL CONLO QUE
-        // DEBERIA SER EL USUARIO CORRECTO.
-        }else if(req.body["fa2"] === 'RECIBED'){
-
-            // RECIBIMOS TODA LA INFO DEL FORM PARA CAMBIAR EL PASSWORD
-            // NEW_PASSWORD, URL_TOKEN, CODE_VERIFICACION
-
-            console.log("RENOVE-PASSWORD  -->>  PRIMERO HEMOS DE COMPROBAR EL 2FA")
-        }
-        
 
     }
 
@@ -245,11 +228,10 @@ async function renovePassword(req, res){
     // actualizamos en USER
     const data_update_user = {
         task: "UPDATE_PASSWORD",
-        user: user,
         new_value: req.body.password,
         await: true
     }
-    const result_user = await userHandler.updateUser(data_update_user)
+    const result_user = await userHandler.updateUser(data_update_user, user)
    
     if(result_user.status != 'ok'){
         console.log('Error Actualizando UserDB')

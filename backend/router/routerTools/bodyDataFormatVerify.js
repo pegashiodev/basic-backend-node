@@ -1,7 +1,9 @@
 
 
 /*
-        VErifica los campos recibidos en una peticion post
+        VERIFICA LA VALIDEZ DE LOS DATOS QUE LLEGAN EN LA PETICION POST
+
+        ESTA SIN TERMINAR. PARA PRUEBAS ESTAMOS DEVOLVIENDO QUE TODO ESTA "OK"
 
 */
 
@@ -59,35 +61,37 @@ export default  (data)=>{
     return result;
 }
 
-    const isValidName = (name)=>{
 
-        /**
-         * Al menos 3 caractereds
-         * NO NUMEROS
-         * NO SIMBOLOS
-         * SOLO LETRAS
-         * 
-         */
-        return true
-    }
 
-    const isValidEmail = (email)=>{
-        // typeof email === 'string'
-        // lenght
-        // type of chars
-        // valid Char
-        // valid format ( @, ., ext, ....)
-        return true;
-    }
+const isValidName = (name)=>{
 
-    const isValidPassword = (password)=>{
-        /**
-         * al menos 6 caracteres
-         * 
-         */
-        return true;
-    }
+    /**
+     * Al menos 3 caractereds
+     * NO NUMEROS
+     * NO SIMBOLOS
+     * SOLO LETRAS
+     * 
+     */
+    return true
+}
 
-    const isEmailReserved = (email)=>{
-        return false;
-    }
+const isValidEmail = (email)=>{
+    // typeof email === 'string'
+    // lenght
+    // type of chars
+    // valid Char
+    // valid format ( @, ., ext, ....)
+    return true;
+}
+
+const isValidPassword = (password)=>{
+    /**
+     * al menos 6 caracteres
+     * 
+     */
+    return true;
+}
+
+const isEmailReserved = (email)=>{
+    return false;
+}

@@ -3,18 +3,7 @@
 
 
 /**
- * 
- *  data: {
- *      task, email, name, lastName, from, url_token, await
- * }, 
- * from = 'LOGIN, SIGNIN, HACKED, 
- * 
- *      - DESDE AQUI SE GENERAN LOS CODIGOS DE VALIDACION Y DE VERIFICACION
- *      enviamos un email al user
- *      y almacenamos el codigo en 
- *          - usersByEmail
- *          - user (catch y DB)
- *          - session del usuario (catch y DB)
+ * ENVIAMOS UN EMAIL AL USUARIO USANDO LOS SERVICIOS DE AWS
  * 
  * 
  */
@@ -35,6 +24,11 @@ const sesClient = new SESClient({
 }});
 
 
+/**
+ * @param {object} data -> Con los dartos para el email (from, task, endpoint, url_token, ...)
+ * @param {object} user -> DAtos del usuario
+ * 
+ */
 
 export default async (data, user)=>{        // {task, name, email, lastName, url_tokren, await}
 
@@ -45,24 +39,26 @@ export default async (data, user)=>{        // {task, name, email, lastName, url
     if(data.task === "SEND_VALIDATION_TOKEN"){
         // ENVIAMOS UN EMAIL A data.email con el token para terminar el signup
         
+
+        if(!user.email || !user.name){
+            return {ststus: "error", mesage: "Datos incompletos: name or validation_token.token"}
+        }
+
         const validation_token = generateValidationToken(user);
         // token: validation_token.token,
         // token_expireTime: validation_token.expireTime,
+        // ESTOS DATOS NO PUEDEN SER NULL, SINO HABRA ERROR EN EL ENVIO DEL EMAIL 
+        
 
         const data_email = {
             sender: systemConfig.EMAIL_NOT_REPLY_SENDER,
             subject: "CONSULTA LEGAL: CODIGO DE ACCESO",
-            emails: [data.email],
-            name: data.name,
+            emails: [user.email],
+            name: user.name,
             body_type: "html",
-            
         }
 
-        // ESTOS DATOS NO PUEDEN SER NULL, SINO HABRA ERROR EN EL ENVIO DEL EMAIL 
-        if(!data.email || !data.name){
-            return {ststus: "error", mesage: "Datos incompletos: name or validation_token.token"}
-        }
-
+        /** DISTINTOS CUERPOS DE LOS EMAILS QUE SE ENVIAN  */
         if(data.from === "SIGNUP"){
 
             data_email.body_data = 
@@ -78,7 +74,7 @@ export default async (data, user)=>{        // {task, name, email, lastName, url
         }else if(data.from === "LOGIN"){
 
             data_email.body_data = 
-            `<p>Hola ${data.name}:</p>
+            `<p>Hola ${user.name}:</p>
             <p style="margin-bottom: 20px;">Te damos la bienvenida a Consulta Legal.<br> A continuacion te facilitamos el código de verificación para Iniciar Sesión</p>
             <div style="width: 320px;height: auto; border: 1px solid plum;border-radius: 12px;margin: 0 auto;text-align: center;background-color:aliceblue;">
                 <h2 style="text-align: center;">ConsultaLegal</h2>
@@ -103,11 +99,13 @@ export default async (data, user)=>{        // {task, name, email, lastName, url
             data.emails = systemConfig.EMAILS_TO_SEND_ACCESS_CODES
         }
 
-        const params = setEmailParams(data_email)
-        const result = await sendEmail(params)
-        return result;
+        if(!data_email.body_data){
+            return {status: "error"}
+        }
 
-        // return {status: 'ok', message: "Email con validation Token Enviado"}   
+        const params = setEmailParams(data_email)
+        const result = await send(params)
+        return result;
 
     }else if(data.task === "SEND_ID_EMAIL_VERIFICATION"){
         
@@ -124,43 +122,6 @@ export default async (data, user)=>{        // {task, name, email, lastName, url
         id_verify_email = '12345';           
         id_verify_expireTime = Date.now() + systemConfig.TOKENS_AGE.EMAIL_VERIFICATION_AGE;
         return {status: 'ok', message: '', id_verify_email: id_verify_email, id_verify_expireTime: id_verify_expireTime}   
-
-
-    }else if(data.task === 'SEND_USER_HACKED_ALERT'){
-        const data_gen_endpoint = {
-            email: user.email,
-            name: user.name,
-            lastName: user.lastName,
-            from: "HACKED",
-            await: true
-        }
-        const gen_url_token = await generateVerificationEndpoint(data_gen_endpoint);
-        
-        const data_email = {
-            sender: systemConfig.EMAIL_NOT_REPLY_SENDER,
-            subject: "CONSULTA LEGAL: CAMBIO DE CONTRASEÑA",
-            emails: [user.email],
-            name: user.name,
-            body_type: "html",
-            body_data: `<p>Hola ${user.name}:</p>
-            <p style="margin-bottom: 20px;">HEMOS DETECTADO UN TRAFICO INCORRECTO DESDE TU CUENTA. TE ENVIAMOS UN LINK PARA EL CAMBIO DE LA CONTRASEÑA. ANTES DEBERAS BORRAR LAS COOKIES DE TU NAVEGADOR PARA LIMPIAR LAS SESSIONES ANTERIORES. LO PUEDES HACE BORRANDO EL HISTORIAL.</p>
-            <div style="width: 320px;height: auto; border: 1px solid plum;border-radius: 12px;margin: 0 auto;text-align: center;background-color:aliceblue;">
-                <h3>ConsultaLegal</h3>
-                <h2 style="text-align: center;"><a href ="${gen_url_token.endpoint}">Cambiar Contraseña</a></h2>
-            </div>
-           <p style="text-align: center;">SI NO HAS SIDO TU NO HAGAS USO DE ESTE ENLACE</p>`
-
-        }
-        const params = setEmailParams(data_email)
-        
-        if(data.await){
-            const result = await sendEmail(params)
-            return result;
-        }else{
-            sendEmail(params)
-            return;
-        }
-     
 
     }else if(data.task === 'SEND_ID_EMAIL_VERIFICATION_AGAIN'){
         
@@ -180,13 +141,10 @@ export default async (data, user)=>{        // {task, name, email, lastName, url
     }else if(data.task === "SEND_FORGOT_PASSWORD_EMAIL"){
 
         const data_gen_endpoint = {
-            email: user.email,
-            name: user.name,
-            lastName: user.lastName,
             from: "FORGOT_PASSWORD",
             await: true
         }
-        const gen_url_token = await generateVerificationEndpoint(data_gen_endpoint);
+        const gen_url_token = await generateVerificationEndpoint(data_gen_endpoint, user);
 
         const data_email = {
             sender: systemConfig.EMAIL_NOT_REPLY_SENDER,
@@ -206,13 +164,8 @@ export default async (data, user)=>{        // {task, name, email, lastName, url
       
         const params = setEmailParams(data_email)
         
-        if(data.await){
-            const result = await sendEmail(params)
-            return result;
-        }else{
-            sendEmail(params)
-            return;
-        }
+        const result = await send(params)
+        return result;
         
     
     // enviamos email de confirmacion de cambio de password
@@ -228,15 +181,14 @@ export default async (data, user)=>{        // {task, name, email, lastName, url
             body_data: `<p>Hola ${user.name}:</p><p style="margin-bottom: 20px;">Le confirmamos que hemos actualizado su clave de acceso</p>`
 
         }
-        const params = setEmailParams(data_email)
-        
+        const params = setEmailParams(data_email)        
         if(data.await){
-            const result = await sendEmail(params)
+            const result = await send(params)
 
             return {status: "ok", message: "Email enviado"}
         }else{
-            sendEmail(params)
-            return;
+            send(params)
+            return {status: "ok"}
         }
     }
 
@@ -281,7 +233,7 @@ const setEmailParams = (data)=>{
     
 }
 
-const sendEmail = async (params)=>{
+const send = async (params)=>{
 
     // const params = {
     //     Source: "pegashio70@gmail.com",
@@ -307,7 +259,6 @@ const sendEmail = async (params)=>{
 
     // console.log(params)
     try{
-        // const result = await ses.sendEmail(params).promise();
         const result = await sesClient.send(params);
         console.log("Email Sent")
         result.status = "ok"

@@ -1,4 +1,24 @@
 
+/***
+ * 
+ *  ANTES DE LANZAR EL SERVIDOR HTTP, AQUI SE CACHEAN DATOS DE LAS DIFERENTES BASES DE DATOS 
+ *  EN MEMORIA
+ * 
+ *  - LOS NOMBRE DE LAS BASES DE DATOS A CACHEAR ESTAN EN "systemConfig.js"
+ * 
+ *  - lAS SESIONES QUE AUN NO HAN EXPIRADO
+ *  - LOS USUARIOS DE LA PLATAFORMA POR EMAIL
+ *  - LOS PRODUCTOS QUE ESTAN A LA VENTA 
+ *  - LAS PROMOCIONES QUE ESTAN VIGENTES
+ * 
+ * 
+ *  PARA UN SAAS CON UNOS POCOS MILES DE USUARIOS NO ES UNA CARGA IMPORTANTE EN RAM,
+ *  PERO PODEMOS REVISARLO
+ * 
+ *   
+ */
+
+
 import systemConfig from "../../globalData/systemConfig.js"
 import usersByEmail from "../../globalData/usersByEmail.js"
 import sessionsCached from "../../globalData/sessionsCached.js"
