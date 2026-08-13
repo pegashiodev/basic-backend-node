@@ -2,6 +2,9 @@
 /**
  * 
  *  DESDE AQUI SE REALIZA EL CAMBIO DE PASSWORD SOLICITADO POR EL USUARIO
+ * 
+ *  -llega desde un  endpoint que le hemos enviado a su email con un token para acceder a sus datos
+ * 
  */
 
 
@@ -30,24 +33,86 @@ export default async function(req, res){
 
     console.log(" ** RENOVE-PASSWORD-HANDLER")
     
-    // LLEGA AQUI DESDE EL LINK QUE LE HEMOS ENVIADO POR CORREO
+    // POR AQUI LLEGA DESDE EL LINK QUE LE HEMOS ENVIADO POR CORREO
     if(req.method === 'GET'){
-        req.url_token = req.urlData.searchParams?.tk
+
         // COMPROBAMOS LOS DATOS DE LA URL: 
+        req.url_token = req.urlData.searchParams?.tk
         if(!req.url_token){
             console.log("NO HAY URL TOKEN EN EL LINK RECIBIDO de RENOVE_PASSWORD !!!")
             res.code = 500
             res.headers = {}
             return sendStaticFile(req, res)
         }
-        
-        const validToken = await isValidToken(req.url_token, "GET", req, res)
+        // COMPROBAMOS EL TOKEN 
+        const validToken = await isValidToken(req.url_token, "GET")
         console.log({validToken})
 
-        if(!validToken){
+        if(validToken.status === "INVALID"){
             // El res.end() ya se ha ejecutado en la funcion
+            console.log("TOKEN INVALIDO!!!")
+            
+            if(req.method === "GET"){
+                res.code = 500
+                res.headers = {}
+                sendStaticFile(req, res)
+            
+            }else{
+                const response_data = {
+                    status: 'error',
+                    message: 'NO HAY URL_TOKEN RECIBIDO EN EL LINK EN LA DB',
+                    code: 500
+                }
+                res.writeHead(200, { 'Content-Type': 'application/json'});
+                res.end(JSON.stringify(response_data))
+    
+            }
             return;
-       
+
+        }else if(validToken.status === "USED"){
+                console.log("EL TOKEN YA HA SIDO USADO ->> EN ESTE CASO ENVIAMOS AL LOGIN")
+            if(method === "GET"){
+                res.code = 302
+                res.headers = {
+                    location: systemConfig.PAGES.ACCESS_PLATFORM
+                }
+                sendStaticFile(req, res)
+            
+            }else{
+                const response_data = {
+                    status: 'error',
+                    message: 'TOKEN YA USADO -> SOLICITE OTRO',
+                    code: 302,
+                    location: systemConfig.PAGES.ACCESS_PLATFORM
+                }
+                res.writeHead(200, { 'Content-Type': 'application/json'});
+                res.end(JSON.stringify(response_data))
+            }
+            return;
+
+
+        }else if(validToken.status === "EXPIRED"){
+            // eL LINK ESTA CADUCADO -->
+            console.log("EL TOKEN ESTA CADUCADO Y NO USADO --> ENVIAMOS AL LOGIN DE NUEVO PARA QUE PIDA OTRO LINK" )
+            
+            if(method === "GET"){
+                res.code = 302
+                res.headers = {
+                    location: systemConfig.PAGES.RENOVE_PASSWORD_EXPIRES
+                }
+                sendStaticFile(req, res)
+            }else{
+                const response_data = {
+                    status: 'error',
+                    message: 'TOKEN CADUCADO -> SOLICITE OTRO',
+                    code: 302,
+                    location: systemConfig.PAGES.RENOVE_PASSWORD_EXPIRES
+                }
+                res.writeHead(200, { 'Content-Type': 'application/json'});
+                res.end(JSON.stringify(response_data))
+            }
+            return;
+
         }else{
             // Enviamos la pagina solicitada
             res.code = 200;
@@ -56,115 +121,91 @@ export default async function(req, res){
             return sendStaticFile(req, res)
         }
 
-    // POR AQUI ENTRA EL ENVIO DEL FORMULARIO CON EL NUEVA PASSWORD
+    // POR AQUI ENTRA EL ENVIO DEL FORMULARIO CON LA NUEVA PASSWORD
+    // desde el endpoint renove-password.html
     }else if(req.method === 'POST'){
 
-        req.url_token = req.body.tk;
-        return renovePassword(req, res)
-
+        // EN EL BODY LLEGA EL TOKEN  Y LA NUEVA PASSWORD
+       
+        renovePassword(req, res)
     }
-
 }
 
-async function isValidToken(url_token, method, req, res) {
+
+// VALIDADMOS EL TOKEN RECIBIDO
+async function isValidToken(url_token, method) {
 
     // SI NO HAY TOKEN, NO ES VALIDO
-    if(!url_token){
-        return false;
-    }
-    console.log(url_token)
-    console.log(verificationEndpoints)
-    let result_findOne = verificationEndpoints[url_token];
-    console.log({result_findOne})
-
-    if(!result_findOne){
-        // Lo buscamos en la DB
-        console.log("LO BUSCAMOS EN DB !!!!!")
-        const params = {
-            dbName: systemConfig.DBS.VERIFICATION_ENDPOINTS + `_${new Date().getFullYear()}`, 
-            collection: "emails",
-            await: true
-        }
-        const query = {_id: url_token}
-        result_findOne = await dbCrudHandler.findOne(query, params)
-    }
-    console.log({result_findOne})
-
-    if(!result_findOne){
-        console.log("NO HAY URL_TOKEN RECIBIDO EN EL LINK EN LA DB !!!")
-        if(method === "GET"){
-            res.code = 500
-            res.headers = {}
-            sendStaticFile(req, res)
-        }else{
-            const response_data = {
-                status: 'error',
-                message: 'NO HAY URL_TOKEN RECIBIDO EN EL LINK EN LA DB',
-                code: 500
-            }
-            res.writeHead(200, { 'Content-Type': 'application/json'});
-            res.end(JSON.stringify(response_data))
-
-        }
-        return false;
-    }
-    // console.log(result_findOne)
-
-    // EL TOKEN YA FUE USADO
-    if(result_findOne && result_findOne.used){
-        console.log("EL TOKEN YA HA SIDO USADO ->> EN ESTE CASO ENVIAMOS AL LOGIN")
-        if(method === "GET"){
-            res.code = 302
-            res.headers = {
-                location: systemConfig.PAGES.ACCESS_PLATFORM
-            }
-            sendStaticFile(req, res)
-        
-        }else{
-            const response_data = {
-                status: 'error',
-                message: 'TOKEN YA USADO -> SOLICITE OTRO',
-                code: 302,
-                location: systemConfig.PAGES.ACCESS_PLATFORM
-            }
-            res.writeHead(200, { 'Content-Type': 'application/json'});
-            res.end(JSON.stringify(response_data))
-        }
-        return false
     
-    // NO HA SIDO USADO PERO HA CADUCADO
-    }else if(result_findOne && !result_findOne.used && result_findOne.expireTime < Date.now()){
-        // eL LINK ESTA CADUCADO -->
-        console.log("EL TOKEN ESTA CADUCADO Y NO USADO --> ENVIAMOS AL LOGIN DE NUEVO PARA QUE PIDA OTRO LINK" )
-        
-        if(method === "GET"){
-            res.code = 302
-            res.headers = {
-                location: systemConfig.PAGES.RENOVE_PASSWORD_EXPIRES
-            }
-            sendStaticFile(req, res)
-        }else{
-            const response_data = {
-                status: 'error',
-                message: 'TOKEN CADUCADO -> SOLICITE OTRO',
-                code: 302,
-                location: systemConfig.PAGES.RENOVE_PASSWORD_EXPIRES
-            }
-            res.writeHead(200, { 'Content-Type': 'application/json'});
-            res.end(JSON.stringify(response_data))
-        }
-        
-        return false;
-    }
+    console.log(url_token)
 
-   
-    // ACTUALIZAMOS CON TODOS LOS DATOS DEL TOKEN
-    req.url_token = result_findOne;
-    // Retornamos Token Valido
-    return true;
+    if(method === "GET"){
+
+    
+        // BUSCAMOS EL TOKEN
+        let result_findToken = verificationEndpoints[url_token];
+        console.log({result_findToken})
+    
+    
+        // NO LO BUSCAMOS EN DB, PORQUE SOLO SE CACHEAN
+        // if(!result_findToken){
+        //     // Lo buscamos en la DB
+        //     console.log("LO BUSCAMOS EN DB !!!!!")
+        //     const params = {
+        //         dbName: systemConfig.DBS.VERIFICATION_ENDPOINTS + `_${new Date().getFullYear()}`, 
+        //         collection: "emails",
+        //         await: true
+        //     }
+        //     const query = {_id: url_token}
+        //     result_findToken = await dbCrudHandler.findOne(query, params)
+        // }
+        // console.log({result_findToken})
+    
+        if(!result_findToken){
+            
+            return {status: "INVALID"};
+        }
+        // console.log(result_findOne)
+    
+        // EL TOKEN YA FUE USADO
+        if(result_findToken && result_findToken.used){
+            
+            return {status: "USED"}
+        
+        // NO HA SIDO USADO PERO HA CADUCADO
+        }else if(result_findToken && !result_findToken.used && result_findToken.expireTime < Date.now()){
+            
+            return {status: "EXPIRED"}
+        }
+           
+        return {status: "ok"}
+    
+    }else if(method === "POST"){
+
+        let result_findToken = verificationEndpoints[url_token];
+        
+        if(!result_findToken){
+            
+            return {status: "INVALID"};
+    
+        // EL TOKEN YA FUE USADO
+        }else if(result_findToken && result_findToken.used){
+            
+            return {status: "USED"}
+        
+        // NO HA SIDO USADO PERO HA CADUCADO
+        }else if(result_findToken && !result_findToken.used && result_findToken.expireTime < Date.now()){
+            
+            return {status: "EXPIRED"}
+        }else{
+            return {status: "ok", email: verificationEndpoints[url_token].email }
+        }
+
+    }
     
 }
 
+// RENOVAMOS CON EL PASSWORD RECIBIDO
 async function renovePassword(req, res){
     
     const from = "RENOVE_PASSWORD"
@@ -179,21 +220,21 @@ async function renovePassword(req, res){
     }
 
     // const {email, tokenId} = JSON.parse(decodeToken(req.body.tk))
-    const validToken = await isValidToken(req.url_token, "POST", req, res);
+    const validToken = await isValidToken(req.body.tk, "POST");
 
-    if(!validToken){
-        // El res.end() ya se ha realizado en la funcion
-        return;
-    }
-
-    if(!req.url_token.email || !req.url_token.url_token){
-        console.log('Datos incompletos en el url_token-- > Falta url_token o email')
+    if(validToken.status !== "ok"){
+        const response_data = {
+            status: 'error',
+            message: 'TOKEN INVALIDO, CADUCADO O YA USADO',
+            code: 400
+        }
         res.writeHead(200, { 'Content-Type': 'application/json'});
-        res.end(JSON.stringify({message: 'url_token Incorrecto', code:460}))
+        res.end(JSON.stringify(response_data))
         return;
     }
-    
-    let user = usersByEmail[req.url_token.email];
+
+    // obtenemos el email del usuario para acceder a sus datos
+    let user = usersByEmail[validToken.email]
 
     if(!user){
         console.log('No hay User con ese email')
@@ -245,6 +286,7 @@ async function renovePassword(req, res){
         return;
     }
 
+    // ENVIAMOS EMAIL CONFIRMANDO EL CAMBIO DE PASSWORD
     const data_send_email = {
         task: "SEND_PASSWORD_UPDATE_SUCCESS",
         from: "RENOVE_PASSWORD",
@@ -253,9 +295,10 @@ async function renovePassword(req, res){
     sendEmail(data_send_email, user)
 
     console.log('PASSWORD ACTUALIZADO')
-    // MARCAMOS COMO USADO
-    verificationEndpoints[req.url_token.url_token].used = true;
+    // MARCAMOS EL TOKEN COMO USADO
+    verificationEndpoints[req.body.tk].used = true;
 
+    // RE-ENVIAMOS A "ACCESO-PLATAFORMA" PARA QUE SE LOGUEE CON EL NUEVO PASSWORD
     const response_data = {
         status: 'ok',
         message: 'PASSWORD ACTUALIZADO CON EXITO',

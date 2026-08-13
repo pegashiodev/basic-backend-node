@@ -81,6 +81,8 @@ export default async function(data, user){
 
         }
         // HAY QUE ALMACENARLOS EN UNA LISTA PARA COMPROBAR SU ESTADO Y CADUCIDAD
+        // SOLO SON VALIDOS DURANTE UNOS POCOS MINUTOS. 
+        // POR ESO NO LOS ALMACENAMOS EN DB
         verificationEndpoints[verify_endpoint_data.url_token] = verify_endpoint_data;
         return verify_endpoint_data;
         

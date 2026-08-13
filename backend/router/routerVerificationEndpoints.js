@@ -15,7 +15,6 @@
 
 
 
-import emailVerificationHandler from "./routerHandlers/emailVerificationHandler.js";
 import renovePasswordHandler from "./routerHandlers/renovePasswordHandler.js"
 import sendStaticFile from "../server/serverHandlers/sendStaticFile.js";
 import recoveryAccountHandler from "./routerHandlers/recoveryAccountHandler.js";

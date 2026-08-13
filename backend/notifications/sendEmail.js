@@ -138,12 +138,14 @@ export default async (data, user)=>{        // {task, name, email, lastName, url
         return;
 
 
+    // ENVIAMOS UN EMAIL PARA RENOVAR EL PASSWORD
     }else if(data.task === "SEND_FORGOT_PASSWORD_EMAIL"){
 
         const data_gen_endpoint = {
             from: "FORGOT_PASSWORD",
             await: true
         }
+        // GENERAMOS EL ENDPOINT PARA RENOVAR EL PASSWORD
         const gen_url_token = await generateVerificationEndpoint(data_gen_endpoint, user);
 
         const data_email = {

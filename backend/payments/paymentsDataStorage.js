@@ -12,7 +12,7 @@ import systemConfig from "../globalData/systemConfig.js";
 // LAS BASES DE DATOS DE ESTA CONTABILIDAD TIENEN EN SU NOMBRE EL AÑO EN CURSO
 // LA COLECCION DE ESA BASE DE DATOS TIENE EN SU NOMBRE EL MES EN CURSO
 
-const months = ['ene', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dec' ]
+const months = ['ene', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec' ]
 const [week_day, month, day, year, time] = new Date().toString().split(' ')
 
 // EJ: [ 'Sun', 'Jun','29', '2025','20:09:25', 'GMT+0200','(hora',    'de','verano',   'de','Europa',   'central)'  ]
@@ -33,7 +33,7 @@ export const insertOne = async (data)=>{
     // console.log(data)
     const params = {
         dbName: systemConfig.DBS.PAYMENTS + year,
-        collection: months[month],
+        collection: month.toLowerCase(),
         await: true
     }
 
@@ -64,13 +64,15 @@ export const insertOne = async (data)=>{
 
 export const updateOne = async (data)=>{
     console.log("Payment-> updateOne")
+    let filter = null;
 
     if(data.task === "UPDATE_STATUS_PAYMENT"){
-        if(data.paymentMethod === "STRIPE-CARD"){
-            const filter = {"_id._id": data.stripeId}
 
-        }else if(paymentMethod === "STRIPE-BIZUM"){
-            const filter = {"_id._id": data.bizumId}
+        if(data.paymentMethod === "STRIPE-CARD"){
+            filter = {"_id._id": data.stripeId}
+
+        }else if(data.paymentMethod === "STRIPE-BIZUM"){
+            filter = {"_id._id": data.bizumId}
 
         }
         const data_db = {$set: data.new_value}
@@ -92,7 +94,7 @@ export const updateOne = async (data)=>{
 
     }else if(data.task === "UPDATE_STATUS_PAYMENT_AND_RETURN_DOCUMENT"){
         
-        const filter = {"_id._id": data.stripeId}
+        filter = {"_id._id": data.stripeId}
         const data_db = {$set: data.new_value}
        
         const params = {

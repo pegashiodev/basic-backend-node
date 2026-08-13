@@ -7,7 +7,7 @@
 
 
 import {randomUUID} from 'crypto'
-import { hashToken } from './tools/tokenGenerator.js';
+import { hashToken } from './tokenGenerator.js';
 import systemConfig from '../globalData/systemConfig.js';
 
 /**

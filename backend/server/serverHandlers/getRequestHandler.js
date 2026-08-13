@@ -13,7 +13,6 @@ import routerRestrictedEndpoints from '../../router/routerRestrictedEndpoints.js
 import routerDinamicEndpoints from '../../router/routerDinamicEndpoints.js';
 import subdomainGetRequestHandler from "./subdomainGetRequestHandler.js"
 import mastersEndpoints from '../../globalData/mastersEndpoints.js';
-import routerGetMasterEndpoints from '../../router/routerGetMasterEndpoints.js';
 import routerPayEndpoints from "../../router/routerPayEndpoints.js"
 process.loadEnvFile();
 

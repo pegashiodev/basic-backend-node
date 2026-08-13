@@ -1,9 +1,11 @@
 
 /**
- *  OBTIENE NUESTRA COOKIE DE  ENVIADA POR EL NAVEGADOR
+ *      OBTIENE NUESTRA COOKIE DE  ENVIADA POR EL NAVEGADOR
+ *      - se añade al objeto Request: req.our_cookie
+ *      - si la cookie es correcta se añade al objeto Request el objeto user: req.user
  * 
  *      - SI FALTA ALGUNOS DE LOS VALORES, MANDA ENVIAR AL LOGIN
- *      PARA SETEAR NUEVA COOKIE
+ *      
  * 
  * 
  */
@@ -12,6 +14,7 @@
 import cookieParser from "./cookieParser.js";
 import systemConfig from "../globalData/systemConfig.js";
 import { decodeToken } from "./tokenGenerator.js";
+import usersByEmail from "../globalData/usersByEmail.js";
 
 /**
  * 
@@ -119,14 +122,14 @@ export default (req)=>{
 
     let atk_decoded = JSON.parse(decodeToken(req.cookie_parsed.atk))
     let rtk_decoded = JSON.parse(decodeToken(req.cookie_parsed.rtk))
-    req.our_cookie = {atk_decoded, rtk_decoded, deviceId}
+    let our_cookie = {atk_decoded, rtk_decoded, deviceId}
 
     // COMPROBAMOS EL RESTO DE COOKIES PARA ACCESOS ESPECIALES
     let stk_decoded;
     if(req.cookie_parsed.stk){
         stk_decoded = JSON.parse(decodeToken(req.cookie_parsed.stk))
         if(stk_decoded){
-            req.our_cookie.stk_decoded = stk_decoded
+            our_cookie[stk_decoded] = stk_decoded
         }
     }
 
@@ -141,11 +144,16 @@ export default (req)=>{
     }
     req.body.deviceId = deviceId;
 
+    // todos los datos de la cookie son correctos.
     if(atk_decoded && rtk_decoded && req.body.deviceId){
 
         req.has_our_cookie = true;
+        req.our_cookie = our_cookie;
         req.accessData = req.cookie_parsed.atk;
         req.refreshData = req.cookie_parsed.rtk
+
+        // AÑADIMOS EL USUARIO QUE EXTRAEMOS DE LOS DATOS DE LA COOKIE
+        req.user = usersByEmail[req.our_cookie.atk_decoded.email]
 
     // SI FALTAN LOS 3 PUEDE SER POR BORRADO DE HISTORIAL
     }else if(!atk_decoded && !rtk_decoded && !req.body.deviceId){
@@ -243,8 +251,7 @@ export default (req)=>{
             return result;
         }
     }
-    console.log("OUR_COOKIE ------------------ !!")
-    console.log({atk_decoded}, {rtk_decoded}, {deviceId})
+    console.log(`OUR COOKIE: ${req.our_cookie}`)
 
     result.status = 'ok'
     return result;

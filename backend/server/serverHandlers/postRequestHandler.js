@@ -156,8 +156,7 @@ export default  async (req, res)=>{
         }
 
     }
-
-    
+   
     // PERMITIMOS EL PASO DIRECTO  A ESOS ENDPOINTS QUE NO REQUIEREN COOKIE
     if(req.urlData.endpoint && systemConfig.VALID_POST_ENDPOINTS_WITHOUT_COOKIE.includes(req.urlData.endpoint)){
         // AÑADIMOS DATOS AL BODY
@@ -166,6 +165,7 @@ export default  async (req, res)=>{
         req.body.ip = req.urlData.ip;
         return routerPostRequest(req, res)
     }
+
 
     // PERMITIMOS EL PASO DIRECTO  A ESOS ENDPOINTS QUE NO REQUIEREN SESSION
     if(req.urlData.endpoint && systemConfig.VALID_POST_ENDPOINTS_WITHOUT_SESSION.includes(req.urlData.endpoint)){
@@ -210,10 +210,10 @@ export default  async (req, res)=>{
             }
         }
     }
-    let session = sessionsCached[req.body.email]
+
 
     // PERMITIMOS SEGUIR SI HAY NUESTRA COOKIE Y HAY SESION
-    if(req.has_our_cookie && session){
+    if(req.has_our_cookie){
 
         // AÑADIMOS DATOS AL BODY
         req.body.language = req.urlData.language;

@@ -5,6 +5,8 @@
  * 
  *      EL USER HA CLICADO EN QUE "FORGOT PASSWORD"
  * 
+ *          - nos envia un {body} con el email
+ * 
  *      LE ENVIAMOS UN EMAIL CON UNA URL + URL_TOKEN 
  *      PARA CAMBIAR EL PASSWORD
  * 
@@ -51,7 +53,7 @@ export default async function(req, res){
     
     req.user = usersByEmail[req.body.email]
 
-    // ENVIAR EMAIL --> 
+    // ENVIAMOS EMAIL PARA HACER EL CAMBIO DE PASSWORD 
     let data_email = {
         // ... data_gen_endpoint, 
         task: "SEND_FORGOT_PASSWORD_EMAIL",

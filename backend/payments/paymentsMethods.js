@@ -90,7 +90,7 @@ async function stripePaymentCard(cart){
                     product_data: {
                         name: products[i].title,
                     },
-                    unit_amount: products[i].unit_cost,
+                    unit_amount: products[i].unit_amount,
                 },
                 quantity: products[i].quantity
             }   

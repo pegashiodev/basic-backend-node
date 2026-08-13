@@ -28,7 +28,6 @@ import validationTokens from "../../globalData/validationTokens.js"
 import getOurCookie from "../../tools/getOurCookie.js"
 
 
-
 /**
  * 
  * @param {object} Objeto Request de NodeJS
@@ -43,7 +42,8 @@ export default async function(req, res){
     const ERROR_LOGS = "ERROR"
 
     log(FROM_LOGS, "** LOGIN !!", INFO_LOGS)
-    //console.log(req.body)
+
+console.log(req.body)
     //console.log(usersByEmail)
     // Validamos los formatos de los datos recibidos
     let result_body_format = bodyDataFormatVerify(req.body)
@@ -98,8 +98,7 @@ export default async function(req, res){
     // COMPROBAMOS SI ESTAMOS EN EL PASO EN EL QUE EL CLIENTE SOLICITA ENVIAR EL CODIGO PARA HACER EL LOGIN
     }else if(req.body["fa2"] === 'SEND'){
         // COMPROBAMOS SI ESTA HABILITADO EL "DOBLE FACTOR AUTENTICACION" EN EL LOGIN
-        if(systemConfig.HAS_FA2_LOGIN || user["fa2"].endpoints.includes(req.urlData.endpoint)){
-            let user = usersByEmail[req.body.email]
+        if(systemConfig.HAS_FA2_LOGIN || req.user["fa2"].endpoints.includes(req.urlData.endpoint)){
             
             log(FROM_LOGS, "2fa -> SEND CODE  --->> VALIDAMOS DATOS", INFO_LOGS)
             
@@ -114,9 +113,7 @@ export default async function(req, res){
     // ESTAMOS EN EL PASO EN EL QUE EL CLIENTE NOS ENVIA EL CODIGO QUE LE HEMOS ENVIADO PARA HACER AL LOGIN
     }else if(req.body["fa2"] === 'RECIBED'){
 
-        let user = usersByEmail[req.body.email]
-
-        if(systemConfig.HAS_FA2 &&  user["fa2"].endpoints.includes(req.urlData.endpoint)){
+        if(systemConfig.HAS_FA2 &&  req.user["fa2"].endpoints.includes(req.urlData.endpoint)){
             
             log(FROM_LOGS, "2fa -> RECIBED  --->> VALIDAMOS DATOS", INFO_LOGS)
 
@@ -138,7 +135,6 @@ export default async function(req, res){
             }
     
             console.log({token_meta})
-            console.log(req.body)
             
             if(req.body.token !== token_meta.token){
                 // token invalido o Caducado
@@ -177,7 +173,7 @@ export default async function(req, res){
     
 }
 
-
+// VERIFICAMOS EL "STATUS" DEL USUARIO
 function verifyUser(req){
 
     const FROM_LOGS = "loginHandler.js -> isValidUser()"

@@ -17,9 +17,9 @@ export default  {
     
     BASE_URL_PROD: "",
     BASE_URL_DEV: "/home/carlos/dev/basic-project/backend/",
-    BASE_URL_USER_FILES_FOLDER_DEV: "/home/carlos/dev/basic-project/user-files/",
+    BASE_URL_USER_FILES_FOLDER_DEV: "/home/carlos/dev/basic-project-old/user-files/",
     BASE_URL_USER_FILES_FOLDER_PROD: "",
-    BASE_URL_FRONTEND_FILES_DEV: "/home/carlos/dev/basic-project/frontend/",
+    BASE_URL_FRONTEND_FILES_DEV: "/home/carlos/dev/basic-project-old/frontend/",
     BASE_URL_FRONTEND_FILES_PROD: "",
 
     /** EMAILS USADOS PARA LOS ENVIOS DE LOS EMAILS A LOS CLIENTES */
@@ -159,7 +159,7 @@ export default  {
     */ 
 
     //ENDPOINTS A LOS QUE SE PUEDE ACCEDER MEDIANTE METODO POST SIN COOKIE 
-    VALID_POST_ENDPOINTS_WITHOUT_COOKIE: ["signup", "signup.html", "login", "login.html", "get-main-menu", "get-main-menu.html"],
+    VALID_POST_ENDPOINTS_WITHOUT_COOKIE: ["signup-email", "signup-email.html", "login-email", "login-email.html", "get-main-menu", "get-main-menu.html", "forgot-password", "forgot-password.html", "renove-password", "renove-password.html"],
     // ENDPOINTS A LOS QUE SE PUEDE ACCEDER MEDIANTE METODO POST SIN SESION
     VALID_POST_ENDPOINTS_WITHOUT_SESSION: ["get-main-menu", "get-html-items"],
     // ENDPOINTS PARA CAMBIAR EL PASSWORD O RECUPERAR CUENTA
@@ -221,17 +221,17 @@ export default  {
     */
     DBS: {
         WEB_SITE: "web_site",                               // Contiene datos, endpoint, categorias, tags, ...
-        AUTOMATES: 'automates',                             //
         BLACKLIST: "blacklist",                             // Collection = "ips"
         BILLS: "bills_",                                    // + año. Collection = mes
         ORDERS: "orders_",                                  // + año. Collection = mes
-        PAYMENTS: "payments_" ,                             // año. Colecction = mes
+        PAYMENTS: "payments_" ,                             // + año. Colecction = mes
+        MICROPAYMENTS: "micro_payments_",                   // + año. Coleccion = mes
         PENDING_TASKS: 'pending_tasks_',                    // + año
         PRODUCTS: "products",                               //             
-        SESSIONS: 'sessions_',                              //  + AÑO EN EL QUE SE CREA LA SESSION ACTUAL -> COLLECTION = MES ... IDEM
+        SESSIONS: 'sessions_',                              // + AÑO EN EL QUE SE CREA LA SESSION ACTUAL -> COLLECTION = MES ... IDEM
         SITE_STATS: "site_stats_",                          // + año. Collection = mes
-        USERS_ACTIVITY: 'users_activity_',                  // x YEAR -> coll = name user
-        USERS_CONTA: 'users_accounting_',                        // +YEAR -> coll = MONTH
+        USERS_ACTIVITY: 'users_activity_',                  // x año -> coll = name user
+        USERS_CONTA: 'users_accounting_',                   // + año -> coll = MONTH
         USERS_DATA: 'users_data_',                          // + AÑO ALTA DEL USUARIIO -> COLLECTION = MES DE ALTA DEL USUARIO
 
     },
@@ -270,12 +270,12 @@ export default  {
     /**  
     *   CARPTETA BASE  DESDE LA QUE HAY QUE CACHEAR LOS ARCHIVOS ESTATICOS
     */
-    BASE_URL_CATCH_FILES_DEV: "/home/carlos/dev/basic-project/frontend/",
+    BASE_URL_CATCH_FILES_DEV: "/home/carlos/dev/basic-project-old/frontend/",
     BASE_URL_CATCH_FILES_PROD: "",
     /** 
     *   CARPETAS DONDE ESTAN LOS ARCHIVOS ESTATICOS DEL SITIO
     */
-    CATCH_FILES_FOLDERS: ["/statics", "/images", "/media"],
+    CATCH_FILES_FOLDERS: ["statics/", "images/", "media/"],
     /**  
     * CARPETAS DONDE ESTAN LOS ARCHIVOS HTML DEL SITIO
     */

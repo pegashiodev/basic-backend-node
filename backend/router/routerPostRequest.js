@@ -15,7 +15,7 @@ import renovePasswordHandler from "./routerHandlers/renovePasswordHandler.js";
 import systemConfig from "../globalData/systemConfig.js";
 import checkOutHandler from "./routerHandlers/checkOutHandler.js";
 import forgotPasswordHandler from "./routerHandlers/forgotPasswordHandler.js";
-import expiredEndpointHandler from "./routerHandlers/expiredEndpointHandler.js";
+// import expiredEndpointHandler from "./routerHandlers/expiredEndpointHandler.js";
 import remoteControlAccessHandler from "../restrictedEndpoints/remoteControlAccessHandler.js";
 import remoteControlPanelHandler from "../restrictedEndpoints/remoteControlPanelHandler.js";
 import uploadFilesHandler from "./routerHandlers/uploadFilesHandler.js";
@@ -39,16 +39,16 @@ export default function (req, res){
     // NO ACCESS IF SYSTEM HAS NO USERS
     const postHandlers = {
 
-        "signupEmail":          {handler: signUpEmailHandler, access: systemConfig.HAS_USERS}, 
-        "signupEmail.html":     {handler: signUpEmailHandler, access: systemConfig.HAS_USERS},
-        "loginEmail":           {handler: logInEmailHandler, access: systemConfig.HAS_USERS},
-        "loginEmail.html":      {handler: logInEmailHandler, access: systemConfig.HAS_USERS},
+        "signup-email":          {handler: signUpEmailHandler, access: systemConfig.HAS_USERS}, 
+        "signup-email.html":     {handler: signUpEmailHandler, access: systemConfig.HAS_USERS},
+        "login-email":           {handler: logInEmailHandler, access: systemConfig.HAS_USERS},
+        "login-email.html":      {handler: logInEmailHandler, access: systemConfig.HAS_USERS},
         "logout":               {handler: logOutHandler, access: systemConfig.HAS_USERS},
         "logout.html":          {handler: logOutHandler, access: systemConfig.HAS_USERS},
         "forgot-password":      {handler: forgotPasswordHandler, access: systemConfig.HAS_USERS},
         "forgot-password.html": {handler: forgotPasswordHandler, access: systemConfig.HAS_USERS},
-        "expired-endpoint":     {handler: expiredEndpointHandler, access: systemConfig.HAS_USERS},
-        "expired-endpoint.html":{handler: expiredEndpointHandler, access: systemConfig.HAS_USERS},
+        //"expired-endpoint":     {handler: expiredEndpointHandler, access: systemConfig.HAS_USERS},
+        //"expired-endpoint.html":{handler: expiredEndpointHandler, access: systemConfig.HAS_USERS},
 
         "upload-files.html":    {handler: uploadFilesHandler, access: systemConfig.HAS_USERS},
         "upload-files":         {handler: uploadFilesHandler, access: systemConfig.HAS_USERS},

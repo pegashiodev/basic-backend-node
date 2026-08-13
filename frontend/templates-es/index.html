@@ -34,7 +34,7 @@
 
     <H1>acceso-plataforma.html --- > ESPAÑOL</H1>
 
-    <dic class="wrap">
+    <div class="wrap">
         <div class="form signup_form">
             <div class="top_data">
                 <p><input class="username" type="text" placeholder="username"></p>
@@ -75,7 +75,7 @@
         <div class="form logout_form">
             <button id="btn_logout">LOGOUT</button>
         </div>
-    </dic>
+    </div>
     
 
     <script>
@@ -129,14 +129,14 @@
 
                 data_signup.previous_endpoint = location.search.split("?from=")[1].replace("@@&", "?");
             }
-
-            const result = await fetchRequest("http://localhost:3000/signupEmail.html", data_signup)
+            const url_signup = "http://localhost:3000/signup-email"
+           
+            const result = await fetchRequest(url_signup, data_signup)
 
             console.log(result)
            
             if(!result){
                 alert("ERROR EN EL SIGNUP")
-
             }else if(result.status !== "ok"){
                 // Erroes con el formato de los Campos
                 // o disponibilidad de Nombres
@@ -163,7 +163,7 @@
                     // Leemos el valor del promo_code, si lo hay
                     data_signup.promo_code = ""
                     data_signup.token = document.querySelector(".signup_form .fa2 #signup_validation_token").value;
-                    const result2 = await fetchRequest(`http://localhost:3000/signupEmail.html`, data_signup)
+                    const result2 = await fetchRequest(url_signup, data_signup)
                     console.log(result2)
 
                     /***
@@ -226,12 +226,12 @@
 
             ev.preventDefault();
 
-            const result = await fetchRequest("http://localhost:3000/loginEmail.html", data_login)
+            const result = await fetchRequest("http://localhost:3000/login-email.html", data_login)
 
             console.log(result)
 
             if(!result){
-                alert("ERROR EN EL SIGNUP")
+                alert("ERROR EN EL LOGIN !! ")
 
             }else if(result.fa2_required){
                  // mOSTRAMOS EL RESTO DEL FORM
@@ -250,7 +250,7 @@
                     data_login.fa2 = "RECIBED"
                     // data_login.token = "ABCDE"
                     data_login.token = document.querySelector(".login_form .fa2 #login_validation_token").value;
-                    const result2 = await fetchRequest("http://localhost:3000/loginEmail.html", data_login)
+                    const result2 = await fetchRequest("http://localhost:3000/login-email.html", data_login)
                     console.log(result2)
 
                     if(!result2){
@@ -262,7 +262,6 @@
                         console.log(result2.code)
                         alert(result2.message)
                     }
-
                 });
 
             }else{
@@ -281,17 +280,8 @@
                     }else{
                         alert("Mantenimientto -> Prueba pasado unos minutos")
                     }
-                                        
                 }
-
-
             }
-
-
-
-            
-            
-            
         })
 
         btn_forgot_password.addEventListener('click', (ev)=>{
@@ -331,7 +321,6 @@
                 // Redirigir a HOME
 
             })
-            
             
         })
         
@@ -433,7 +422,6 @@
         }
 
     </script>
-    
     
 </body>
 </html>

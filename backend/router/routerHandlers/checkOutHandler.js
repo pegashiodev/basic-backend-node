@@ -15,6 +15,7 @@ import paymentsMethods from "../../payments/paymentsMethods.js";
 import errorsCodes from "../../tools/errorsCodes.js"
 import siteStats from "../routerTools/siteStats.js";
 import verifyCart from "../../orders/verifyCart.js";
+import usersByEmail from "../../globalData/usersByEmail.js";
 
 
 
@@ -31,8 +32,6 @@ export default async (req, res)=>{
 // ¡¡¡¡¡ IMPORTANTE
 // LA COOKIE Y SESSION YA SE HAN VERIFICADO EN postRequestHandler
 // HA DE LLEGAR CON searchParams.from que he es la url del carrito, por si no hay session para poder reenviarlo despues de loguearse.
-
-
 
     
     // console.log(req.body.order)
@@ -115,12 +114,12 @@ export default async (req, res)=>{
         return;
 
     }
-
+    let data_payment = null;
 
 // ALMACENAMOS EL PAGO COMO "PENDING"
     if(paymentMethod === "STRIPE-CARD"){
 
-        const data_payment = {
+        data_payment = {
             stripeId: payment_result.id,
             status: "PENDING",
             userId: req.user.userId,
@@ -135,7 +134,7 @@ export default async (req, res)=>{
     }else if(paymentMethod === "STRIPE-BIZUM"){
         console.log("PAGO POR BIZUM");
 
-        const data_payment = {
+        data_payment = {
             bizumId: payment_result.id,
             status: "PENDING",
             userId: req.user.userId,
@@ -177,7 +176,7 @@ export default async (req, res)=>{
     // si se cancela paso el status = "CANCEL"
     const response_data = {
         status: 'ok',
-        location: stripe_result.url,
+        location: payment_result.url,
         code: 200
     }
     res.writeHead(200, { 'Content-Type': 'application/json' });

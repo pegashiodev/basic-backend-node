@@ -89,12 +89,12 @@
 
                 if(result.status === 'ok'){
                     console.log('CAMBIO DE PASSWORD REALIZADO ')
-                    alert("Enviamos a BOTS.hmlt")
+                    alert("Enviamos a su pagina despues del signup");
                     document.location.href =  result.location
                 }else{
                     console.log('ERROR en la respuesta del CaMBIO ')
                     console.log(result.code)
-                    alert("ERROR ->> Enviamos a algun lado")
+                    alert("ERROR ->> Enviamos a algun otro sitio")
                     if(result.location){
 
                         document.location.href =  result.location
@@ -105,8 +105,6 @@
                 // Redirigir a HOME
 
             })
-
-
 
         })
 
