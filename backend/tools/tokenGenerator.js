@@ -1,76 +1,80 @@
 
-/**
- *  CREA LOS TOKENS DE LAS COOKIES
- * 
- */
-
-
-import crypto  from 'node:crypto'
-process.loadEnvFile();
-const secret_key = process.env.SESION_TOKEN_SECRET_KEY;
-
-/**
- * 
- * @param {String} plainText -> TExto con el objeto que tiene los datos del token: email, expireTime, ... 
- * @returns 
- */
-export const hashToken = (plainText) => {
-
-  if(!plainText || typeof(plainText)!=='string'|| plainText === undefined){
-    console.log('ERROr en sessionTokenGenerator -> Formato de entrada INCORRECTO')
-    return null
-  }
-  try {
-    // Dejamos que iv sea random para que no los genere iguales con la misma entrada de datos
-    //const iv = Buffer.from("8f33f368445eeaaab9c12359f64e886e", 'hex')
-    const iv = crypto.randomBytes(16);
-    const key = crypto.createHash('sha256').update(secret_key).digest('base64').substring(0, 32);
-    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
-    let encrypted = cipher.update(plainText);
-    encrypted = Buffer.concat([encrypted, cipher.final()])
-    
-    //return iv.toString('hex') + ':' + encrypted.toString('hex');
-    let result = iv.toString('hex') + ':' + encrypted.toString('hex');
-    
-    // MODIFICAMOS EL RESULTADO -> GiRAMOS EL RESULTADO
-    let arr = result.split('')
-    arr[32] = arr[23]
-    return arr.reverse().join('')
-    
-  } catch (error) {
-    console.log('ERROr en sessionTokenGenerator -> EN EL TRY-CATCH')
-    console.log(error);
-    return null;
-  }
-}
 
 
 /**
- * 
- * @param {String} encryptedText -> recibimos el token encriptado de la cookie para obtener la cadena de texto con los datos 
- * @returns 
+ * GENERADOR Y VERIFICADOR DE TOKENS NATIVOS (HMAC-SHA256)
  */
-export const decodeToken = (encryptedText) => {
+
+import { createHmac, timingSafeEqual } from 'node:crypto';
+
+// Clave secreta desde variables de entorno
+const SECRET_KEY = process.env.SESION_TOKEN_SECRET_KEY || 'default_super_secret_key_change_me';
+
+// Utilidades para Base64URL seguro
+const toBase64Url = (str) => Buffer.from(str).toString('base64url');
+const fromBase64Url = (str) => Buffer.from(str, 'base64url').toString('utf8');
+
+/**
+ * Crea un token firmado: "base64url(payload).firmaHex"
+ * @param {Object|string} data 
+ * @returns {string|null}
+ */
+export const hashToken = (data) => {
+    if (!data) return null;
     try {
-        // Desacemos lo que hicimos despues de que se encriptase
-        let arr = encryptedText.split('').reverse();
-        arr[32] = ':'
-        encryptedText = arr.join('')
+        const payloadStr = typeof data === 'string' ? data : JSON.stringify(data);
+        const payloadEncoded = toBase64Url(payloadStr);
 
-        const textParts = encryptedText.split(':');
-        const iv = Buffer.from(textParts.shift(), 'hex');
-        const encryptedData = Buffer.from(textParts.join(':'), 'hex');
-        const key = crypto.createHash('sha256').update(secret_key).digest('base64').substring(0, 32);
-        const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
-        
-        const decrypted = decipher.update(encryptedData);
-        const decryptedText = Buffer.concat([decrypted, decipher.final()]);
-        return decryptedText.toString();
+        const signature = createHmac('sha256', SECRET_KEY)
+            .update(payloadEncoded)
+            .digest('hex');
+
+        return `${payloadEncoded}.${signature}`;
     } catch (error) {
-        console.log(error)
-        return null
+        console.error('Error al generar token:', error.message);
+        return null;
     }
-}
+};
 
+/**
+ * Verifica la firma y decodifica el token. Devuelve el objeto o null si fue alterado o es inválido.
+ * @param {string} token 
+ * @returns {Object|null}
+ */
+export const decodeToken = (token) => {
+    if (!token || typeof token !== 'string') return null;
 
+    try {
+        const parts = token.split('.');
+        if (parts.length !== 2) return null;
 
+        const [payloadEncoded, signature] = parts;
+
+        // 1. Recalcular la firma esperada
+        const expectedSignature = createHmac('sha256', SECRET_KEY)
+            .update(payloadEncoded)
+            .digest('hex');
+
+        // 2. Comparación en tiempo constante para evitar Timing Attacks
+        const sigBuffer = Buffer.from(signature, 'hex');
+        const expectedSigBuffer = Buffer.from(expectedSignature, 'hex');
+
+        if (sigBuffer.length !== expectedSigBuffer.length || !timingSafeEqual(sigBuffer, expectedSigBuffer)) {
+            console.warn('⚠️ Firma de token inválida o manipulada.');
+            return null;
+        }
+
+        // 3. Decodificar payload JSON
+        const payloadJson = fromBase64Url(payloadEncoded);
+        return JSON.parse(payloadJson);
+
+    } catch (error) {
+        console.error('Error al decodificar token:', error.message);
+        return null;
+    }
+};
+
+export default {
+    hashToken,
+    decodeToken
+};
