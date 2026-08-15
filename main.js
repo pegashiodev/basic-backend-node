@@ -16,8 +16,16 @@ const HOST = process.env.MODE === "DEV" ?   process.env.HOST_DEV : process.env.H
 
 // ABRIR DBS
 
-initControler.openDbs(systemConfig.DBS_TO_OPEN)
-console.log(Object.keys(dbsOpened))
+// 1. ABRIR DBS
+const dbsResult = await initControler.openDbs(systemConfig.DBS_TO_OPEN);
+
+if (dbsResult.status !== 'ok') {
+    console.error(`Fallo crítico al iniciar bases de datos: ${dbsResult.message}`);
+    process.exit(1); // Detiene el proceso si no hay base de datos
+}
+
+console.log('Bases de datos abiertas:', Object.keys(dbsOpened));
+
 
 // CACHEO STATICOS
 if(systemConfig.CATCH_STATIC_FILES){
