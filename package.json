@@ -15,6 +15,7 @@
     "@aws-sdk/client-pinpoint-sms-voice-v2": "^3.859.0",
     "@aws-sdk/client-ses": "^3.859.0",
     "mongodb": "6.10",
+    "redis": "^6.2.1",
     "stripe": "^18.3.0"
   }
 }
