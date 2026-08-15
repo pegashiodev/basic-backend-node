@@ -36,6 +36,7 @@ export default async (data, user)=>{        // {task, name, email, lastName, url
     // console.log(data)
     // console.log({usersByEmail})
 
+    // token que se envia al correo del usuario para que lo ingrese en una formulario de acceso o para verificar algun paso
     if(data.task === "SEND_VALIDATION_TOKEN"){
         // ENVIAMOS UN EMAIL A data.email con el token para terminar el signup
         
@@ -45,7 +46,6 @@ export default async (data, user)=>{        // {task, name, email, lastName, url
         }
 
         const validation_token = await generateValidationToken(user.email);
-console.log({validation_token})
         // token: validation_token.token,
         // token_expireTime: validation_token.expireTime,
         // ESTOS DATOS NO PUEDEN SER NULL, SINO HABRA ERROR EN EL ENVIO DEL EMAIL 
@@ -108,38 +108,8 @@ console.log({validation_token})
         const result = await send(params)
         return result;
 
-    }else if(data.task === "SEND_ID_EMAIL_VERIFICATION"){
-        
-        let id_verify_email, id_verify_expireTime;
-        const endpoint = data.endpoint + `?tk=${data.url_token}`
-        console.log(`ENDPOINT ENVIADO POR EMAIL:  https://midominio.com${endpoint}`)
-        // IMPORTANTE
-        // En data.url_token esta la url que hay que hay que colocar en la url del email
-        // midominio.com/email-verification?tk=url_token
-        // body: "Haz clic en este enlace para confirmar tu email -> https://midominio.com/email-verification/?tk=data.url_token"
-
-        // id_verify_email = randomUUID();           
-
-        id_verify_email = '12345';           
-        id_verify_expireTime = Date.now() + systemConfig.TOKENS_AGE.EMAIL_VERIFICATION_AGE;
-        return {status: 'ok', message: '', id_verify_email: id_verify_email, id_verify_expireTime: id_verify_expireTime}   
-
-    }else if(data.task === 'SEND_ID_EMAIL_VERIFICATION_AGAIN'){
-        
-        const endpoint = data.endpoint + `?tk=${data.url_token}`
-        console.log(`ENDPOINT ENVIADO POR EMAIL:  https://midominio.com${endpoint}`)
-        
-        let id_verify_email, id_verify_expireTime;
-        id_verify_email = '67890';           
-        id_verify_expireTime = Date.now() + systemConfig.TOKENS_AGE.EMAIL_VERIFICATION_AGE;
-       
-        if(data.await){
-            return {status: 'ok', message: '', id_verify_email: id_verify_email, id_verify_expireTime: id_verify_expireTime}   
-        }
-        return;
-
-
-    // ENVIAMOS UN EMAIL PARA RENOVAR EL PASSWORD
+    
+    // ENVIAMOS UN EMAIL con un endpoint personalizado PARA RENOVAR EL PASSWORD
     }else if(data.task === "SEND_FORGOT_PASSWORD_EMAIL"){
 
         const data_gen_endpoint = {
@@ -147,8 +117,8 @@ console.log({validation_token})
             await: true
         }
         // GENERAMOS EL ENDPOINT PARA RENOVAR EL PASSWORD
-        const gen_url_token = await generateVerificationEndpoint(data_gen_endpoint, user);
-
+        const renove_password_endpoint = await generateVerificationEndpoint(data_gen_endpoint, user);
+console.log({renove_password_endpoint})
         const data_email = {
             sender: systemConfig.EMAIL_NOT_REPLY_SENDER,
             subject: "CONSULTA LEGAL: CAMBIO DE CONTRASEÑA",
@@ -159,7 +129,7 @@ console.log({validation_token})
             <p style="margin-bottom: 20px;">Haz CLICK en el siguiente enlace para hacer el cambio de contraseña.</p>
             <div style="width: 320px;height: auto; border: 1px solid plum;border-radius: 12px;margin: 0 auto;text-align: center;background-color:aliceblue;">
                 <h3 style="text-align: center;">ConsultaLegal</h3>
-                <h2 style="text-align: center;"><a style="text-decoration: underline;" href ="${gen_url_token.endpoint}">CAMBIAR CONTRASEÑA</a></h2>
+                <h2 style="text-align: center;"><a style="text-decoration: underline;" href ="${renove_password_endpoint}">CAMBIAR CONTRASEÑA</a></h2>
             </div>
             <p style="text-align: center;">SI NO HAS SIDO TU QUIEN HA REQUERIDO ESTA ACCIÓN NO HAGAS USO DE ESTE ENLACE</p>`
 

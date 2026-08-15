@@ -19,6 +19,8 @@ import sendEmail from "../../notifications/sendEmail.js"
 import verificationEndpoints from "../../globalData/verificationEndpoints.js"
 import dbCrudHandler from "../../db/dbCrudHandler.js"
 
+import { checkValidationEndpoint } from "../../notifications/notificationsTools/generateVerificationEndpoint.js"
+
 
 /**
  * 
@@ -37,14 +39,39 @@ export default async function(req, res){
     if(req.method === 'GET'){
 
         // COMPROBAMOS LOS DATOS DE LA URL: 
-        req.url_token = req.urlData.searchParams?.tk
-        if(!req.url_token){
+        const url_token = req.urlData.searchParams?.tk
+        const email = req.urlData.searchParams?.email
+        if(!url_token || email){
             console.log("NO HAY URL TOKEN EN EL LINK RECIBIDO de RENOVE_PASSWORD !!!")
             res.code = 500
             res.headers = {}
             return sendStaticFile(req, res)
         }
-        // COMPROBAMOS EL TOKEN 
+        // COMPROBAMOS EL token del endpoint enviado 
+
+
+        const normalizedEmail = email.toLowerCase().trim();
+        
+        // 2. Verificar el código de validación almacenado en Redis
+        const isValidEndpoint = await checkValidationEndpoint(normalizedEmail, url_token);
+        console.log({isValidEndpoint})
+        console.log(req.body)
+        if (!isValidEndpoint) {
+            res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+            return res.end(JSON.stringify({
+                status: 'error',
+                code: 401,
+                message: 'El código de verificación es incorrecto o ha expirado.'
+            }));
+        }
+
+        // Enviamos la pagina solicitada
+        res.code = 200;
+        req.urlData.filename = systemConfig.PAGES.RENOVE_PASSWORD
+        req.urlData.ext = systemConfig.EXTENSION_STATIC_VIEWS
+        return sendStaticFile(req, res)
+
+        /*
         const validToken = await isValidToken(req.url_token, "GET")
         console.log({validToken})
 
@@ -114,12 +141,10 @@ export default async function(req, res){
             return;
 
         }else{
-            // Enviamos la pagina solicitada
-            res.code = 200;
-            req.urlData.filename = systemConfig.PAGES.RENOVE_PASSWORD
-            req.urlData.ext = systemConfig.EXTENSION_STATIC_VIEWS
-            return sendStaticFile(req, res)
-        }
+
+        */
+            
+        
 
     // POR AQUI ENTRA EL ENVIO DEL FORMULARIO CON LA NUEVA PASSWORD
     // desde el endpoint renove-password.html
@@ -132,79 +157,6 @@ export default async function(req, res){
 }
 
 
-// VALIDADMOS EL TOKEN RECIBIDO
-async function isValidToken(url_token, method) {
-
-    // SI NO HAY TOKEN, NO ES VALIDO
-    
-    console.log(url_token)
-
-    if(method === "GET"){
-
-    
-        // BUSCAMOS EL TOKEN
-        let result_findToken = verificationEndpoints[url_token];
-        console.log({result_findToken})
-    
-    
-        // NO LO BUSCAMOS EN DB, PORQUE SOLO SE CACHEAN
-        // if(!result_findToken){
-        //     // Lo buscamos en la DB
-        //     console.log("LO BUSCAMOS EN DB !!!!!")
-        //     const params = {
-        //         dbName: systemConfig.DBS.VERIFICATION_ENDPOINTS + `_${new Date().getFullYear()}`, 
-        //         collection: "emails",
-        //         await: true
-        //     }
-        //     const query = {_id: url_token}
-        //     result_findToken = await dbCrudHandler.findOne(query, params)
-        // }
-        // console.log({result_findToken})
-    
-        if(!result_findToken){
-            
-            return {status: "INVALID"};
-        }
-        // console.log(result_findOne)
-    
-        // EL TOKEN YA FUE USADO
-        if(result_findToken && result_findToken.used){
-            
-            return {status: "USED"}
-        
-        // NO HA SIDO USADO PERO HA CADUCADO
-        }else if(result_findToken && !result_findToken.used && result_findToken.expireTime < Date.now()){
-            
-            return {status: "EXPIRED"}
-        }
-           
-        return {status: "ok"}
-    
-    }else if(method === "POST"){
-
-        let result_findToken = verificationEndpoints[url_token];
-        
-        if(!result_findToken){
-            
-            return {status: "INVALID"};
-    
-        // EL TOKEN YA FUE USADO
-        }else if(result_findToken && result_findToken.used){
-            
-            return {status: "USED"}
-        
-        // NO HA SIDO USADO PERO HA CADUCADO
-        }else if(result_findToken && !result_findToken.used && result_findToken.expireTime < Date.now()){
-            
-            return {status: "EXPIRED"}
-        }else{
-            return {status: "ok", email: verificationEndpoints[url_token].email }
-        }
-
-    }
-    
-}
-
 // RENOVAMOS CON EL PASSWORD RECIBIDO
 async function renovePassword(req, res){
     
@@ -213,12 +165,31 @@ async function renovePassword(req, res){
     let result = bodyDataFormatVerify(req.body)
             
     // COMPROBAMOS LOS DATOS DEL BODY [ EMAIL, NAME, NUEVO-PASSWORD]
-    if(!req.body.tk || !req.body.password){
+    if(!req.body.tk || !req.body.password || req.body.email){
         res.writeHead(200, { 'Content-Type': 'application/json'});
         res.end(JSON.stringify({message: 'faltan datos en la request'}))
         return;
     }
 
+    // COMPROBAMOS EL token del endpoint enviado 
+
+
+    const normalizedEmail = req.body.email.toLowerCase().trim();
+        
+    // 2. Verificar el código de validación almacenado en Redis
+    const isValidEndpoint = await checkValidationEndpoint(normalizedEmail, req.body.tk);
+    console.log({isValidEndpoint})
+    if (!isValidEndpoint) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({
+            status: 'error',
+            code: 401,
+            message: 'El código de verificación es incorrecto o ha expirado.'
+        }));
+    }
+
+
+    /*
     // const {email, tokenId} = JSON.parse(decodeToken(req.body.tk))
     const validToken = await isValidToken(req.body.tk, "POST");
 
@@ -232,9 +203,11 @@ async function renovePassword(req, res){
         res.end(JSON.stringify(response_data))
         return;
     }
+    */
+
 
     // obtenemos el email del usuario para acceder a sus datos
-    let user = usersByEmail[validToken.email]
+    let user = usersByEmail[req.body.email]
 
     if(!user){
         console.log('No hay User con ese email')

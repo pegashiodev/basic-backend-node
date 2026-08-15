@@ -147,6 +147,7 @@ export default  {
         CATCH_STATICS_FILES_TIME: 1000*60*60*6,     // 6 HORAS
         VERIFICATION_ENDPOINTS_AGE: 1000*60*1,      // 10 MINUTOS
         VALIDATION_TOKENS: 1000*60*1,               // 10 MINUTOS
+        VALIDATION_TOKENS_AGE: 90000,
         SMS_TOKEN: 1000*60*7,                       // 7 MINUTOS
     },
 
