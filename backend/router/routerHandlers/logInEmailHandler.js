@@ -10,7 +10,8 @@
 
 
 
-import { passwordEncript } from "../routerTools/passwordEncript.js"
+//import { passwordEncript } from "../routerTools/passwordEncript.js"
+import { comparePassword } from './routerTools/passwordEncript.js';
 import sessionsCached from "../../globalData/sessionsCached.js"
 
 import bodyDataFormatVerify from "../routerTools/bodyDataFormatVerify.js"
@@ -69,16 +70,23 @@ console.log(req.body)
     }
     
     // VERIFICAMOS SI PASSWORD CORRECTO
-    if(!isValidPassword(req, res)){
+
+    const isMatch = await comparePassword(req.body.password, req.user.password);
+
+    if (!isMatch) {
+        // Contraseña incorrecta
         const response_data = {
-            status: "error",
-            code: 400,
-            message: "NO ES UN PASSWORD VALIDO",         
+                status: "error",
+                code: 400,
+                message: "NO ES UN PASSWORD VALIDO",         
+            }
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(response_data))
+            return;
         }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(response_data))
-        return;
-    }
+
+    // Contraseña correcta -> procedemos a generar tokens
+
 
     // COMPROBAMOS SU ES UN LOGIN SIN "DOBLE verificacion"
     if(!req.body["fa2"]){
@@ -181,6 +189,8 @@ function verifyUser(req){
     const ERROR_LOGS = "ERROR"
     let result = {}
     
+
+// OJO -> ESTE USUARIO HAY QUE OBTENERLO DE LA DB
     req.user = usersByEmail[req.body.email];
 
     if(!req.user){
@@ -223,31 +233,23 @@ function verifyUser(req){
     return result
 }
 
-function isValidPassword(req, res){
-    const FROM_LOGS = "loginHandler.js -> isValidPassword()"
-    const INFO_LOGS = "INFO";
-    const SAVE_LOGS = "SAVE";
-    const ERROR_LOGS = "ERROR"
+// function async isValidPassword(req, res){
+        
+//     // ENCRIPTAMOS PASSWORD RECIBIDO PARA COMPARAR
 
-    let result = {}
+//     // userFromDb es el documento obtenido de MongoDB
+//     const isMatch = await comparePassword(req.body.password, req.user.password);
 
-    // ENCRIPTAMOS PASSWORD RECIBIDO PARA COMPARAR
-    const encriptedPassword = passwordEncript(req.body.password.toString())
-    
-    if(!encriptedPassword){
-       log(FROM_LOGS, "ERROR -> al encriptar el Password", ERROR_LOGS);
-        return false;
-       
-   }
+//     if (!isMatch) {
+//         // Contraseña incorrecta
+//         return false;
+//     }
 
-    if(req.user.password !== encriptedPassword){
-        log(FROM_LOGS, "ERROR -> Password Incorrecto", ERROR_LOGS)
-        // limpiamos el formulario del login
-        return false;
-    }
-    return true;
+//     // Contraseña correcta -> procedemos a generar tokens
 
-}
+//     return true;
+
+// }
 
 async function loginWhithFA2(req, res) {
     const FROM_LOGS = "signUpHandler.js -> signupWhith2FA";

@@ -9,7 +9,8 @@
 
 import bodyDataFormatVerify from "../routerTools/bodyDataFormatVerify.js";
 import sendEmail from "../../notifications/sendEmail.js";
-import { passwordEncript} from "../routerTools/passwordEncript.js";
+// import { passwordEncript} from "../routerTools/passwordEncript.js";
+import { hashPassword } from './routerTools/passwordEncript.js';
 import userHandler from "../../users/userHandler.js";
 import sessionHandler from "../../sessions/sessionHandler.js";
 import systemConfig from "../../globalData/systemConfig.js";
@@ -79,10 +80,14 @@ export default async function(req, res){
     // }
 
 
-    // ENCRIPTAR PASSWORD
-    const encriptedPassword = passwordEncript(req.body.password.toString())
     
-    if(!encriptedPassword){
+    
+    
+    // ENCRIPTAR PASSWORD
+    const passwordHash = await hashPassword(req.body.password);
+    // Guardas passwordHash en MongoDB en el campo user.password
+    
+    if(!passwordHash){
         log(FROM_LOGS, "Error hasheando pasword", ERROR_LOGS)
 
         const response_data = {
@@ -95,7 +100,7 @@ export default async function(req, res){
         return;
     }
     // Machacamos con el password encriptado
-    req.body.password = encriptedPassword;
+    req.body.password = passwordHash;
 
     // SI TENEMOS FA2 ACTIVADO Y ESTA EN EL SIGNUP 
     return signupWithFA2(req, res)
