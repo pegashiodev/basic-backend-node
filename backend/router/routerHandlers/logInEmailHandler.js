@@ -28,6 +28,16 @@ import sendEmail from "../../notifications/sendEmail.js"
 import validationTokens from "../../globalData/validationTokens.js"
 import getOurCookie from "../../tools/getOurCookie.js"
 
+// Función auxiliar para responder errores POST en JSON
+const sendError = (res, statusCode, message, customCode = null) => {
+    res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({
+        status: 'error',
+        code: customCode || statusCode,
+        message: message
+    }));
+};
+
 /**
  * 
  * @param {object} Objeto Request de NodeJS
@@ -608,16 +618,5 @@ async function loginUser(req, res){
 }
 
 
-function sendError(res, code, our_code, message){
-
-    const response_data = {
-        status: "error",
-        code: our_code,
-        message: message,         
-    }
-    res.writeHead(code, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(response_data))
-    return;
-}
 
 

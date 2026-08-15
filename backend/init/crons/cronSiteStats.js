@@ -1,108 +1,70 @@
 
-/****
- *      
- *      - Hace una instatanea de siteStatsCatched 
- *      - La almacena en DB
- *      - deja siteStatsCatched Limpia = {} 
- * 
- *      - EL OBJEC¡TIVO ES PODER LISTARLOS POR URL,  HORA, DIA, MES, ...
- *      - ¡¡ HAY QUE REVISAR ESTO: TAL VEZ SEA MEJOR DEJARLO PARA GOOGLE ANALITICS EN VEZ DE TENER LAS NUESTRAS PROPIAS !!
- * 
- *      - FORMATO: siteStatsCatched
- * 
- *          {
- *              hour_[hora-1]:{
- *                  endpoints{
- *                      "index": [ip1, ip2, ...],
- *                      "url-2": [ip1, ip2, ...],
- *                      ...
- *                  }
- *              },
- * 
- *              hour_[hora-2]: {
- *              
- *              },
- *              ....
- * 
- *          }
- * 
- *      - FORMATO EN LA DB
- * 
- *      - Colelction:  mes
- *      - doc: 
- *          HAY UN DOC POR CADA HORA DEL DIA Y POR CADA DIA
- *          {
- *              _id: [dia-en-numero] + "_" + hour_[hora-n],
- *              day: [dia],
- *              hour: hour_[hora-n],
- *              endpoints: {
- *                  "url-1": [ip1, ip2, ...],
- *                  "url-2": [ip1, ip2, ...] ,
- *                  ...
- *              }
- * 
- *          }
- * 
+
+/**
+ * CRON: Vuelca las estadísticas de tráfico acumuladas en memoria hacia MongoDB
  */
 
 import dbCrudHandler from "../../db/dbCrudHandler.js";
-import siteStatsCatched from "../../globalData/siteStatsCatched.js"
-import systemConfig from "../../globalData/systemConfig.js"
+import siteStatsCatched from "../../globalData/siteStatsCatched.js";
+import systemConfig from "../../globalData/systemConfig.js";
 
+export default async function cronSiteStats() {
+    const hours = Object.keys(siteStatsCatched);
+    if (hours.length === 0) return;
 
-export default ()=>{
+    console.log(`📊 [CRON SiteStats] Guardando estadísticas acumuladas (${hours.length} franjas horarias)...`);
 
-    console.log("CRON SiteStats")
-    // // Hacemos la tarea a una hora en concreto: DE MADRUGADA
-    // LA TAREA LA MARCAMOS EN EL SYSYTEMCONFIG CADA 60 MINUTOS
-    // HACEMOS DE 3-4 A.M.
-    // const hour = new Date().getHours()
-    // if(hour <3 || hour >4){
-    //     return;
-    // }
-
-    const [week_day, month, day, year, time] = new Date().toString().split(' ');
+    const [week_day, month, day, year] = new Date().toString().split(' ');
 
     const params = {
         dbName: systemConfig.DBS.SITE_STATS + year,
         collection: month.toLowerCase(),
         upsert: true,
-        await: false
-    }
+        await: true
+    };
 
-    const hours = Object.keys(siteStatsCatched)
-    let len_hours = hours.length;
-// console.log({hours})
+    for (const hourKey of hours) {
+        const hourData = siteStatsCatched[hourKey];
+        if (!hourData || !hourData.endpoints) {
+            delete siteStatsCatched[hourKey];
+            continue;
+        }
 
-    while(len_hours--){
-// console.log(hours[len_hours])
+        const urls = Object.keys(hourData.endpoints);
+        const parsedHour = parseInt(hourKey.split('_')[1] || '0', 10);
 
-        // Obtenemos el listados de endpoints visitados
-        const urls = Object.keys(siteStatsCatched[hours[len_hours]].endpoints)
-        let endpoints_len = urls.length
-
-        for(let i=0; i<endpoints_len; i++){
+        for (const url of urls) {
+            const arr_ips = hourData.endpoints[url] || [];
+            if (arr_ips.length === 0) continue;
 
             const filter = {
-            //    "_id": month.toLowerCase() + day + "_" + hours[len_hours]
-            //    "_id": month.toLowerCase() + "_" + day + "_" + hours[len_hours].split("_")[1]
-               "_id": {month:  month.toLowerCase(), day: parseInt(day), hour: parseInt(hours[len_hours].split("_")[1])}
-            }
-            let key = "endpoints." + urls[i]
-            //Obtenemos el array de ips que ha visitado ese endpoint
-            const arr_ips = siteStatsCatched[hours[len_hours]].endpoints[urls[i]]
-           
-            const update_data = {
-                $set:{year: year, month: month.toLowerCase(), day: parseInt(day), hour: parseInt(hours[len_hours].split("_")[1])},
-                $push:{["endpoints." + urls[i]]: {$each:arr_ips}}
-            }
-            
-            dbCrudHandler.updateOne(filter, update_data, params)
-        }
-        // limpiamos 
-        delete siteStatsCatched[hours[len_hours]]
+                _id: {
+                    month: month.toLowerCase(),
+                    day: parseInt(day, 10),
+                    hour: parsedHour
+                }
+            };
 
+            const update_data = {
+                $set: {
+                    year: year,
+                    month: month.toLowerCase(),
+                    day: parseInt(day, 10),
+                    hour: parsedHour
+                },
+                $push: {
+                    [`endpoints.${url}`]: { $each: arr_ips }
+                }
+            };
+
+            try {
+                await dbCrudHandler.updateOne(filter, update_data, params);
+            } catch (err) {
+                console.error(`Error guardando estadísticas de ${url}:`, err.message);
+            }
+        }
+
+        // Limpiar franja horaria una vez persistida
+        delete siteStatsCatched[hourKey];
     }
-    // console.log({siteStatsCatched})
-    // console.log(" CRON_SITE_STATS")
 }

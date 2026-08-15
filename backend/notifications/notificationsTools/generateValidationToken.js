@@ -1,44 +1,25 @@
+import { randomInt } from 'node:crypto';
+import { redisClient } from '../../db/openRedis.js';
+import systemConfig from '../../globalData/systemConfig.js';
 
-/**
- * 
- * 
- * GENERA UN TOKEN DE VALIDACION PARA ADMINIR ALGUNA OPERACION, 
- * COMO EL SIGNUP, ...
- * 
- *  REcibimos un OBJETO data con al menos:
- *      . - data.email,
- *        - data.name,
- * 
- * 
- * 
- */
+export default async function generateValidationToken(email) {
+    // Generar código numérico de 6 dígitos criptográficamente seguro
+    const code = randomInt(100000, 999999).toString();
+    const ttlSeconds = Math.ceil((systemConfig.TOKENS_AGE?.VALIDATION_TOKENS_AGE || 900000) / 1000);
 
-
-// Almacenamos el Cache y en DB ?? Solo son validos 5 minutos
-
-import systemConfig from "../../globalData/systemConfig.js"
-import validationTokens from "../../globalData/validationTokens.js"
-
-
-
-/**
- * 
- * @param {object} data -> datos para crear el token
- * @returns 
- */
-export default function(data){
-
-    const now = Date.now()
-
-    const token_data = {
-        
-        token: "ABCDE", // PARA LAS PRUEBAS ESTAMOS USANDO SIEMPRE EL MISMO
-        expireTime: now + systemConfig.TOKENS_AGE.VALIDATION_TOKENS,
-        // email: data.email,
-        // name: data.name,
+    if (redisClient && redisClient.isOpen) {
+        await redisClient.set(`verify:email:${email}`, code, { EX: ttlSeconds });
     }
 
-    validationTokens[data.email] = token_data;  // ALMACENAMOS POR el email del usuario para mas tarde localizarlo.
-    return token_data;
+    return code;
+}
 
+export async function checkValidationToken(email, code) {
+    if (!redisClient || !redisClient.isOpen) return false;
+    const storedCode = await redisClient.get(`verify:email:${email}`);
+    if (storedCode && storedCode === code.toString()) {
+        await redisClient.del(`verify:email:${email}`); // Consumir código (un solo uso)
+        return true;
+    }
+    return false;
 }

@@ -23,6 +23,16 @@ import log from "../../tools/log.js";
 import promotionsHandler from "../../promotions/promotionsHandler.js";
 
 
+// Función auxiliar para responder errores POST en JSON
+const sendError = (res, statusCode, message, customCode = null) => {
+    res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({
+        status: 'error',
+        code: customCode || statusCode,
+        message: message
+    }));
+};
+
 /**
  * 
  * @param {object} Objeto Request de NodeJS
@@ -358,4 +368,7 @@ async function signupWithFA2(req, res) {
     return;   
     
 }
+
+
+
 

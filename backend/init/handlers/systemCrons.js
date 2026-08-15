@@ -1,50 +1,26 @@
 
 
 /**
- * 
- *      INICIA LAS TAREAS QUE SE HARAN DE FORMA PERIODICA EN EL SiSTEMA
- * 
- *      1.- ALMACENAMIENTO PERIODICO DE SESSIONES DE LOS USUARIOS
- *     
- *      2.- ALMACENAR LOS LOGS DE ERRORES
- *      
- *      3.- REVISAR Y EJECUTAR LAS TAREAS PENDIENTES
- *      
- *      4.- BACK-UPS DE LAS BASES DE DATOS
- * 
- *      5.- REVISAR temporalEndpoints -> para eliminar caducados
- * 
- * 
- *      LOS PERIODOS DE ESTOS CRONS ESTAN DETALLADOS EN "systemConfig.js"
- * 
+ * REGISTRO DE TAREAS PROGRAMADAS DEL SISTEMA (CRONs)
+ * Se ejecutan únicamente en la instancia principal (o proceso maestro PM2)
  */
 
-import systemConfig from "../../globalData/systemConfig.js"
-import cronVerificationEndpoints from "../crons/cronVerificationEndpoints.js";
-import cronSessions from "../crons/cronSessions.js";
-import cronBlackList from "../crons/cronBlackList.js"
-import cronTemporalEndpoints from "../crons/cronTemporalEndpoints.js";
-import cronBackups from "../crons/cronBackups.js"
-import cronSiteStats from "../crons/cronSiteStats.js"
-import cronValidationTokensEmailAndSMS from "../crons/cronValidationTokensEmailAndSMS.js";
-import cronPromotionsCodes from "../crons/cronPromotionsCodes.js";
+import systemConfig from "../../globalData/systemConfig.js";
+import cronBackups from "../crons/cronBackups.js";
+import cronSiteStats from "../crons/cronSiteStats.js";
 
+export default function systemCrons() {
+    console.log("⏰ Iniciando tareas programadas del sistema...");
 
-export default function(){
+    // 1. Backups periódicos de bases de datos
+    if (systemConfig.CRONS_INTERVALS?.BACKUP_DBS) {
+        setInterval(cronBackups, systemConfig.CRONS_INTERVALS.BACKUP_DBS);
+        console.log(`  - Backup DBs programado cada ${systemConfig.CRONS_INTERVALS.BACKUP_DBS / 1000}s`);
+    }
 
-    console.log("** systemCrons")
-    systemConfig.CRONS.CRON_BACKUPS_DBS_CODE = setInterval(cronBackups, systemConfig.CRONS_INTERVALS.BACKUP_DBS)
-
-    // Eliminamos el cros ya que el update en db se hace cuando se usa la promo
-    // setInterval(cronVerificationEndpoints, systemConfig.CRONS_INTERVALS.VERIFICATION_ENDPOINTS)
-    setInterval(cronSiteStats, systemConfig.CRONS_INTERVALS.SITE_STATS_TO_DB)
-    setInterval(cronBlackList, systemConfig.CRONS_INTERVALS.BLACKLIST)
-    setInterval(cronValidationTokensEmailAndSMS, systemConfig.CRONS_INTERVALS.VALIDATION_TOKENS_MANAGE)
-    setInterval(cronSessions, systemConfig.CRONS_INTERVALS.SESSIONS)
-
-    // ESTE NO SE HACE ASI. -< SE ACTUALLIZA EN db CADA VEZ QUE SE USA CON CODIGO
-    // setInterval(cronPromotionsCodes, systemConfig.CRONS_INTERVALS.PROMOTIONS_CODES)
-    
-
-
+    // 2. Persistencia de analíticas/estadísticas de tráfico a MongoDB
+    if (systemConfig.CRONS_INTERVALS?.SITE_STATS_TO_DB) {
+        setInterval(cronSiteStats, systemConfig.CRONS_INTERVALS.SITE_STATS_TO_DB);
+        console.log(`  - Persistencia de estadísticas programada cada ${systemConfig.CRONS_INTERVALS.SITE_STATS_TO_DB / 1000}s`);
+    }
 }
