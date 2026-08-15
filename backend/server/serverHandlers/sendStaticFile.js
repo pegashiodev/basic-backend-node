@@ -1,209 +1,115 @@
 
+
+
 /**
- * 
- * ENVIA LOS ARCHIVOS ESTATICOS DEL SITIO: 
- * 
+ * ENVÍA LOS ARCHIVOS ESTÁTICOS DEL SITIO CON PROTECCIÓN ANTI-PATH-TRAVERSAL
  */
 
-
-import { createReadStream, access, constants  }  from  'node:fs'
+import { createReadStream, access, constants } from 'node:fs';
+import path from 'node:path';
 import systemConfig from "../../globalData/systemConfig.js";
-import staticsFilesCached from "../../globalData/staticsFilesCached.js"
+import staticsFilesCached from "../../globalData/staticsFilesCached.js";
 import siteStats from '../../router/routerTools/siteStats.js';
-import getStaticFolder from "../serverTools/getStaticFolder.js"
-import htmlFilesCatchedEN from '../../globalData/htmlFilesCatchedEN.js';
-import htmlFilesCatchedES from '../../globalData/htmlFilesCatchedES.js';
+import getStaticFolder from "../serverTools/getStaticFolder.js";
 import languages from '../../globalData/languages.js';
-process.loadEnvFile();
 
-
-/**
- * 
- * @param {object} Objeto Request de NodeJS 
- * @param {object} Objeto Response de NodeJS
- * @returns 
- */
-export default (req, res)=>{
-
-    console.log('sendStaticFile')
-    //console.log(res.headers)
-
-    // MANEJAMOS LOS DIFERENTES CODIGOS DE ERROR
-    if(!res.headers){
-        res.headers = {}
+export default function sendStaticFile(req, res) {
+    if (!res.headers) {
+        res.headers = {};
     }
-    // SI ES UNA REDIRECCION TERMINAMOS AQUI.
-    if(res.code === 302 || res.code === 301){
-        res.writeHead(res.code, res.headers)
+
+    // 1. SI ES UNA REDIRECCIÓN TERMINAMOS DIRECTAMENTE
+    if (res.code === 301 || res.code === 302) {
+        res.writeHead(res.code, res.headers);
         return res.end();
     }
 
-    if(res.code === 404){
-        
-        if(req.urlData.language){
+    // 2. GESTIÓN DE CÓDIGOS DE ERROR (404 / 500)
+    const currentLang = req.urlData?.language || systemConfig.MAIN_LANGUAGE;
 
-            req.urlData.fileName = systemConfig.PAGES.PAGE_NOT_FOUND + "-" + req.urlData.language;
-        }else{
-            req.urlData.fileName = systemConfig.PAGES.PAGE_NOT_FOUND + "-" + systemConfig.MAIN_LANGUAGE;
+    if (res.code === 404) {
+        req.urlData.fileName = `${systemConfig.PAGES.PAGE_NOT_FOUND}-${currentLang}`;
+        req.urlData.ext = systemConfig.EXTENSION_STATIC_VIEWS;
+    } else if (res.code === 500) {
+        req.urlData.fileName = `${systemConfig.PAGES.REQUEST_INVALID}-${currentLang}`;
+        req.urlData.ext = systemConfig.EXTENSION_STATIC_VIEWS;
+    }
 
+    // 3. DETERMINAR CARPETA DEL ESTÁTICO SI NO VIENE ASIGNADA
+    if (!req.static_folder) {
+        getStaticFolder(req, res);
+    }
+
+    res.headers['Cache-Control'] = systemConfig.TOKENS_AGE.CATCH_STATICS_FILES_TIME;
+
+    // 4. SERVICIO DESDE MEMORIA CACHÉ (Si está en memoria)
+    // HTML
+    if (req.urlData.ext === systemConfig.EXTENSION_STATIC_VIEWS) {
+        res.headers["Content-Type"] = "text/html; charset=utf-8";
+        req.urlData.fileName = req.urlData.fileName.replace(/^\//, ''); // Limpiar barra inicial
+
+        const langData = languages[currentLang];
+        if (langData?.HTML_FILES_CACHED?.[req.urlData.fileName]) {
+            const statusCode = res.code || 200;
+            res.writeHead(statusCode, res.headers);
+            res.write(langData.HTML_FILES_CACHED[req.urlData.fileName]);
+            res.end();
+            if (statusCode === 200) siteStats(req);
+            return;
         }
-        req.urlData.ext = systemConfig.EXTENSION_STATIC_VIEWS
-        // res.writeHead(res.headers_response.code, res.headers_response.headers)
-        // return res.end();
-    
-    }else if(res.code === 500){
 
-        if(req.urlData.language){
-
-            req.urlData.fileName = systemConfig.PAGES.REQUEST_INVALID + "-" + req.urlData.language;
-        }else{
-            req.urlData.fileName = systemConfig.PAGES.REQUEST_INVALID + "-" + systemConfig.MAIN_LANGUAGE;
-
-        }
-        req.urlData.ext = systemConfig.EXTENSION_STATIC_VIEWS
+    // OTROS ESTÁTICOS (JS, CSS, Imágenes...)
+    } else if (staticsFilesCached[req.urlData.fileName]) {
+        res.writeHead(res.code || 200, res.headers);
+        res.write(staticsFilesCached[req.urlData.fileName]);
+        res.end();
+        return;
     }
 
-    
-    // PUEDE HABER SIDO ASIGNADA EN OTRA PARTE. EJ. EN SUBDOMAINS, ...
-    if(!req.static_folder){
-        
-        // la añade en req.static_folder
-        // aÑADE LA CARPETA DONDE ESTA EL ESTAICO DEPENDIENDO DE SU TIPO
-        getStaticFolder(req, res)
-    }
-        
-    let filePath = ""
-    
-    // BUSCAMOS ENTRE LOS CACHEADOS Y SI NO ESTA DEJAMOS PASAR PARA LEER DE DISCO
-    // INICIALIZAMOS CON 200 Y SI HAY ERROR DENTRO SE CAMBIA
-    // res.code = 200;
+    // 5. SERVICIO DESDE DISCO CON PROTECCIÓN ANTI-PATH TRAVERSAL
+    const basePublicDir = path.resolve(process.cwd(), 'frontend');
+    const safeTargetRelative = path.join(req.static_folder || '', req.urlData.fileName || '');
+    const resolvedPath = path.resolve(basePublicDir, safeTargetRelative);
 
-    // BUSCAMOS ENTRE LOS CACHEADOS Y SI NO ESTA DEJAMOS PASAR PARA LEER DE DISCO
-
-    console.log(`ENVIAMOS: ${req.urlData.fileName}`)
-    res.headers['Cache-Control'] = systemConfig.TOKENS_AGE.CATCH_STATICS_FILES_TIME
-       
-
-    // BUSCAMOS ENTRE LOS CACHEADOS Y SI NO ESTA DEJAMOS PASAR PARA LEER DE DISCO
-
-    // SI ES UN HTML
-    if(req.urlData.ext === systemConfig.EXTENSION_STATIC_VIEWS){
-        res.headers["Content-type"] = "text/html"
-        // ELIMINAMOS LAS  "/" DEL FILENAME SI LAS TIENE
-        req.urlData.fileName = req.urlData.fileName.replace("/", "")
-       
-        if(systemConfig.HAS_MULTI_LANGUAJES){
-
-            if(languages[req.urlData.language]?.HTML_FILES_CACHED[req.urlData.fileName]){
-                // console.log("**** ESTA CACHEADO !!")
-
-                if(!res.code){res.code = 200}
-                res.writeHead(res.code, res.headers)
-                // res.write(htmlFilesCatchedES[req.urlData.fileName])
-                res.write(languages[req.urlData.language].HTML_FILES_CACHED[req.urlData.fileName])
-
-                res.end()
-                siteStats(req)
-                return
-            }
-
-        }else{
-
-
-            if(languages[systemConfig.MAIN_LANGUAGE].HTML_FILES_CACHED[req.urlData.fileName]){
-
-                if(!res.code){res.code = 200}
-                res.writeHead(res.code, res.headers)
-                res.write(languages[systemConfig.MAIN_LANGUAGE].HTML_FILES_CACHED[req.urlData.fileName])
-                res.end()
-
-                siteStats(req)
-                return;
-            }
-        }
-        // Almacenamos estadistica
-        
-        
-
-    // ES OTRO TIPO DE ESTATICO
-    }else if(staticsFilesCached[req.urlData.fileName]){
-        if(!res.code){res.code = 200}
-        res.writeHead(res.code, res.headers)
-        res.write(staticsFilesCached[req.urlData.fileName])
-        res.end()
-        return
-        
+    // COMPROBACIÓN DE SEGURIDAD:
+    // resolvedPath DEBE comenzar obligatoriamente por la carpeta base /frontend
+    if (!resolvedPath.startsWith(basePublicDir)) {
+        console.warn(`🚨 Intento de Path Traversal bloqueado desde IP ${req.ip}: ${req.urlData.fileName}`);
+        res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+        return res.end('403 Forbidden: Acceso no permitido.');
     }
 
-    // console.log("NO ESTA CACHEADO !!!")
-    // console.log(req.urlData.fileName)
-    if(process.env.MODE === "DEV"){
+    // 6. COMPROBAR EXISTENCIA Y TRANSMITIR STREAM
+    access(resolvedPath, constants.F_OK, (err) => {
+        if (err) {
+            // Si el archivo no existe en disco -> 404
+            console.log(`❌ Archivo no encontrado en disco: ${resolvedPath}`);
+            res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
 
-        // filePath= new URL('../../frontend/' + req.static_folder + req.urlData.fileName, import.meta.url).pathname;
-        filePath = systemConfig.BASE_URL_FRONTEND_FILES_DEV + req.static_folder + req.urlData.fileName 
-        console.log({enviamos: filePath})
-
-    }else{
-        // filePath = new URL('RUTA-DEL-SERVER' + req.static_folder + req.urlData.fileName, import.meta.url).pathname;
-        filePath = systemConfig.BASE_URL_FRONTEND_FILES_PROD + req.static_folder + req.urlData.fileName 
-
-    }
-    
-    
-    access(filePath, constants.F_OK, (error) => {   
-        if (error) {
-            // SI SE SOLICITA UN HTML RESPONDEMOS 404
-            if(req.urlData.ext === systemConfig.EXTENSION_STATIC_VIEWS){
-
-                // SE SOLICITA UN ESTATICO distinto de HTML (JS, CSS, ...)
-                console.log(`El archivo HTML ${req.urlData.fileName} NO EXISTE -1`)
-                
-                // console.log(req.urlData.language);
-                // DEVOLVEMOS 404 EN EL LENGUAJE QUE CORRESPONDA
-                res.writeHead(404, {"content-type": "text/html"})
-                if(languages[req.urlData.language]?.HTML_FILES_CACHED["404-" + req.urlData.language + ".html"]){
-                    res.write(languages[req.urlData.language].HTML_FILES_CACHED["404-" + req.urlData.language + ".html"])
-                    res.end()
-                }else{
-                    res.end("ERROR en la PLATAFORMA: VUELVA A INTENTARLO PASADOS UNOS MINUTOS.")
-                }
-                return;
-
-
-
+            const notFoundKey = `404-${currentLang}.html`;
+            const notFoundHtml = languages[currentLang]?.HTML_FILES_CACHED?.[notFoundKey] || '<h1>404 - Página no encontrada</h1>';
             
-            // SE SOLICITA UN ESTATICO distinto de HTML (JS, CSS, ...)
-            }else{
-                console.log(`El archivo Statico ${req.urlData.fileName} NO EXISTE -2`)
-                res.writeHead(404, {})
-                if(languages[req.urlData.language]?.HTML_FILES_CACHED["404-" + req.urlData.language + ".html"]){
-                    res.write(languages[req.urlData.language].HTML_FILES_CACHED["404-" + req.urlData.language + ".html"])
-                    res.end()
-                }else{
-                    res.write(languages[systemConfig.MAIN_LANGUAGE].HTML_FILES_CACHED["404-" + systemConfig.MAIN_LANGUAGE + ".html"])
-                    res.end()
-                }
+            res.write(notFoundHtml);
+            return res.end();
+        }
 
-                return;
+        if (req.urlData.ext === systemConfig.EXTENSION_STATIC_VIEWS && (!res.code || res.code === 200)) {
+            siteStats(req);
+        }
+
+        res.writeHead(res.code || 200, res.headers);
+
+        // Envío por stream con control de errores
+        const readStream = createReadStream(resolvedPath);
+        
+        readStream.on('error', (streamErr) => {
+            console.error('Error transmitiendo archivo estático:', streamErr.message);
+            if (!res.headersSent) {
+                res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
             }
-        }
+            res.end();
+        });
 
-        // SI ES UN HTML Y CODE === 200
-        // ACTUALIZAMOS ESTADISTICAS DE USO DEL SITIO WEB
-        if(req.urlData.ext === systemConfig.EXTENSION_STATIC_VIEWS && res.code === 200){
-            siteStats(req)
-        }
-
-        // Añadimos el tiempo de cache de los staticos por defecto
-        // res.headers['Cache-Control'] = systemConfig.TOKENS_AGE.CATCH_STATICS_FILES_TIME
-        // res.writeHead(res.code, res.headers)
-        if(!res.code){res.code = 200}
-        res.writeHead(res.code, res.headers)
-        const readStream = createReadStream(filePath); 
-        readStream.on('data', chunk => res.write(chunk));
-        readStream.on('close', () => res.end());
-
-    })    
-
-
+        readStream.pipe(res); // pipe gestiona la contrapresión (backpressure) de forma óptima
+    });
 }
