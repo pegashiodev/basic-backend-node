@@ -11,7 +11,7 @@
 
 
 //import { passwordEncript } from "../routerTools/passwordEncript.js"
-import { comparePassword } from './routerTools/passwordEncript.js';
+import { comparePassword } from '../routerTools/passwordEncript.js';
 import sessionsCached from "../../globalData/sessionsCached.js"
 
 import bodyDataFormatVerify from "../routerTools/bodyDataFormatVerify.js"
@@ -233,23 +233,6 @@ function verifyUser(req){
     return result
 }
 
-// function async isValidPassword(req, res){
-        
-//     // ENCRIPTAMOS PASSWORD RECIBIDO PARA COMPARAR
-
-//     // userFromDb es el documento obtenido de MongoDB
-//     const isMatch = await comparePassword(req.body.password, req.user.password);
-
-//     if (!isMatch) {
-//         // Contraseña incorrecta
-//         return false;
-//     }
-
-//     // Contraseña correcta -> procedemos a generar tokens
-
-//     return true;
-
-// }
 
 async function loginWhithFA2(req, res) {
     const FROM_LOGS = "signUpHandler.js -> signupWhith2FA";
@@ -622,6 +605,19 @@ async function loginUser(req, res){
 
     }
     
+}
+
+
+function sendError(res, code, our_code, message){
+
+    const response_data = {
+        status: "error",
+        code: our_code,
+        message: message,         
+    }
+    res.writeHead(code, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(response_data))
+    return;
 }
 
 

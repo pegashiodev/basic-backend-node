@@ -144,7 +144,7 @@ export const updateUser = async (data, user)=>{
 
     if(data.task === 'UPDATE_USER_STATUS'){
 
-        const filter = {_id: user.userId}
+        const filter = {"_id._id": user.userId}
        
         const update_data = {
           
@@ -171,7 +171,7 @@ export const updateUser = async (data, user)=>{
 
     }else if(data.task === 'UPDATE_USER_DEVICES'){
         // AÑADIMOS EL NUEVO DEVICE AL ARRAY DEL USER
-        const filter = {_id: user.userId}
+        const filter = {"_id._id": user.userId}
         const update_data = {$push: {userDevices: data.new_value}}
        
         if(data.await){
@@ -191,7 +191,7 @@ export const updateUser = async (data, user)=>{
         usersByEmail[user.email].userDevices.push(data.new_value);
         
     }else if(data.task === 'UPDATE_PASSWORD'){
-        const filter = {_id: user.userId}
+        const filter = {"_id._id": user.userId}
 
         const update_data = {
             $set: {password: data.new_value}
@@ -216,7 +216,7 @@ export const updateUser = async (data, user)=>{
         
 
     }else if(data.task === "UPDATE_PASSWORD_AND_STATUS"){
-        const filter = {_id: user.userId}
+        const filter = {"_id._id": user.userId}
 
         const update_data = {
             $set: {password: data.new_value, status: "ACTIVE"}
@@ -247,7 +247,19 @@ export const updateUser = async (data, user)=>{
 
 }
 
-export const findUser = (user)=>{
+/**
+ * 
+ * @param {*} data 
+ * EJ: {
+ *  dbName; "string",
+ *  collection: "string",
+ *  userId: "_id",
+ *  email: "string" [opcional]
+ * }
+ * @returns {user}
+ */
+export const findUser = (data)=>{
+
     return {status: 'ok', data: '', message: ''}
 
 }

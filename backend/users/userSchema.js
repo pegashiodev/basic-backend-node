@@ -21,13 +21,18 @@ const days = ["mon", "tue", "wen", "thu", "fri", "sat", "sun"]
 export default  (body)=>{
     const now = Date.now()
     const id = new ObjectId().toHexString();
+    const id2 = randomUUID()    
     
     let user = {
-        _id: id,
+        _id: {
+            _id: id,
+            email: body.email,
+            id2: id2,                                    // UN SEGUNDO ID PARA OTRAS COSAS
+            since_year: new Date(now).getFullYear(),    // PARA ACCESO A SUS BASES DE DATOS
+            since_month: new Date(now).getMonth(),      // PARA ACCESO A SUS COLECCIONES
+        },
         userId: id,
-        id2: randomUUID(),      // UN SEGUNDO ID PARA OTRAS COSAS
-        // type: "BASIC",          //  ['EMPLOYEE','MASTER', 'PRO']
-        // userToken: "",
+        id2: id2, 
         status:  systemConfig.STATUS.ACTIVE,                // ['ACTIVE', 'PAUSED', 'BLOCKED'  ] 
         signup_method: body.access_method || "USER-EMAIL",  // ["GOOGLE-EMAIL", "GITHUB", ...]
         name: body.name,

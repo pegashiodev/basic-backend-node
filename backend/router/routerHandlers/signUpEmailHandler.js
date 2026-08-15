@@ -10,7 +10,8 @@
 import bodyDataFormatVerify from "../routerTools/bodyDataFormatVerify.js";
 import sendEmail from "../../notifications/sendEmail.js";
 // import { passwordEncript} from "../routerTools/passwordEncript.js";
-import { hashPassword } from './routerTools/passwordEncript.js';
+
+import { hashPassword } from '../routerTools/passwordEncript.js';
 import userHandler from "../../users/userHandler.js";
 import sessionHandler from "../../sessions/sessionHandler.js";
 import systemConfig from "../../globalData/systemConfig.js";
