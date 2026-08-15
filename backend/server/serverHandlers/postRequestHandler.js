@@ -1,21 +1,9 @@
 
 
+
 /***
- * 
- *  MANEJADOR DE LAS PETICIONES POST QUE LLEGAN EL SERVIDOR HTTP
- * 
- * 
- * - OBTENEMOS LOS DATOS DE LA PETICION : urlData y body
- * - COMPROBAMOS SI ES UNA PETICION PARA ALGUN SUBDOMINIO: SI ES ASI LA TRAMITAMOS
- * - COMPROBAMOS SI ES UN ENDPOINT QUE NO REQUIERE COOKIE DE LA PLATAFORMA: TRAMITAMOS SI PROCEDE
- * - COMPROBAMOS LA COOKIE: SI NO CORRECTA ENVIAMOS MESAJE DE REDIRECCION AL LOGIN O SIGNUP
- * - TRAMITAMOS LA PETICION -> routerPostRequest.js
- * 
- * 
+ * MANEJADOR DE LAS PETICIONES POST DEL SERVIDOR HTTP
  */
-
-
-
 
 import getRequestBody from "../serverTools/getRequestBody.js";
 import getUrlData from "../serverTools/getUrlData.js";
@@ -23,233 +11,100 @@ import routerPostRequest from "../../router/routerPostRequest.js";
 import systemConfig from "../../globalData/systemConfig.js";
 import getOurCookie from "../../tools/getOurCookie.js";
 import subdomainPostRequestHandler from "./subdomainPostRequestHandler.js";
-import sessionsCached from "../../globalData/sessionsCached.js";
 import usersByEmail from "../../globalData/usersByEmail.js";
+import verifyTokensAndSetCookie from "../../tools/verifyTokensAndSetCookie.js";
 
+// Función auxiliar para responder errores POST en JSON
+const sendPostError = (res, statusCode, message, customCode = null) => {
+    res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({
+        status: 'error',
+        code: customCode || statusCode,
+        message: message
+    }));
+};
 
-/**
- * 
- * @param {req}
- * @param {res}
- */
-export default  async (req, res)=>{
-    
-    console.log("\n\nNUEVA PETICION POST ************************************")
-    console.log(`URL: ${req.url}`)
-    console.log("** PostRequestHandler !!")
-    
-    if(!req.headers['content-type']){
-        console.log('POST -> NO Content-Type IN REQUEST -> devolvemos 404')
-        const response_data = {
-            message: 'NO HEADER[CONTENT-TYPE] EN LA PETICION',
-            code: 450
-        }
-        res.writeHead(200, { 'Content-Type': 'text/plain' });
-        res.end(JSON.stringify(response_data))
-        return;
+export default async function postRequestHandler(req, res) {
+    const contentType = req.headers['content-type'] || '';
+
+    if (!contentType) {
+        return sendPostError(res, 400, 'Falta la cabecera Content-Type en la petición POST', 450);
     }
 
-    const contentType = req.headers['content-type']
-    
-    // Obtenemos Datos de la URL
+    // 1. Extraer y estructurar datos de la URL
     getUrlData(req);
 
-    if(!req.urlData.endpoint){
-        console.log('POST -> NO endpoint IN REQUEST -> devolvemos 404')
-        const response_data = {
-            message: 'NO ENDPOINT EN LA PETICION',
-            code: 450
-        }
-        res.writeHead(200, { 'Content-Type': 'text/plain' });
-        res.end(JSON.stringify(response_data))
-        return;
+    if (!req.urlData.endpoint) {
+        return sendPostError(res, 404, 'No se especificó un endpoint válido en la petición', 450);
     }
-    
-    
-    if(contentType === 'application/json'){
+
+    // 2. Determinar el tipo de contenido
+    if (contentType.includes('application/json')) {
         req.urlData.body_type = 'JSON';
-
-    }else if(contentType.startsWith('image/')){
+    } else if (contentType.startsWith('image/')) {
         req.urlData.body_type = 'IMAGE';
-
-    }else if(contentType.startsWith('audio/')){
+    } else if (contentType.startsWith('audio/')) {
         req.urlData.body_type = 'AUDIO';
-
-    }else if(contentType.startsWith('file/')){
-        req.urlData.body_type = 'FILE';     
-
-    }else {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({status: "error", code: 445, message: 'TIPO DE BODY NO ESPERADO!!'}));
-        return;
+    } else if (contentType.startsWith('multipart/form-data') || contentType.startsWith('application/octet-stream')) {
+        req.urlData.body_type = 'FILE';
+    } else {
+        return sendPostError(res, 415, 'Tipo de contenido (Content-Type) no soportado', 445);
     }
 
-   
-    // OBTENEMOS EL BODY DE LA PETICION
-    try{
+    // 3. Capturar y parsear el Body con límite de tamaño
+    try {
         const result = await getRequestBody(req, req.urlData.body_type);
-        
-        if(result.status === 'ok'){
-            req.body = result.data;                
-        }else{
-            console.log('ERROR con el BODY ENVIADO')
-            const response_data = {
-                code: 440,
-                message: "LOS DATOS DEL BODY NO SE HAN PODIDO RECIBIR CORRECTAMENTE"
-            }
-            res.writeHead(200, { 'Content-Type': 'text/plain' });
-            res.end(JSON.stringify(response_data));
-            return;
-        }
-
-    }catch(err){
-
-        console.log('ERROR AL CAPTURAR EL BODY')
-        const response_data = {
-            code: 440,
-            message: "LOS DATOS DEL BODY NO SE HAN RECIBIDO CORRECTAMENTE"
-        }
-        res.writeHead(200, { 'Content-Type': 'text/plain' });
-        res.end(JSON.stringify(response_data));
-        return;
+        req.body = result.data || {};
+    } catch (err) {
+        return sendPostError(res, err.code || 400, err.message, err.code);
     }
 
-    // TRAMITAMOS AQUI SI ES UNA PETICION A UN SUBDOMAIN
+    // 4. Gestión de Subdominios (si aplica)
+    if (systemConfig.HAS_SUBDOMAINS) {
+        const hostName = process.env.MODE === "DEV" ? systemConfig.HOST_DEV : systemConfig.HOST_PROD;
+        const sub = req.urlData.host.replace(hostName, '').replace(/\.$/, '').replace(/^\./, '');
 
-    // ...
-    if(systemConfig.HAS_SUBDOMAINS){
-
-        // req.urlData.subdomains = req.urlData.host.split(":")[0].split(".")
-        // SOLO ELIMINAMOS EL HOST PRINCIPAL. EL RESTO ES EL SUBDOMAIN
-        const host_name = process.env.MODE === "DEV" ? systemConfig.HOST_DEV : systemConfig.HOST_PROD
-        
-        req.urlData.subdomains = req.urlData.host.replace(host_name, "")
-        let len = req.urlData.subdomains.length;
-        console.log(req.urlData.subdomains)
-
-        if(len > 0){
-            
-            // Eliminamos el "."
-            let str = req.urlData.subdomains;
-            str = str.substring(1, str.length - 1)
-            req.urlData.subdomains = str;
-
-            let is_valid_subdomain = false;
-
-            // COMPROBAMOS SI ESTAN PERMITIDOS
-            if(systemConfig.SUBDOMAINS_ALLOWED.includes(req.urlData.subdomains[i])){
-                is_valid_subdomain = true;
-            }
-
-            if(is_valid_subdomain){
-
-                return subdomainPostRequestHandler(req, res)
-
-            }else{
-                const response_data = {
-                    code: 486,
-                    message: "INVALID SUBDOMAIN"
-                }
-                res.writeHead(200, { 'Content-Type': 'text/plain' });
-                res.end(JSON.stringify(response_data));
-                return;
-            }   
-        }
-
-    }
-   
-    // PERMITIMOS EL PASO DIRECTO  A ESOS ENDPOINTS QUE NO REQUIEREN COOKIE
-    if(req.urlData.endpoint && systemConfig.VALID_POST_ENDPOINTS_WITHOUT_COOKIE.includes(req.urlData.endpoint)){
-        // AÑADIMOS DATOS AL BODY
-        console.log("Ruta valida")
-        req.body.language = req.urlData.language;
-        req.body.ip = req.urlData.ip;
-        return routerPostRequest(req, res)
-    }
-
-
-    // PERMITIMOS EL PASO DIRECTO  A ESOS ENDPOINTS QUE NO REQUIEREN SESSION
-    if(req.urlData.endpoint && systemConfig.VALID_POST_ENDPOINTS_WITHOUT_SESSION.includes(req.urlData.endpoint)){
-        // AÑADIMOS DATOS AL BODY
-        console.log("Ruta valida")
-        req.body.language = req.urlData.language;
-        req.body.ip = req.urlData.ip;
-        return routerPostRequest(req, res)
-    }
-
-
-
-    // OJO !!!
-    // OJO DEJAMOS PASAR PARA PROBAR LAS OPCIONES DE REMOTE PANEL
-
-    // if(req.urlData.endpoint === "remote-control-handler-post" || req.urlData.endpoint === "verify-from-remote-panel"){
-    //     // AÑADIMOS DATOS AL BODY
-    //     req.body.language = req.urlData.language;
-    //     req.body.ip = req.urlData.ip;
-    // console.log(req.urlData.endpoint)
-    //     routerPostRequest(req, res)
-    //     return;
-    // }
-
-   
-
-    // PARA EL RESTO DE ENDPOINTS COMPROBAMOS COOKIE
-    if(req.urlData.hasCookie){
-
-        const result_getOurCookie = getOurCookie(req)
-
-        if(result_getOurCookie.status !== 'ok'){
-
-            if(result_getOurCookie.task === "SEND_FETCH_ERROR"){
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(result_getOurCookie.response_data));
-                return;
-            }else{
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({status: "error", message: "Error Obteniendo Cookie desde postRequestHandler"}));
-                return;
+        if (sub.length > 0) {
+            req.urlData.subdomains = sub;
+            if (systemConfig.SUBDOMAINS_ALLOWED.includes(sub)) {
+                return subdomainPostRequestHandler(req, res);
+            } else {
+                return sendPostError(res, 403, 'Subdominio no permitido', 486);
             }
         }
     }
 
+    // 5. Endpoints públicos que no requieren autenticación (Login, Signup, Forgot Password, etc.)
+    const isPublicWithoutCookie = systemConfig.VALID_POST_ENDPOINTS_WITHOUT_COOKIE?.includes(req.urlData.endpoint);
+    const isPublicWithoutSession = systemConfig.VALID_POST_ENDPOINTS_WITHOUT_SESSION?.includes(req.urlData.endpoint);
 
-    // PERMITIMOS SEGUIR SI HAY NUESTRA COOKIE Y HAY SESION
-    if(req.has_our_cookie){
-
-        // VERIFICAMOS NUESTRA COKKIE POR SI HAY QUE ACTUALIZAR ALGUN TOKEN
-        req.user = usersByEmail[req.our_cookie.atk_decoded.email]
-        verifyTokensAndSetCookie(req, req.user, "POST_REQUEST")
-
-        // AÑADIMOS DATOS AL BODY
-        req.body.language = req.urlData.language;
-        req.body.ip = req.urlData.ip;
-        routerPostRequest(req, res)
-      
-    }else{
-
-        let location = systemConfig.PAGES.SESSION_IS_REQUIRED
-
-        // SI LA HAY, AÑADIMOS LA RUTA DESDE LA QUE SE LE ENVIO AL LOGUEARSE: "req.urlData.search"
-        if(req.urlData.searchParams?.from){
-            location = `${systemConfig.PAGES.SESSION_IS_REQUIRED}/?${req.urlData.search}`;
-            // if(req.urlData.searchParams.search){
-            //     location += `params=${req.urlData.searchParams.search.slice(1)}`
-            // }
-        }
-        
-        const response_data = {
-            status: "error",
-            // location: systemConfig.PAGES.SESSION_IS_REQUIRED,
-            location: location, 
-            code: 452,
-            message: "NO HAY nuestras  COOKIES"
-        }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(response_data));
-        return;
-
+    if (isPublicWithoutCookie || isPublicWithoutSession) {
+        req.body.language = req.urlData.language || systemConfig.MAIN_LANGUAGE;
+        req.body.ip = req.ip;
+        return routerPostRequest(req, res);
     }
-     
 
+    // 6. Endpoints protegidos: Validación de Cookie y Sesión
+    const result_getOurCookie = getOurCookie(req);
+    if (result_getOurCookie.status !== 'ok') {
+        return sendPostError(
+            res, 
+            401, 
+            result_getOurCookie.response_data?.message || 'Autenticación requerida',
+            result_getOurCookie.response_data?.code || 452
+        );
+    }
 
+    if (req.has_our_cookie) {
+        req.user = usersByEmail[req.our_cookie.atk_decoded.email];
+        
+        // Verificar y renovar tokens de sesión
+        await verifyTokensAndSetCookie(req, req.user, "POST_REQUEST");
+
+        req.body.language = req.urlData.language || systemConfig.MAIN_LANGUAGE;
+        req.body.ip = req.ip;
+        return routerPostRequest(req, res);
+    } else {
+        return sendPostError(res, 401, 'No hay cookie de sesión válida', 452);
+    }
 }
