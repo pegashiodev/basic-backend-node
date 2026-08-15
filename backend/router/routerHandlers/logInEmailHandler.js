@@ -25,7 +25,8 @@ import log from "../../tools/log.js"
 import errorsCodes  from "../../tools/errorsCodes.js"
 // import generateValidationToken from "../../tools/generateValidationToken.js"
 import sendEmail from "../../notifications/sendEmail.js"
-import validationTokens from "../../globalData/validationTokens.js"
+//import validationTokens from "../../globalData/validationTokens.js"
+import { checkValidationToken } from '../../notifications/notificationsTools/generateValidationToken.js';
 import getOurCookie from "../../tools/getOurCookie.js"
 
 // Función auxiliar para responder errores POST en JSON
@@ -135,6 +136,22 @@ console.log(req.body)
             log(FROM_LOGS, "2fa -> RECIBED  --->> VALIDAMOS DATOS", INFO_LOGS)
 
             // COMPROBAMOS QUE EL TOKEN ES CORRECTO
+            const normalizedEmail = req.body.email.toLowerCase().trim();
+        
+            // 2. Verificar el código de validación almacenado en Redis
+            const isValidCode = await checkValidationToken(normalizedEmail, req.body.token);
+            console.log({isValidCode})
+            console.log(req.body)
+            if (!isValidCode) {
+                res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+                return res.end(JSON.stringify({
+                    status: 'error',
+                    code: 401,
+                    message: 'El código de verificación es incorrecto o ha expirado.'
+                }));
+            }
+            
+            /*
             const token_meta = validationTokens[req.body.email]
             
             if(!token_meta){
@@ -167,6 +184,8 @@ console.log(req.body)
                 res.end(JSON.stringify(response_data))
                 return;
             }
+            */
+
             return loginWhithFA2(req, res)
         
         
@@ -303,8 +322,27 @@ async function loginWhithFA2(req, res) {
             res.end(JSON.stringify(response_data))
             return; 
         }
+
+
+        // COMPROBAMOS QUE EL TOKEN ES CORRECTO
+        const normalizedEmail = req.body.email.toLowerCase().trim();
         
+        // 2. Verificar el código de validación almacenado en Redis
+        const isValidCode = await checkValidationToken(normalizedEmail, req.body.token);
+        console.log({isValidCode})
+        console.log(req.body)
+        if (!isValidCode) {
+            res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+            return res.end(JSON.stringify({
+                status: 'error',
+                code: 401,
+                message: 'El código de verificación es incorrecto o ha expirado.'
+            }));
+        }
+        
+        /*
         // COMPROBAMOS SI EL TOKEN RECIBIDO ES CORRECTO
+            
         const token_meta = validationTokens[req.body.email]
         
         if(req.body.token !== token_meta.token){
@@ -337,6 +375,8 @@ async function loginWhithFA2(req, res) {
 
             return;
         }
+        
+        */
     
         // FINALIZAMOS EL LOGIN : SESSION, COOKIE, ...
         loginUser(req, res)

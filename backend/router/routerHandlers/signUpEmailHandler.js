@@ -17,10 +17,12 @@ import sessionHandler from "../../sessions/sessionHandler.js";
 import systemConfig from "../../globalData/systemConfig.js";
 import {randomUUID} from 'crypto';
 // import generateVerificationEndpoint from "../../tools/generateVerificationEndpoint.js";
+
 import validationTokens from "../../globalData/validationTokens.js";
 import errorsCodes from "../../tools/errorsCodes.js";
 import log from "../../tools/log.js";
 import promotionsHandler from "../../promotions/promotionsHandler.js";
+import { checkValidationToken } from "../../notifications/notificationsTools/generateValidationToken.js";
 
 
 // Función auxiliar para responder errores POST en JSON
@@ -184,7 +186,23 @@ async function signupWithFA2(req, res) {
     
     // NOS ENVIAN EL CODIGO DE VERIFICACION
     }else if(req.body.fa2 === "RECIBED"){
-        
+
+
+        const normalizedEmail = req.body.email.toLowerCase().trim();
+
+        // 2. Verificar el código de validación almacenado en Redis
+        const isValidCode = await checkValidationToken(normalizedEmail, req.body.token);
+        console.log({isValidCode})
+        console.log(req.body)
+        if (!isValidCode) {
+            res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+            return res.end(JSON.stringify({
+                status: 'error',
+                code: 401,
+                message: 'El código de verificación es incorrecto o ha expirado.'
+            }));
+        }
+        /*
         // COMPROBAMOS QUE EL TOKEN ES CORRECTO
         const token_data = validationTokens[req.body.email]
        
@@ -235,6 +253,7 @@ async function signupWithFA2(req, res) {
             res.end(JSON.stringify(response_data));
             return;
         }
+        */
     
     
     // FA2 NO ES "SEND" NI "RECIBED" ???
@@ -316,8 +335,6 @@ async function signupWithFA2(req, res) {
         return;
     }
 
-    // BORRAMOS EL TOKEN
-    delete validationTokens[req.body.email]
     
     log(FROM_LOGS, "USUARIO REGISTRADO CON EXITO", INFO_LOGS)
     
@@ -329,14 +346,6 @@ async function signupWithFA2(req, res) {
 
     console.log(`Location desde el signup: ${location}`)
 
-    // if(req.urlData.searchParams?.from){
-    //     location = `${req.urlData.searchParams.from}`
-        
-    //     if(req.urlData.searchParams.search && req.urlData.searchParams.search !== "undefined"){
-    //         location += `?${req.urlData.searchParams.search}`
-    //     }
-        
-    // }
     const response_data = {
         "status": "ok",
         // "location": systemConfig.PAGES.URL_AFTER_SIGNUP,

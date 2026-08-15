@@ -44,7 +44,8 @@ export default async (data, user)=>{        // {task, name, email, lastName, url
             return {ststus: "error", mesage: "Datos incompletos: name or validation_token.token"}
         }
 
-        const validation_token = generateValidationToken(user);
+        const validation_token = await generateValidationToken(user.email);
+console.log({validation_token})
         // token: validation_token.token,
         // token_expireTime: validation_token.expireTime,
         // ESTOS DATOS NO PUEDEN SER NULL, SINO HABRA ERROR EN EL ENVIO DEL EMAIL 

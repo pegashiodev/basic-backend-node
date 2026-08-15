@@ -17,6 +17,7 @@ export default async function generateValidationToken(email) {
 export async function checkValidationToken(email, code) {
     if (!redisClient || !redisClient.isOpen) return false;
     const storedCode = await redisClient.get(`verify:email:${email}`);
+console.log({storedCode})
     if (storedCode && storedCode === code.toString()) {
         await redisClient.del(`verify:email:${email}`); // Consumir código (un solo uso)
         return true;
