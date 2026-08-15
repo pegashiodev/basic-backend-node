@@ -27,7 +27,6 @@ import sendEmail from "../../notifications/sendEmail.js"
 import validationTokens from "../../globalData/validationTokens.js"
 import getOurCookie from "../../tools/getOurCookie.js"
 
-
 /**
  * 
  * @param {object} Objeto Request de NodeJS

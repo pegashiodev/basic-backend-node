@@ -53,11 +53,15 @@ const addOrder =  async (data_order)=>{
 
     console.log("ordersHandler -> addOrder !!")
     console.log(data_order)
-    const now = Date.now()
+    //const now = Date.now()
+
+    // HAY QUE USAR LA FECHA ORIGINAL DEL PEDIDO !!!! 
 
     const params = {
-        dbName: systemConfig.DBS.ORDERS + new Date(now).getFullYear(),       // dbName = users_ + año de alta del usuario
-        collection: months[new Date(now).getMonth()],                          // collection = Mes de alta el usuario
+        // dbName: systemConfig.DBS.ORDERS + new Date(now).getFullYear(),       // dbName = users_ + año de alta del usuario
+        dbName: systemConfig.DBS.ORDERS + data_order.date.year,
+        // collection: months[new Date(now).getMonth()],                          // collection = Mes de alta el usuario
+        collection: data_order.date.month, 
         await: data_order.await
     }
         

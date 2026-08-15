@@ -26,7 +26,7 @@ export default  (body)=>{
         _id: id,
         userId: id,
         id2: randomUUID(),      // UN SEGUNDO ID PARA OTRAS COSAS
-        type: "BASIC",          //  ['EMPLOYEE','MASTER', 'PRO']
+        // type: "BASIC",          //  ['EMPLOYEE','MASTER', 'PRO']
         // userToken: "",
         status:  systemConfig.STATUS.ACTIVE,                // ['ACTIVE', 'PAUSED', 'BLOCKED'  ] 
         signup_method: body.access_method || "USER-EMAIL",  // ["GOOGLE-EMAIL", "GITHUB", ...]
@@ -35,8 +35,8 @@ export default  (body)=>{
         nick: body.nick || undefined,
         comercial_name: body.comercial_name || undefined,
         email: body.email,
-        role: 'USER',               //  USER / ADMIN / MASTER / ... 
-        userDevices: [],      // {userAgent:"", deviceId: "", status:""}
+        role: 'USER',               //  EMPLOYEE / USER / ADMIN / MASTER / ... 
+        userDevices: [],            // {userAgent:"", deviceId: "", status:""}
         credentials: [],
         language: body.language || undefined,
         country: body.country || undefined,
@@ -52,7 +52,16 @@ export default  (body)=>{
             endpoints: []
         },
         company: undefined,                     // COMPAÑIA A LA QUE PERTENECE EL EMPLEADO
-        // SALDOS DEL USUARIO
+        
+        // SALDOS DEL USUARIO PARA CONSUMIRLO EN LA PLATAFORMA
+        coins_generator: body.coins_generator || 0,
+        coins_trainning: body.coins_trainning || 0,
+        coins_styles: body.coins_styles || 0,
+        coins_images: body.coins_images || 0,
+        coins_audio: body.coins_audio || 0,
+        coins_video: body.coins_video || 0,
+        coins_coach: body.coins_coach || 0,
+
         saldoMoney: body.saldoMoney || 0,       // SALDO EN EUROS O DOLARES
         saldoCoins: body.saldoCoins || 0,       // SALDO EN COINS
         saldoAds: body.saldoAds || 0,           // OTRO SALDO POR CONSUMIR ANUNCIOS
@@ -88,15 +97,7 @@ export default  (body)=>{
         shipping_address: [],
         
     }
-    // Si no codigos de verificacion, almacenamos el token que se envia en el link 
-    // del correo
-    // SI TENE 2FA se envia un codigo al email para el signup y ya no 
-    // hay que hacer una verificacion explicita del email
-    if(!systemConfig.HAS_FA2 && !systemConfig.HAS_FA2_SIGNUP){
-        user.id_verify_email = body.id_verify_email;
-        user.id_verify_expireTime = body.id_verify_expireTime || now + systemConfig.TOKENS_AGE.EMAIL_VERIFICATION_AGE;
-        user.status = systemConfig.STATUS.EMAIL_NOT_VERIFIED;   // se verifica desde el link que le enviamos al email
-    }
+   
     // AÑADIMOS DIRECCION DE FACTURACION SI LA HAY
     if(body.billing_address){
         const address = {

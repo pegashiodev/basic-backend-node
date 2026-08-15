@@ -3,7 +3,7 @@
 
 /***
  * 
- *      UNA ESPECIE DE "console.log()" personalizado para almacenar logs importantes
+ *      UNA ESPECIE DE "console.log()" personalizado para almacenar logs importantes cuando estemos en produccion. ??? 
  * 
  *      @param type [TIPO DE MENSAJE] : "INFO", "ERROR", "SAVE"  
  *      @param from [NOMBRE DEL FICHERO QUE LO ENVIA "fileName.js"]
@@ -26,9 +26,7 @@ export default function(from, data, type='INFO'){
             return console.log({CONSOLE:"INFO", from, data })
         }
    
-    }
-
-    if(type === 'ERROR' || type === "SAVE"){       
+    }else if(type === 'ERROR' || type === "SAVE"){       
 
         systemConsoleLogs.push(
             {   from: from,

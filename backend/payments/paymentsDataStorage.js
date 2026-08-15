@@ -40,10 +40,10 @@ export const insertOne = async (data)=>{
     // EN EL _ID INCLUYO VARIOS CAMPOS PARA NO CREAR MAS INDICES EN LA DB. 
     const data_db = {
         ...data, 
-        date:  {day: day, hour: hour, min: min, sec: sec}, 
+        date:  {year: year, month: month, day: day, hour: hour, min: min, sec: sec}, 
         _id: {
             _id: data.stripeId,
-            date: {day: day, hour: hour, min: min, sec: sec},
+            date: {year: year, month: month, day: day, hour: hour, min: min, sec: sec},
             method: "STRIPE-CARD",
             userId: data.userId,
             email: data.email,

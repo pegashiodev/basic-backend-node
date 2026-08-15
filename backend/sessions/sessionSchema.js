@@ -24,7 +24,7 @@ export default  (req)=>{
     let session = {
         _id: new ObjectId().toHexString(),
         userId: user.userId,
-        type: user.type,
+        // type: user.type,
         // TOKENS DE LA COOKIE
         atk: req.accessData.atk,
         atk_expireTime: req.accessData.expireTime,

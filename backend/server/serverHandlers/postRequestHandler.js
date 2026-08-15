@@ -24,6 +24,7 @@ import systemConfig from "../../globalData/systemConfig.js";
 import getOurCookie from "../../tools/getOurCookie.js";
 import subdomainPostRequestHandler from "./subdomainPostRequestHandler.js";
 import sessionsCached from "../../globalData/sessionsCached.js";
+import usersByEmail from "../../globalData/usersByEmail.js";
 
 
 /**
@@ -214,6 +215,10 @@ export default  async (req, res)=>{
 
     // PERMITIMOS SEGUIR SI HAY NUESTRA COOKIE Y HAY SESION
     if(req.has_our_cookie){
+
+        // VERIFICAMOS NUESTRA COKKIE POR SI HAY QUE ACTUALIZAR ALGUN TOKEN
+        req.user = usersByEmail[req.our_cookie.atk_decoded.email]
+        verifyTokensAndSetCookie(req, req.user, "POST_REQUEST")
 
         // AÑADIMOS DATOS AL BODY
         req.body.language = req.urlData.language;

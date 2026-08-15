@@ -15,7 +15,8 @@ import userSchema from "./userSchema.js";
 import dbCrudHandler from "../db/dbCrudHandler.js";
 import usersByEmail from "../globalData/usersByEmail.js";
 
-const months = ['ene', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dec' ]
+// USAMOS EL MES DE ALTA DEL USUARIO PARA ESTABLECER LA "COLLECTION" DE LA BASE DE DATOS
+const months = ['ene', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec' ]
 
 
 /**
@@ -39,8 +40,8 @@ export const addUser = async (body)=>{
 
     const params = {
         dbName: systemConfig.DBS.USERS_DATA + user.since_year,   // dbName = users_ + año de alta del usuario
-        // collection: months[user.since_month],                                    // collection = Mes de alta el usuario
-        collection: user.since_day_week + user.since_day_number,                    // collection = dia semana + dia mes numero
+        collection: months[user.since_month],                                    // collection = Mes de alta el usuario
+        // collection: user.since_day_week + user.since_day_number,                    // collection = dia semana + dia mes numero
 
         await: true
     }
@@ -76,7 +77,7 @@ export const updateUserSaldo = async (data, user)=>{
         // dbName = users_ + año de alta del usuario
         dbName: systemConfig.DBS.USERS_DATA + user.since_year,     
         // collection = dia semana + dia mes numero             
-        collection: user.since_day_week + user.since_day_number,     
+        collection: months[user.since_month],     
         await: data.await,                        
     }
 
@@ -135,8 +136,8 @@ export const updateUser = async (data, user)=>{
     console.log(data)
 
     const params = {
-        dbName: systemConfig.DBS.USERS_DATA + user.since_year,       // dbName = users_ + año de alta del usuario
-        collection: user.since_day_week + user.since_day_number  ,     // collection = dia semana + dia mes numero
+        dbName: systemConfig.DBS.USERS_DATA + user.since_year,          // dbName = users_ + año de alta del usuario
+        collection: months[user.since_month],                           // collection = MES 
         await: data.await,                        
     }
         
