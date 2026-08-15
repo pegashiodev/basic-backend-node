@@ -10,11 +10,10 @@ export default  {
     PLATFORM_NAME: "TUDOMINIO.COM",
     HOST_DEV: "localhost:3000",
     HOST_PROD: "",
-
     // mode: 'DEV', // 'PROD',
     // HOST_DEV: 'localhost:3000',
     // HOST_PROD: 'automatizabots.com',
-    
+
     BASE_URL_PROD: "",
     BASE_URL_DEV: "/home/carlos/dev/basic-project/backend/",
     BASE_URL_USER_FILES_FOLDER_DEV: "/home/carlos/dev/basic-project-old/user-files/",
@@ -34,7 +33,6 @@ export default  {
     /**  
     *   CONFIGURACION DEL SITIO: TIENE USUARIOS?, PERMITE SUBDOMINIOS, TRABAJAMOS CON MULTIPLES CPUS, Y DISTINTOS TIPOS DE ENDPOINTS 
     */
-    HAS_MULTI_CPUS: false,
     HAS_USERS: true,        
     HAS_SUBDOMAINS: true, 
     HAS_RESTRICTED_ENDPOINTS: true,

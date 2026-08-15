@@ -38,46 +38,11 @@ initControler.systemCrons()
 import server from './backend/server/server.js'
 if(result_catch_dbs.status === 'ok'){
 
-    // CON OPCION DE CLUSTERS
 
-    if(systemConfig.HAS_MULTI_CPUS && numCpus > 3){  
-          
-        numCpus --;     // RESERVAMOS  UNA PARA EL SISTEMA
-
-        // CREAMOS CLUSTERS DEPENDIENDO DEL NUMERO DE NUCLEOS DE LA CPU
-        if(cluster.isPrimary){
-            for(let i=0; i< numCpus; i++){
-                cluster.fork()
-            }
-            // SI ALGUNO MUERE LEVANTAMOS OTRO
-            cluster.on("exit", (worker, code, signal)=>{
-                cluster.fork();
-            })
-    
-        }else{
-    
-            // LEVANTAR EL SERVIDOR WEB
-            server.listen(PORT, HOST, () => {
-                console.log(`Server Process: ${process.pid} running at http://${HOST}:${PORT}/`);
-            });
-        }
-
-    }else{
-
-
-        // LEVANTAR EL SERVIDOR WEB en un unico Nucleo de CPU
-        server.listen(PORT, HOST, () => {
-            console.log(`Server Process: ${process.pid} running at http://${HOST}:${PORT}/`);
-        });
-    }
-
-    // SIN LA OPCION DE CLUSTERS
-
-    // // LEVANTAR EL SERVIDOR WEB en un unico Nucleo de CPU
-    // server.listen(PORT, HOST, () => {
-    //     console.log(`Server Process: ${process.pid} running at http://${HOST}:${PORT}/`);
-    // });
-
+    // LEVANTAR EL SERVIDOR WEB en un unico Nucleo de CPU
+    server.listen(PORT, HOST, () => {
+        console.log(`Server Process: ${process.pid} running at http://${HOST}:${PORT}/`);
+    });
 
 
 }else{
