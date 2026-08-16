@@ -230,7 +230,7 @@ export default  {
         SITE_STATS: "site_stats_",                          // + año. Collection = mes
         USERS_ACTIVITY: 'users_activity_',                  // x año -> coll = name user
         USERS_CONTA: 'users_accounting_',                   // + año -> coll = MONTH
-        USERS_DATA: 'users_data_',                          // + AÑO ALTA DEL USUARIIO -> COLLECTION = MES DE ALTA DEL USUARIO
+        USERS_DATA: 'users_data',                          //  -> COLLECTION = MES DE ALTA DEL USUARIO
 
     },
     /** TIEMPO DE EXPIRACION DE LA COOKIE */

@@ -4,6 +4,7 @@ import dbsOpened from './backend/globalData/dbsOpened.js';
 import systemConfig from './backend/globalData/systemConfig.js';
 import initControler from './backend/init/initControler.js';
 import server from './backend/server/server.js';
+import { syncUsersIndexToRedis } from './backend/db/initUsersIndex.js';
 
 // Cargar variables de entorno
 process.loadEnvFile();
@@ -29,6 +30,9 @@ async function bootstrap() {
             console.error(`❌ Fallo crítico abriendo Redis: ${redisResult.message}`);
             process.exit(1);
         }
+
+        // 3.0 -> ALMACENAMOS UN DICIONARIO CON LOS EMAILS DE LOS USUARIOS PARA UNA BUSQUEDA RAPIDA
+        await syncUsersIndexToRedis();
 
         // 3. CACHEO DE ESTÁTICOS Y HTML (En proceso local)
         if (systemConfig.CATCH_STATIC_FILES) {

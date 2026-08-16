@@ -80,21 +80,21 @@ export default async function routerRestrictedEndpoints(req, res) {
     if (!req.body) req.body = {};
     req.body.userAgent = req.headers['user-agent'];
 
-    // 3. Consultar sesión activa desde Redis
-    let session = await sessionHandler.getSession(req.our_cookie.atk_decoded.email);
+    // 3. Consultar sesión activa desde Redis mediante sessionId
+    const sessionId = req.our_cookie.atk_decoded.sessionId;
+    let session = await sessionHandler.getSession(sessionId);
 
     if (session) {
         const now = Date.now();
-
         if (session.status === 'ENDED' || now > session.expireTime) {
             session.status = 'ENDED';
             await sessionHandler.updateSession({
                 task: 'SESSION_ENDED',
+                sessionId: sessionId,
                 email: req.user.email,
                 new_value: session,
                 await: false
             });
-
             const result_session = await sessionHandler.addSession(req, from);
             if (result_session.status !== 'ok') {
                 res.code = 302;
@@ -109,14 +109,14 @@ export default async function routerRestrictedEndpoints(req, res) {
 
         // Renovar tokens y setear cookie si procede
         await verifyTokensAndSetCookie(req, req.user, "ROUTER_RESTRICTED_ENDPOINTS");
-
     } else {
-        // No hay sesión en Redis -> redirigir a Login
+        // No hay sesión activa en Redis con ese sessionId -> redirigir al login
         res.code = 302;
         res.headers = { "Location": systemConfig.PAGES.ACCESS_PLATFORM };
         return sendStaticFile(req, res);
     }
 
+    
     if (!endpoints_handlers[req.urlData.endpoint]) {
         res.code = 404;
         return sendStaticFile(req, res);

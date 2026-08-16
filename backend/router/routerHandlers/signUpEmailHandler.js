@@ -1,383 +1,149 @@
-
-
 /**
- *  SIGNUP DEL USUARIO CON SU EMAIL Y PASSWORD
- * 
- *  
+ * HANDLER DE REGISTRO POR EMAIL (SIGNUP)
  */
 
+import generateValidationToken, { checkValidationToken } from '../../notifications/notificationsTools/generateValidationToken.js';
+import sendEmail from '../../notifications/sendEmail.js';
+import userHandler from '../../users/userHandler.js';
+import sessionHandler from '../../sessions/sessionHandler.js';
+import { getUserPointer } from '../../db/userIndexService.js';
+import { redisClient } from '../../db/openRedis.js';
+import systemConfig from '../../globalData/systemConfig.js';
 
-import bodyDataFormatVerify from "../routerTools/bodyDataFormatVerify.js";
-import sendEmail from "../../notifications/sendEmail.js";
-// import { passwordEncript} from "../routerTools/passwordEncript.js";
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-import { hashPassword } from '../routerTools/passwordEncript.js';
-import userHandler from "../../users/userHandler.js";
-import sessionHandler from "../../sessions/sessionHandler.js";
-import systemConfig from "../../globalData/systemConfig.js";
-import {randomUUID} from 'crypto';
-// import generateVerificationEndpoint from "../../tools/generateVerificationEndpoint.js";
+export default async function signUpEmailHandler(req, res) {
+    const { email, password, name, code, userAgent, deviceId, language } = req.body || {};
 
-import validationTokens from "../../globalData/validationTokens.js";
-import errorsCodes from "../../tools/errorsCodes.js";
-import log from "../../tools/log.js";
-import promotionsHandler from "../../promotions/promotionsHandler.js";
-import { checkValidationToken } from "../../notifications/notificationsTools/generateValidationToken.js";
-
-
-// Función auxiliar para responder errores POST en JSON
-const sendError = (res, statusCode, message, customCode = null) => {
-    res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({
-        status: 'error',
-        code: customCode || statusCode,
-        message: message
-    }));
-};
-
-/**
- * 
- * @param {object} Objeto Request de NodeJS
- * @param {object} Objeto Response de NodeJS
- * 
- */
-export default async function(req, res){
-    
-    const from = "SIGNUP"
-
-    const FROM_LOGS = "signUpHandler.js";
-    const INFO_LOGS = "INFO";
-    const SAVE_LOGS = "SAVE";
-    const ERROR_LOGS = "ERROR";
-    
-    log(FROM_LOGS, "** SIGNUP !!", INFO_LOGS)
-    
-    // console.log(req.data)
-
-    // Validamos los formatos de los datos recibidos
-    let result = bodyDataFormatVerify(req.body)
-
-    if(result.status !== 'ok'){
-        log(FROM_LOGS, "Error verificando Datos del Signin", INFO_LOGS)
-
-        const response_data = {
+    if (!email || !EMAIL_REGEX.test(email.trim())) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({
             status: 'error',
-            code: errorsCodes.c532.code,
-            message: "ERROR EN EL SIGNUP",      // errorsCodes.c532.message,
-        }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(response_data))
-        return;
+            code: 400,
+            message: 'Dirección de correo electrónico inválida.'
+        }));
     }
 
-    // VERIFICAMOS SI EMAIL YA REGISTRADO
-    // if(usersByEmail[req.body.email]){
-    //     log(FROM_LOGS, "Error -> EMAIL-YA-REGISTRADO", INFO_LOGS)
+    const normalizedEmail = email.toLowerCase().trim();
 
-    //     const response_data = {
-    //         status: 'error',
-    //         code: errorsCodes.c470.code,
-    //         message:  "ERROR EN EL SIGNUP",          //errorsCodes.c470.message,
-    //     }
-    //     res.writeHead(200, { 'Content-Type': 'application/json' });
-    //     res.end(JSON.stringify(response_data))
-    //     return;
-    // }
-
-    // VERIFICAMOS SI NECESITAMOS PAIS DE ORIGEN
-    // if(systemConfig.GET_SIGNUP_COUNTRY && req.data.ip){
-
-    //     const get_country = await fetch(ip.guide.io/`${req.data.ip}`)
-    //     const country_data = await json(get_country)
-
-    // }
-
-
-    
-    
-    
-    // ENCRIPTAR PASSWORD
-    const passwordHash = await hashPassword(req.body.password);
-    // Guardas passwordHash en MongoDB en el campo user.password
-    
-    if(!passwordHash){
-        log(FROM_LOGS, "Error hasheando pasword", ERROR_LOGS)
-
-        const response_data = {
-            status: 'error',
-            code: errorsCodes.c531.code,
-            message: 'ERROR EN EL SIGNUP',
-        }
-        res.writeHead(200, { 'Content-Type': 'application/json'});
-        res.end(JSON.stringify(response_data))
-        return;
-    }
-    // Machacamos con el password encriptado
-    req.body.password = passwordHash;
-
-    // SI TENEMOS FA2 ACTIVADO Y ESTA EN EL SIGNUP 
-    return signupWithFA2(req, res)
-    
-    
-}
-
-/**
- *  
- * 
- * 
- * 
- * @param {*} req 
- * @param {*} res 
- * @returns 
- */
-async function signupWithFA2(req, res) {
-    const FROM_LOGS = "signUpHandler.js -> signupWhith2FA";
-    const INFO_LOGS = "INFO";
-    const SAVE_LOGS = "SAVE";
-    const ERROR_LOGS = "ERROR";
-
-    if(!req.body.fa2 || !req.body.email){
-        const response_data = {
-            status: 'error',
-            code: errorsCodes.c540.code,
-            message: "ERROR EN EL SIGNUP",          //errorsCodes.c540.message,
-        }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(response_data));
-        return;
-
-    }
-
-    // fa2 es "SEND" O "RECIBED"
-    // SE NOS PIDE QUE ENVIEMOS EL TOKEN
-    if(req.body.fa2 === "SEND"){
-
-        // ENVIAMOS CODIGO DE VALIDACIION 
-        let data_email = { 
-            task: "SEND_VALIDATION_TOKEN",
-            from: "SIGNUP",
-            await: true,
-        }   
-    
-        const result_send_email = await sendEmail(data_email, req.body);
-    
-        if(result_send_email.status != 'ok'){
-            console.log('Error en el Envio del CODIGO DE VERIFICACION POR Email')
-            const response_data = {
+    try {
+        // 1. Comprobar existencia previa instantáneamente en Redis (O(1))
+        const existingPointer = await getUserPointer(normalizedEmail);
+        if (existingPointer) {
+            res.writeHead(409, { 'Content-Type': 'application/json; charset=utf-8' });
+            return res.end(JSON.stringify({
                 status: 'error',
-                code: errorsCodes.c535.code,
-                message: "ERROR EN EL SIGNUP",      //errorsCodes.c535.message,
+                code: 409,
+                message: 'El correo electrónico ya se encuentra registrado.'
+            }));
+        }
+
+        // =====================================================================
+        // FASE 1: NO SE ENVIÓ CÓDIGO -> GENERAR Y ENVIAR CÓDIGO POR EMAIL
+        // =====================================================================
+        if (!code) {
+            if (redisClient && redisClient.isOpen) {
+                const cooldownKey = `cooldown:email:${normalizedEmail}`;
+                const inCooldown = await redisClient.get(cooldownKey);
+                if (inCooldown) {
+                    const ttl = await redisClient.ttl(cooldownKey);
+                    res.writeHead(429, { 'Content-Type': 'application/json; charset=utf-8' });
+                    return res.end(JSON.stringify({
+                        status: 'error',
+                        code: 429,
+                        message: `Por favor espera ${ttl} segundos antes de solicitar otro código.`
+                    }));
+                }
+                await redisClient.set(cooldownKey, '1', { EX: 60 });
             }
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(response_data))
-            return;
+
+            const validationCode = await generateValidationToken(normalizedEmail);
+            const lang = language || systemConfig.MAIN_LANGUAGE || 'es';
+
+            const emailResult = await sendEmail({
+                email: normalizedEmail,
+                code: validationCode,
+                type: 'VERIFICATION_CODE',
+                language: lang
+            });
+
+            if (emailResult && emailResult.status === 'error') {
+                res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+                return res.end(JSON.stringify({
+                    status: 'error',
+                    code: 500,
+                    message: 'No se pudo enviar el correo de verificación.'
+                }));
+            }
+
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+            return res.end(JSON.stringify({
+                status: 'ok',
+                code: 200,
+                step: 'CODE_SENT',
+                message: 'Código de verificación enviado al correo.'
+            }));
         }
 
-        // NOTIFICAMOS AL FRONTEND QUE SE HA ENVIADO UN EMAIL CON EL CODIGO
-        const response_data = {
-            status: 'ok',
-            fa2_required: true,     // MARCAMOS PARA ABRIR FORM PARA INTRODUCIR EL CODIGO DE VALIDACION
-            code: errorsCodes.c200.code,
-            message: 'Te hemos enviado un codigo de verificacion a tu email',
-        }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(response_data))
-        return;
-    
-    // NOS ENVIAN EL CODIGO DE VERIFICACION
-    }else if(req.body.fa2 === "RECIBED"){
-
-
-        const normalizedEmail = req.body.email.toLowerCase().trim();
-
-        // 2. Verificar el código de validación almacenado en Redis
-        const isValidCode = await checkValidationToken(normalizedEmail, req.body.token);
-        console.log({isValidCode})
-        console.log(req.body)
-        if (!isValidCode) {
+        // =====================================================================
+        // FASE 2: SE RECIBIÓ EL CÓDIGO -> VALIDAR, CREAR USUARIO Y CREAR SESIÓN
+        // =====================================================================
+        if (!password || typeof password !== 'string' || password.length < 6) {
             res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+            return res.end(JSON.stringify({
+                status: 'error',
+                code: 400,
+                message: 'La contraseña debe tener al menos 6 caracteres.'
+            }));
+        }
+
+        // Validar y destruir el código en Redis
+        const isValidCode = await checkValidationToken(normalizedEmail, code);
+        if (!isValidCode) {
+            res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
             return res.end(JSON.stringify({
                 status: 'error',
                 code: 401,
                 message: 'El código de verificación es incorrecto o ha expirado.'
             }));
         }
-        /*
-        // COMPROBAMOS QUE EL TOKEN ES CORRECTO
-        const token_data = validationTokens[req.body.email]
-       
-        if(!token_data){
-            // token invalido o Caducado
-            log(FROM_LOGS, "ERROR -> TOKEN BORRADO -> CADUCADO ??", INFO_LOGS)
 
-            const response_data = {
-                status: 'error',
-                code: errorsCodes.c468.code,
-                message: "TOKEN VERIFICACION INVALIDO",      //errorsCodes.c466.message,
-            }
-            res.writeHead(200, { 'Content-Type': 'application/json'});
-            res.end(JSON.stringify(response_data))
-            return;
+        // Crear usuario mediante userHandler (Mongo + Redis Pointer)
+        const userResult = await userHandler.addUser(req.body);
+        if (userResult.status !== 'ok') {
+            res.writeHead(userResult.code || 500, { 'Content-Type': 'application/json; charset=utf-8' });
+            return res.end(JSON.stringify(userResult));
         }
 
-        console.log({token_data})
-        console.log(req.body)
-      
-        if(req.body.token !== token_data.token){
-            // token invalido o Caducado
-            log(FROM_LOGS, "ERROR -> Hemos recibido un VAlidation Token NO VALIDO", INFO_LOGS)
+        // Crear sesión y generar cookies Set-Cookie
+        req.user = userResult.user;
+        await sessionHandler.addSession(req, 'SIGNUP');
 
-            const response_data = {
-                status: 'error',
-                code: errorsCodes.c466.code,
-                message: "ERROR EN EL SIGNUP",      //errorsCodes.c466.message,
-                
-            }
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(response_data))
-            return;
-
+        const headers = { 'Content-Type': 'application/json; charset=utf-8' };
+        if (req.cookie && Array.isArray(req.cookie)) {
+            headers['Set-Cookie'] = req.cookie;
         }
-        if(token_data.expireTime < Date.now()){
-            // token expirado
-            log(FROM_LOGS, "ERROR -> Codigo de Validación Expirado", INFO_LOGS)
-            
-            // Lo borramos
-            delete validationTokens[req.body.email]
-            const response_data = {
-                status: 'error',
-                code: errorsCodes.c465.code,
-                message: "ERROR EN EL SIGNUP",          //errorsCodes.c465.message,
-            }
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(response_data));
-            return;
-        }
-        */
-    
-    
-    // FA2 NO ES "SEND" NI "RECIBED" ???
-    }else{
-        log(FROM_LOGS, "ERROR -> VALOR DE FA2 INCORRECTO", INFO_LOGS)
 
-        const response_data = {
+        res.writeHead(200, headers);
+        return res.end(JSON.stringify({
+            status: 'ok',
+            code: 200,
+            step: 'COMPLETED',
+            message: 'Registro completado con éxito.',
+            data: {
+                name: userResult.user.name,
+                email: userResult.user.email,
+                role: userResult.user.role
+            }
+        }));
+
+    } catch (error) {
+        console.error('❌ Error en signUpEmailHandler:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({
             status: 'error',
-            code: errorsCodes.c540.code,
-            message: "ERROR EN EL SIGNUP",          //errorsCodes.c540.message,
-        }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(response_data));
-        return;
-
+            code: 500,
+            message: 'Error interno en el servidor.'
+        }));
     }
-
-    /**
-     *      COMPROBAMOS SI HAY PROMO_CODE EN LA DATA DE LA PETICION DE SIGNUP
-     * 
-     */
-    if(systemConfig.HAS_PROMO_CODES && req.body.promo_code && req.body.promo_code.trim().length > 0){
-        
-        const result_promo_code = promotionsHandler.applyPromoCode(req)
-       
-        if(result_promo_code.status !== "ok"){
-
-            const response_data = {
-                status: result_promo_code.status,
-                code: result_promo_code.code,
-                message: result_promo_code.message,          //errorsCodes.c540.message,
-            }
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(response_data));
-            return;
-        }
-
-    }
-
-    // FINALIZAMOS EL SIGNUP
-
-    // DATOS PARA ALMACENAR EL DISPOSITIVO DESDE EL QUE SE CONECTA en el signin
-    req.body.deviceId = randomUUID();   // Primer device ID
-    req.body.userDevice = {
-        userAgent: req.urlData.userAgent,
-        deviceId: req.body.deviceId
-    }
-
-    //AÑADIR USUARIO A DB
-    const result_user = await userHandler.addUser(req.body)
-
-    if(result_user.status !== 'ok'){
-        log(FROM_LOGS, "ERROR -> VALOR DE 2FA INCORRECTO", SAVE_LOGS)
-
-        const response_data = {
-            status: 'error',
-            code: errorsCodes.c550.code,
-            message: 'ERROR EN EL SIGNUP',
-        }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        return res.end(JSON.stringify(response_data))
-    }
-    req.user = result_user.user
-
-    // CREAMOS SESSION DE USUARIO
-    const result_session = await sessionHandler.addSession(req, "SIGNUP");
-
-    if(result_session.status !== 'ok'){
-        log(FROM_LOGS, "Error Creando la SESSION", SAVE_LOGS)
-
-        const response_data = {
-            status: 'error',
-            code: errorsCodes.c551.code,
-            message: 'ERROR EN EL SIGNUP',
-        }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(response_data))
-        
-        return;
-    }
-
-    
-    log(FROM_LOGS, "USUARIO REGISTRADO CON EXITO", INFO_LOGS)
-    
-    // SI LA HAY, AÑADIMOS LA RUTA DESDE LA QUE SE LE ENVIO AL REGISTRARSE
-    let location = "/" + req.urlData.language + systemConfig.PAGES.URL_AFTER_SIGNUP
-    if(req.body.previous_endpoint){
-        location = req.body.previous_endpoint
-    }
-
-    console.log(`Location desde el signup: ${location}`)
-
-    const response_data = {
-        "status": "ok",
-        // "location": systemConfig.PAGES.URL_AFTER_SIGNUP,
-        location: location,
-        "message": "USUARIO REGISTRADO",
-    }
-    console.log({response_data})
-    console.log(req.cookie)
-    
-    // ENVIAMOS A SU SUBDOMAIN-CORRESPONDIENTE si se requiere
-    if(systemConfig.HAS_SUBDOMAINS){
-
-        // if(req.user.type === "PRO"){
-        //     response_data.location =  "http://pro.localhost:3000" + systemConfig.PAGES.URL_AFTER_SIGNUP;
-    
-        // }else if(req.user.type === "MASTER"){
-        //     response_data.location =  "http://master.localhost:3000" + systemConfig.PAGES.URL_AFTER_SIGNUP;
-    
-        // }
-    }
-
-    res.writeHead(200, 
-        {   'Content-Type': 'application/json', 
-            'Set-Cookie': req.cookie,
-            'Cache-Control': 'no-cache',
-        });
-        
-    res.end(JSON.stringify(response_data));
-    return;   
-    
 }
-
-
-
-

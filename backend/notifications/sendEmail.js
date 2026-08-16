@@ -1,250 +1,117 @@
 
 
-
-
 /**
- * ENVIAMOS UN EMAIL AL USUARIO USANDO LOS SERVICIOS DE AWS
- * 
- * 
+ * MÓDULO DE ENVÍO DE CORREOS ELECTRÓNICOS VÍA AWS SES (SDK v3)
  */
 
+import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import systemConfig from '../globalData/systemConfig.js';
-import generateVerificationEndpoint from './notificationsTools/generateVerificationEndpoint.js';
-import generateValidationToken from './notificationsTools/generateValidationToken.js';
-process.loadEnvFile();
 
-import { SendEmailCommand, SESClient} from "@aws-sdk/client-ses";
-const REGION = process.env.REGION;
-// Create SES service object.
-const sesClient = new SESClient({ 
-  region: process.env.AWS_SMTP_REGION,
-  credentials:{
-    accessKeyId: process.env.AWS_ACCESS_KEY,
-    secretAccessKey: process.env.AWS_PRIVATE_KEY
-}});
-
+// Inicialización del cliente SES con variables de entorno
+const sesClient = new SESClient({
+    region: process.env.AWS_REGION || 'eu-west-1',
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
+    }
+});
 
 /**
- * @param {object} data -> Con los dartos para el email (from, task, endpoint, url_token, ...)
- * @param {object} user -> DAtos del usuario
- * 
+ * Plantillas básicas de correo según tipo e idioma
  */
+function buildEmailTemplate({ type, code, language = 'es', customData = {} }) {
+    const isEn = language === 'en';
 
-export default async (data, user)=>{        // {task, name, email, lastName, url_tokren, await}
+    if (type === 'VERIFICATION_CODE') {
+        const subject = isEn 
+            ? `Your verification code: ${code}` 
+            : `Tu código de verificación: ${code}`;
 
-    console.log('IN SendEmail !!!!')
-    // console.log(data)
-    // console.log({usersByEmail})
+        const textBody = isEn
+            ? `Hello,\n\nYour verification code is: ${code}\nThis code will expire in 15 minutes.\nIf you did not request this, please ignore this email.`
+            : `Hola,\n\nTu código de verificación es: ${code}\nEste código caduca en 15 minutos.\nSi no has solicitado este código, puedes ignorar este correo.`;
 
-    // token que se envia al correo del usuario para que lo ingrese en una formulario de acceso o para verificar algun paso
-    if(data.task === "SEND_VALIDATION_TOKEN"){
-        // ENVIAMOS UN EMAIL A data.email con el token para terminar el signup
-        
-
-        if(!user.email || !user.name){
-            return {ststus: "error", mesage: "Datos incompletos: name or validation_token.token"}
-        }
-
-        const validation_token = await generateValidationToken(user.email);
-        // token: validation_token.token,
-        // token_expireTime: validation_token.expireTime,
-        // ESTOS DATOS NO PUEDEN SER NULL, SINO HABRA ERROR EN EL ENVIO DEL EMAIL 
-        
-
-        const data_email = {
-            sender: systemConfig.EMAIL_NOT_REPLY_SENDER,
-            subject: "CONSULTA LEGAL: CODIGO DE ACCESO",
-            emails: [user.email],
-            name: user.name,
-            body_type: "html",
-        }
-
-        /** DISTINTOS CUERPOS DE LOS EMAILS QUE SE ENVIAN  */
-        if(data.from === "SIGNUP"){
-
-            data_email.body_data = 
-            `<p>Hola ${data.name}:</p>
-            <p style="margin-bottom: 20px;">Te damos la bienvenida a Consulta Legal.<br> A continuacion te facilitamos el código de verificación para completar la creación de la cuenta</p>
-            <div style="width: 320px;height: auto; border: 1px solid plum;border-radius: 12px;margin: 0 auto;text-align: center;background-color:aliceblue;">
-                <h2 style="text-align: center;">ConsultaLegal</h2>
-                <h3 style="text-align: center;">Codigo de Verificacion</h3><hr>
-                <h1 style="font-weight: bold;">${validation_token.token}</h1>
+        const htmlBody = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                <h2 style="color: #333; text-align: center;">${isEn ? 'Verification Code' : 'Código de Verificación'}</h2>
+                <p style="color: #555; font-size: 16px;">
+                    ${isEn ? 'Please use the following code to complete your registration or verification:' : 'Utiliza el siguiente código para completar tu registro o verificación:'}
+                </p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1a73e8; background: #f1f3f4; padding: 10px 24px; border-radius: 6px; display: inline-block;">
+                        ${code}
+                    </span>
+                </div>
+                <p style="color: #777; font-size: 14px;">
+                    ${isEn ? 'This code is valid for 15 minutes.' : 'Este código es válido durante 15 minutos.'}
+                </p>
+                <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;">
+                <p style="color: #999; font-size: 12px; text-align: center;">
+                    ${isEn ? 'If you did not request this code, you can safely ignore this email.' : 'Si no solicitaste este código, puedes ignorar este correo de forma segura.'}
+                </p>
             </div>
-            <p style="text-align: center;">Mas texto</p></div>`
-        
-        }else if(data.from === "LOGIN"){
+        `;
 
-            data_email.body_data = 
-            `<p>Hola ${user.name}:</p>
-            <p style="margin-bottom: 20px;">Te damos la bienvenida a Consulta Legal.<br> A continuacion te facilitamos el código de verificación para Iniciar Sesión</p>
-            <div style="width: 320px;height: auto; border: 1px solid plum;border-radius: 12px;margin: 0 auto;text-align: center;background-color:aliceblue;">
-                <h2 style="text-align: center;">ConsultaLegal</h2>
-                <h3 style="text-align: center;">Codigo de Verificacion</h3>
-                <hr><h1 style="font-weight: bold;">${validation_token.token}</h1>
-            </div>
-            <p style="text-align: center;">Mas texto</p></div>`
-        
-        }else if(data.from === "ACCESS_REMOTE_PANNEL"){
-           
-            data_email.body_data = 
-            `<p>Hola ${data.name}:</p>
-            <p style="margin-bottom: 20px;"> A continuacion te facilitamos el código de verificación para ACCEDER AL PANNEL </p>
-            <div style="width: 320px;height: auto; border: 1px solid plum;border-radius: 12px;margin: 0 auto;text-align: center;background-color:aliceblue;">
-                <h2 style="text-align: center;">ConsultaLegal</h2>
-                <h3 style="text-align: center;">Codigo de Verificacion</h3>
-                <hr><h1 style="font-weight: bold;">${validation_token.token}</h1>
-            </div>
-            <p style="text-align: center;">Mas texto</p></div>`
-            
-            // ESTE CODIGO SOLO SE ENVIA A UNOS DETERMINADOS EMAILS
-            data.emails = systemConfig.EMAILS_TO_SEND_ACCESS_CODES
-        }
-
-        if(!data_email.body_data){
-            return {status: "error"}
-        }
-
-        const params = setEmailParams(data_email)
-        const result = await send(params)
-        return result;
-
-    
-    // ENVIAMOS UN EMAIL con un endpoint personalizado PARA RENOVAR EL PASSWORD
-    }else if(data.task === "SEND_FORGOT_PASSWORD_EMAIL"){
-
-        const data_gen_endpoint = {
-            from: "FORGOT_PASSWORD",
-            await: true
-        }
-        // GENERAMOS EL ENDPOINT PARA RENOVAR EL PASSWORD
-        const renove_password_endpoint = await generateVerificationEndpoint(data_gen_endpoint, user);
-console.log({renove_password_endpoint})
-        const data_email = {
-            sender: systemConfig.EMAIL_NOT_REPLY_SENDER,
-            subject: "CONSULTA LEGAL: CAMBIO DE CONTRASEÑA",
-            emails: [user.email],
-            name: user.name,
-            body_type: "html",
-            body_data: `<p>Hola ${user.name}:</p>
-            <p style="margin-bottom: 20px;">Haz CLICK en el siguiente enlace para hacer el cambio de contraseña.</p>
-            <div style="width: 320px;height: auto; border: 1px solid plum;border-radius: 12px;margin: 0 auto;text-align: center;background-color:aliceblue;">
-                <h3 style="text-align: center;">ConsultaLegal</h3>
-                <h2 style="text-align: center;"><a style="text-decoration: underline;" href ="${renove_password_endpoint}">CAMBIAR CONTRASEÑA</a></h2>
-            </div>
-            <p style="text-align: center;">SI NO HAS SIDO TU QUIEN HA REQUERIDO ESTA ACCIÓN NO HAGAS USO DE ESTE ENLACE</p>`
-
-        }
-      
-        const params = setEmailParams(data_email)
-        
-        const result = await send(params)
-        return result;
-        
-    
-    // enviamos email de confirmacion de cambio de password
-    }else if(data.task === "SEND_PASSWORD_UPDATE_SUCCESS"){
-
-        
-        const data_email = {
-            sender: systemConfig.EMAIL_NOT_REPLY_SENDER,
-            subject: "CONSULTA LEGAL: CAMBIO DE CONTRASEÑA",
-            emails: [user.email],
-            name: user.name,
-            body_type: "html",
-            body_data: `<p>Hola ${user.name}:</p><p style="margin-bottom: 20px;">Le confirmamos que hemos actualizado su clave de acceso</p>`
-
-        }
-        const params = setEmailParams(data_email)        
-        if(data.await){
-            const result = await send(params)
-
-            return {status: "ok", message: "Email enviado"}
-        }else{
-            send(params)
-            return {status: "ok"}
-        }
+        return { subject, textBody, htmlBody };
     }
 
+    // Plantilla por defecto o personalizada
+    return {
+        subject: customData.subject || (isEn ? 'Notification' : 'Notificación'),
+        textBody: customData.text || '',
+        htmlBody: customData.html || `<p>${customData.text || ''}</p>`
+    };
 }
 
+/**
+ * Función principal para enviar emails
+ * @param {Object} options
+ * @param {string} options.email - Correo de destino
+ * @param {string} [options.code] - Código de verificación (si aplica)
+ * @param {string} [options.type] - Tipo de correo ('VERIFICATION_CODE', etc.)
+ * @param {string} [options.language] - Idioma ('es' | 'en')
+ * @param {Object} [options.customData] - Asunto y textos libres alternativos
+ */
+export default async function sendEmail({ email, code, type = 'VERIFICATION_CODE', language, customData }) {
+    if (!email) {
+        console.error('❌ Error sendEmail: No se proporcionó dirección de correo de destino.');
+        return { status: 'error', message: 'Email de destino obligatorio' };
+    }
 
+    const lang = language || systemConfig.MAIN_LANGUAGE || 'es';
+    const { subject, textBody, htmlBody } = buildEmailTemplate({ type, code, language: lang, customData });
+    const fromAddress = process.env.AWS_SES_FROM_EMAIL || systemConfig.SYSTEM_EMAIL || 'no-reply@tudominio.com';
 
-const setEmailParams = (data)=>{
-    
-    let params = {
-        Source: data.sender,
+    const params = {
+        Source: fromAddress,
         Destination: {
-            ToAddresses: data.emails,       // es un []
+            ToAddresses: [email]
         },
         Message: {
             Subject: {
-                Data: data.subject
+                Data: subject,
+                Charset: 'UTF-8'
             },
             Body: {
-                Html:{},
-                Text:{}
-            },
-        },
-
+                Html: {
+                    Data: htmlBody,
+                    Charset: 'UTF-8'
+                },
+                Text: {
+                    Data: textBody,
+                    Charset: 'UTF-8'
+                }
+            }
+        }
     };
 
-    if(data.body_type === "html"){
-        params.Message.Body.Html = {
-            Charset: "UTF-8",
-            Data: data.body_data,
-        }
-        delete params.Message.Body.Text
-    }else if(data.body_type === "text"){
-        params.Message.Body.Text = {
-            Charset: "UTF-8",
-            Data: data.body_data,
-        }
-        delete params.Message.Body.Html
+    try {
+        const command = new SendEmailCommand(params);
+        const response = await sesClient.send(command);
+        console.log(`✉️ Email enviado con éxito a ${email} (MessageId: ${response.MessageId})`);
+        return { status: 'ok', messageId: response.MessageId };
+    } catch (error) {
+        console.error('❌ Error enviando email mediante AWS SES:', error.message);
+        return { status: 'error', message: error.message };
     }
-
-  return new SendEmailCommand(params);
-    
-}
-
-const send = async (params)=>{
-
-    // const params = {
-    //     Source: "pegashio70@gmail.com",
-    //     Destination: {
-    //         ToAddresses: emails
-    //     },
-    //     Message: {
-    //         Subject: {
-    //             Data: "Asunto de PRUEBA"
-    //         },
-    //         Body: {
-    //             Html:{
-    //                 Charset: "UTF-8",
-    //                 Data:`<p>Hola ${"nombre-del-usuario"}:</p><p style="text-align: center;margin-bottom: 20px;">Te damos la bienvenida a Consulta Legal<br/> A continuacion te failitamos un codgo de verificación para completar la creación de la cuenta</p><div style="width: 320px;height: auto; border: 1px solid plum;border-radius: 12px;margin: 0 auto;text-align: center;background-color:aliceblue;"><p style="text-align: center;"><h2>${"NAME-PLATAFORMA"}</h2></p><hr><h3 style="text-align: center;">Codigo de Verificacion</h3><h1 style="font-weight: bold;">${"CODIGO-DEMO"}</h1></div><div style="max-width: 70%;border: 1px solid plum; margin: 0 auto; min-height: 400px; border-radius: 12px;margin-top: 20px;"><p style="text-align: center;">Mas texto</p></div>`
-    //             },
-    //             // Text: {
-    //             //     Data: message,
-    //             // }
-    //         }
-    //     }
-    // }
-
-
-    // console.log(params)
-    try{
-        const result = await sesClient.send(params);
-        console.log("Email Sent")
-        result.status = "ok"
-        // console.log(result)
-        return result
-
-    }catch(error){
-        console.log("ERROR SENDING Email")
-        const result = {status: "error"}
-        console.log(error)
-        return result
-
-
-    }
-
 }

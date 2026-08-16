@@ -1,9 +1,8 @@
-
-
 /**
- * MANEJADOR DE SESIONES CON PERSISTENCIA EN MONGO Y CACHÉ CENTRALIZADA EN REDIS
+ * MANEJADOR DE SESIONES CON PERSISTENCIA EN MONGO Y CACHÉ CENTRALIZADA EN REDIS (INDEXADO POR SESSION_ID)
  */
 
+import { randomUUID } from 'node:crypto';
 import { redisClient } from '../db/openRedis.js';
 import systemConfig from '../globalData/systemConfig.js';
 import dbCrudHandler from '../db/dbCrudHandler.js';
@@ -23,17 +22,21 @@ export const addSession = async (req, from) => {
         const match = req.user.userDevices?.some((el) => {
             return (el.userAgent === req.body?.userAgent && el.deviceId === req.body?.deviceId);
         });
-
         if (!match) {
             addNewUserDevice(req);
         }
     }
 
-    // Configurar tokens y cookies
-    verifyTokensAndSetCookie(req, req.user, "ADD_SESSION");
+    // Generamos un sessionId único para este inicio de sesión / dispositivo
+    const sessionId = randomUUID();
+    req.currentSessionId = sessionId;
+
+    // Configurar tokens y cookies vinculando el sessionId
+    await verifyTokensAndSetCookie(req, req.user, "ADD_SESSION");
 
     const session_data = sessionSchema(req);
     const session = session_data.session;
+    session.sessionId = sessionId;
 
     // 1. Almacenar sesión en MongoDB
     const params = {
@@ -41,16 +44,16 @@ export const addSession = async (req, from) => {
         collection: session.date.month,
         await: true
     };
-
     const result = await dbCrudHandler.insertOne(session, params);
 
-    // 2. Almacenar sesión en Redis con TTL automático
+    // 2. Almacenar sesión en Redis indexada por sessionId
     if (result.status === 'ok' && redisClient && redisClient.isOpen) {
-        const redisKey = `session:${req.user.email}`;
+        const redisKey = `session:${sessionId}`;
         const ttlSeconds = Math.ceil(systemConfig.TOKENS_AGE.SESSION_DURATION / 1000);
         
         await redisClient.set(redisKey, JSON.stringify(session), { EX: ttlSeconds });
 
+        result.sessionId = sessionId;
         result.atk = req.accessData.accessToken;
         result.rtk = req.refreshData.refreshToken;
         result.userDevices = req.user.userDevices;
@@ -60,12 +63,12 @@ export const addSession = async (req, from) => {
 };
 
 /**
- * OBTENER SESIÓN DESDE REDIS
+ * OBTENER SESIÓN DESDE REDIS POR SESSION_ID
  */
-export const getSession = async (email) => {
-    if (!email || !redisClient || !redisClient.isOpen) return null;
+export const getSession = async (sessionId) => {
+    if (!sessionId || !redisClient || !redisClient.isOpen) return null;
     try {
-        const sessionStr = await redisClient.get(`session:${email}`);
+        const sessionStr = await redisClient.get(`session:${sessionId}`);
         return sessionStr ? JSON.parse(sessionStr) : null;
     } catch (err) {
         console.error('Error obteniendo sesión de Redis:', err.message);
@@ -94,13 +97,13 @@ export const updateSession = async (data) => {
             dbCrudHandler.updateOne(filter, update_data, params);
         }
 
-        // Eliminar sesión de Redis
-        if (redisClient && redisClient.isOpen) {
-            await redisClient.del(`session:${data.email}`);
+        // Eliminar sesión de Redis por sessionId
+        if (data.sessionId && redisClient && redisClient.isOpen) {
+            await redisClient.del(`session:${data.sessionId}`);
         }
 
     } else if (data.task === 'UPDATE_SESSION_STATUS') {
-        const filter = { _id: data.sessionId };
+        const filter = { sessionId: data.sessionId };
         const update_data = { $set: { "status": data.new_value } };
 
         if (data.await) {
@@ -110,22 +113,22 @@ export const updateSession = async (data) => {
         }
 
         // Actualizar estado en Redis
-        if (redisClient && redisClient.isOpen) {
-            const currentSession = await getSession(data.user.email);
+        if (data.sessionId && redisClient && redisClient.isOpen) {
+            const currentSession = await getSession(data.sessionId);
             if (currentSession) {
                 currentSession.status = data.new_value;
-                const ttl = await redisClient.ttl(`session:${data.user.email}`);
+                const ttl = await redisClient.ttl(`session:${data.sessionId}`);
                 if (ttl > 0) {
-                    await redisClient.set(`session:${data.user.email}`, JSON.stringify(currentSession), { EX: ttl });
+                    await redisClient.set(`session:${data.sessionId}`, JSON.stringify(currentSession), { EX: ttl });
                 }
             }
         }
     }
 };
 
-export const deleteSesion = async (email) => {
-    if (redisClient && redisClient.isOpen) {
-        await redisClient.del(`session:${email}`);
+export const deleteSesion = async (sessionId) => {
+    if (sessionId && redisClient && redisClient.isOpen) {
+        await redisClient.del(`session:${sessionId}`);
     }
     return { status: 'ok' };
 };

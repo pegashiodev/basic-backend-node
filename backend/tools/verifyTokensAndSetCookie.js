@@ -1,8 +1,5 @@
-
-
-
 /**
- * VERIFICA Y REFRESCA TOKENS CON ESTADO EN REDIS
+ * VERIFICA Y REFRESCA TOKENS CON ESTADO EN REDIS VINCULADOS POR SESSION_ID
  */
 
 import { getSession } from "../sessions/sessionHandler.js";
@@ -20,14 +17,15 @@ export default async function verifyTokensAndSetCookie(req, user, from) {
 
     const userEmail = user?.email || req.our_cookie?.atk_decoded?.email;
     const userName = user?.name || req.our_cookie?.atk_decoded?.name;
+    const sessionId = req.currentSessionId || req.our_cookie?.atk_decoded?.sessionId || req.our_cookie?.rtk_decoded?.sessionId;
 
     // 1. NUEVA SESIÓN (Login o Signup)
     if (from === "ADD_SESSION") {
         req.set_new_cookie = true;
-        refreshData = generateRefreshToken(userName, userEmail);
+        refreshData = generateRefreshToken(userName, userEmail, sessionId);
         req.refreshData = refreshData;
 
-        accessData = generateAccessToken(userName, userEmail);
+        accessData = generateAccessToken(userName, userEmail, sessionId);
         req.accessData = accessData;
 
     // 2. ACCESO AL PANEL DE ADMINISTRACIÓN
@@ -38,39 +36,40 @@ export default async function verifyTokensAndSetCookie(req, user, from) {
 
     // 3. VERIFICACIÓN Y RENOVACIÓN DE TOKENS EXISTENTES
     } else {
-        const session = await getSession(userEmail);
+        if (!sessionId) return;
 
+        const session = await getSession(sessionId);
         if (session) {
             const atkExpiry = req.our_cookie?.atk_decoded?.expireTime || 0;
             const rtkExpiry = req.our_cookie?.rtk_decoded?.expireTime || 0;
 
-            // Si RTK ha expirado -> Renovamos RTK y ATK
+            // Si RTK ha expirado -> Renovamos RTK y ATK manteniendo el sessionId
             if (rtkExpiry < now) {
                 req.set_new_cookie = true;
-                refreshData = generateRefreshToken(userName, userEmail);
+                refreshData = generateRefreshToken(userName, userEmail, sessionId);
                 req.refreshData = refreshData;
 
-                accessData = generateAccessToken(userName, userEmail);
+                accessData = generateAccessToken(userName, userEmail, sessionId);
                 req.accessData = accessData;
 
                 // Actualizar identificadores en la sesión de Redis
                 session.rtk = refreshData.rtk;
                 session.atk = accessData.atk;
-                const ttl = await redisClient.ttl(`session:${userEmail}`);
+                const ttl = await redisClient.ttl(`session:${sessionId}`);
                 if (ttl > 0) {
-                    await redisClient.set(`session:${userEmail}`, JSON.stringify(session), { EX: ttl });
+                    await redisClient.set(`session:${sessionId}`, JSON.stringify(session), { EX: ttl });
                 }
 
             // Si solo el ATK ha expirado (RTK sigue vivo) -> Renovamos solo ATK
             } else if (atkExpiry < now) {
                 req.set_new_cookie = true;
-                accessData = generateAccessToken(userName, userEmail);
+                accessData = generateAccessToken(userName, userEmail, sessionId);
                 req.accessData = accessData;
 
                 session.atk = accessData.atk;
-                const ttl = await redisClient.ttl(`session:${userEmail}`);
+                const ttl = await redisClient.ttl(`session:${sessionId}`);
                 if (ttl > 0) {
-                    await redisClient.set(`session:${userEmail}`, JSON.stringify(session), { EX: ttl });
+                    await redisClient.set(`session:${sessionId}`, JSON.stringify(session), { EX: ttl });
                 }
 
                 changeOnlyAtk = true;
