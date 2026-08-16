@@ -20,10 +20,6 @@ export default  {
     BASE_URL_USER_FILES_FOLDER_PROD: "",
     BASE_URL_FRONTEND_FILES_DEV: "/home/carlos/dev/basic-project-old/frontend/",
     BASE_URL_FRONTEND_FILES_PROD: "",
-
-    /** EMAILS USADOS PARA LOS ENVIOS DE LOS EMAILS A LOS CLIENTES */
-    EMAIL_NOT_REPLY_SENDER: "pegashio70@gmail.com",
-    EMAIL_SENDER: "pegashio70@gmail.com",
     
     /* LENGUAJES ADMITIDOS EN LA PLATAFORMA */
     HAS_MULTI_LANGUAJES: true, 
