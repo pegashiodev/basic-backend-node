@@ -14,13 +14,15 @@ import { v4 as uuidv4 } from 'uuid';
  * @returns {Object} Estructura normalizada de sesión
  */
 export function createSessionObject({ userId, email, role = 'user', ip = 'unknown', userAgent = 'unknown', extraData = {} }) {
+
+    // console.log({ userId, email, role, ip, userAgent, extraData })
     const now = Date.now();
     const sessionId = uuidv4();
 
     return {
         // Datos inmutables de identificación
-        customId: {
-            sessionId,
+        _id: {
+            _id: sessionId,
             userId,
             email: email.trim().toLowerCase()
         },

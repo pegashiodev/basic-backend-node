@@ -3,18 +3,22 @@
 import { redisClient } from '../db/openRedis.js';
 import { getDb } from '../db/openDbs.js';
 import { createSessionObject } from './sessionSchema.js';
+import systemConfig from '../globalData/systemConfig.js';
 
 // TTL por defecto para Redis (ej. 24 horas en segundos)
 const SESSION_TTL_SECONDS = 60 * 60 * 24;
 
 /**
  * Crea y persiste una nueva sesión
- * @param {Object} sessionInput - Parámetros para el sessionSchema
+ * @param {Object} user - {email, password, nombre ?, }
  * @returns {Promise<Object>} Objeto de sesión completo creado
  */
-export async function createSession(sessionInput) {
-    const session = createSessionObject(sessionInput);
-    const { sessionId, userId } = session.customId;
+export async function createSession(user, from) {
+
+    const [, month, , year] = new Date().toString().split(' ');
+    
+    const session = createSessionObject(user);
+    const { _id:sessionId, userId } = session._id
 
     // 1. Guardar en Redis con expiración automática (TTL)
     const redisKey = `session:${sessionId}`;
@@ -27,14 +31,17 @@ export async function createSession(sessionInput) {
 
     // 2. Persistir en MongoDB (colección centralizada de sesiones)
     try {
-        const db = getDb('users_data');
-        const sessionsCollection = db.collection('sessions');
+        const db = getDb(systemConfig.DBS.SESSIONS + year);
+        const sessionsCollection = db.collection(month.toLowerCase());
         await sessionsCollection.insertOne(session);
     } catch (err) {
         console.error('⚠️ No se pudo persistir la sesión en MongoDB (continúa con Redis):', err.message);
+        return {status: "error", session: session};
+
     }
 
-    return session;
+
+    return {status: "ok", session: session};
 }
 
 /**

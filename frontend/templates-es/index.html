@@ -87,23 +87,21 @@
         const btn_verify_login = document.querySelector("#btn_verify_login")
 
         const data_signup = {
+            type: "SIGNUP",
             name: '',
-            email: "pegashio@gmail.com",
+            email: "",
             signup_method: "USER-EMAIL",
-            password: "12345",
-            pin: 1234,
-            fa2: "SEND",     // required -> se controla en el servidor si se envia codigo o no
+            password: "",
+           
            
         }
 
         const data_login = {
             name: '',
-            email: "pegashio@gmail.com",
+            email: "",
             signup_method: "USER-EMAIL",
-            password: '12345',
-            // forgot_password: false,
-            fa2: "SEND",        // // required -> se controla en el servidor si se envia codigo o no
-
+            password: '',
+           
         }
         data_forgot_password = {
             email: "pegashio@gmail.com",
@@ -135,74 +133,39 @@
 
             console.log(result)
            
-            if(!result){
-                alert("ERROR EN EL SIGNUP")
-            }else if(result.status !== "ok"){
-                // Erroes con el formato de los Campos
-                // o disponibilidad de Nombres
-                // ...
-
-                alert("ERROR con los campos del SignUp")
+            if(result.status === 'ok'){
                 
-            }else if(result.fa2_required){
-                // mOSTRAMOS EL RESTO DEL FORM
-                document.querySelector(".signup_form .fa2").style = "display: block"
-                // oCULTAMOS LO ANTERIOR
-                // document.querySelector(".signup_form .top_data #btn_signup").style = "display:none"
-                btn_signup.parentNode.removeChild(btn_signup)
-                alert(result.message)   // Le hemos enviado un codigo por Email, ....
-                btn_verify_signup.addEventListener("click", async (ev)=>{
-                    ev.preventDefault();
-                    
-                    // capturamos el valor del input CODE_VERIFICATION_ENVIADO
-                    // AÑADIMOS EL CODE
-                    // Y EL AVISO DE QUE YA HEMOS RECIBIDO EL TOKEN
-                    data_signup.fa2 = "RECIBED"
-                    // leemos el valor del token del input
-                    // data_signup.token = "ABCDE"
-                    // Leemos el valor del promo_code, si lo hay
-                    data_signup.promo_code = ""
-                    data_signup.token = document.querySelector(".signup_form .fa2 #signup_validation_token").value;
-                    const result2 = await fetchRequest(url_signup, data_signup)
-                    console.log(result2)
+                if(result.data.step === "CODE_SENT"){
+                     // mOSTRAMOS EL RESTO DEL FORM
+                    document.querySelector(".signup_form .fa2").style = "display: block"
+                    // oCULTAMOS LO ANTERIOR
+                    // document.querySelector(".signup_form .top_data #btn_signup").style = "display:none"
+                    btn_signup.parentNode.removeChild(btn_signup)
+                    alert(result.data.message)   // Le hemos enviado un codigo por Email, ....
+                    btn_verify_signup.addEventListener("click", async (ev)=>{
+                        ev.preventDefault();
+                        
+                        // AÑADIMOS EL CODE
+                        data_signup.promo_code = ""
+                        data_signup.code = document.querySelector(".signup_form .fa2 #signup_validation_token").value;
+                        const result2 = await fetchRequest(url_signup, data_signup)
+                        
+                        if(result2.status === "ok"){
 
-                    /***
-                     *      status = "ok"  -> SignUP concluido.
-                     *      redirigimos a location
-                     * 
-                     *      status !== 'ok'
-                     *      code = 466 -> El token introducido no es correcto -> Volver a hacer el SignUp
-                     *      code = 465 -> Token Expirado -> Volver ha hacer el signup por completo
-                     *      Limpiar los forms y dejarlos como al principio
-                     */
-                    
-                    if(!result2){
-                        alert('ERROR EN EL SIGNUP -> 2º FETCH')
-                    }else if(result2.status === "ok"){
-                    
+                            alert("Usuario Registrado CON EXITO")
 
-                        document.location.href =  result2.location
+                        }else{
+                            alert("Error: " + result2.data.message)
 
-                    }else{
-                        // FALTA
-                        // Manejar los codigos de error
+                        }
+                    })
 
-                        // Error en el promo_code
-                        // Error en el Codigo de Verificación
-                        // Error 
-                        alert(result2.message)
-                    }
-                })
+                }
+            
 
             }else{
-                if(result.location){
-
-                    document.location.href =  result.location
-                }else{
-                    // FALTA
-                    // Manejar los codigos de error
-                    alert("ERROR en la Peticion Fetch")
-                }
+               alert("ERROR -1: " + result.data.message);
+               // limpiamos el formulario [SOLO EL EMAIL]
 
             }
             
@@ -381,35 +344,19 @@
                     body:  JSON.stringify(data)
                 
                 });
+
+                const payload = await result.json()
+                console.log(result.status)
+                console.log(payload.message)
                 
-                // Este status no lo seteamos nosotros directamente en el server. 
-                // 
-                if(result.status === 200){
+               
+                if(result.status >= 200 && result.status <300){
 
-                    try{
-
-                        const data = await result.json()
-                        if(data.status !== "ok"){
-                            console.log("Error en el SignUP")
-                            console.log("Error Code: " + data.code)
-                            // Por ejemplo las cookies estan corruptas
-                            return data
-                        
-                        }else{
-
-                            console.log(data)
-                            return data;
-                        }
-
-                    }catch(e){
-                        console.log("TRY 2 -> ERROR. INVALID JSON ??")
-                        console.log(e)
-                        return null;
-                    }
+                    return {status: "ok", data: payload}
+                    
                 }else{ 
 
-                    console.log("Error en la PETICION FETCH -> status != 200")
-                    return null
+                    return {status: "error", data: payload}
                     
                 }
 

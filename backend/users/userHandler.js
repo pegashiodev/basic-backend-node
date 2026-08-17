@@ -23,8 +23,8 @@ export const addUser = async (body) => {
 
         // 3. Guardar en MongoDB en la colección del mes de alta
         const params = {
-            dbName: systemConfig.DBS.USERS,
-            collection: month,
+            dbName: systemConfig.DBS.USERS_DATA,
+            collection: month.toLowerCase(),
             await: true
         };
 

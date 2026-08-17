@@ -6,13 +6,14 @@
 
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import systemConfig from '../globalData/systemConfig.js';
+process.loadEnvFile();
 
 // Inicialización del cliente SES con variables de entorno
 const sesClient = new SESClient({
-    region: process.env.AWS_REGION || 'eu-west-1',
+    region: process.env.AWS_SMTP_REGION || 'eu-west-1',
     credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ''
+        accessKeyId: process.env.AWS_ACCESS_KEY || '',
+        secretAccessKey: process.env.AWS_PRIVATE_KEY || ''
     }
 });
 
@@ -20,6 +21,7 @@ const sesClient = new SESClient({
  * Plantillas básicas de correo según tipo e idioma
  */
 function buildEmailTemplate({ type, code, language = 'es', customData = {} }) {
+
     const isEn = language === 'en';
 
     if (type === 'VERIFICATION_CODE') {
@@ -73,6 +75,7 @@ function buildEmailTemplate({ type, code, language = 'es', customData = {} }) {
  * @param {Object} [options.customData] - Asunto y textos libres alternativos
  */
 export default async function sendEmail({ email, code, type = 'VERIFICATION_CODE', language, customData }) {
+
     if (!email) {
         console.error('❌ Error sendEmail: No se proporcionó dirección de correo de destino.');
         return { status: 'error', message: 'Email de destino obligatorio' };
@@ -80,6 +83,9 @@ export default async function sendEmail({ email, code, type = 'VERIFICATION_CODE
 
     const lang = language || systemConfig.MAIN_LANGUAGE || 'es';
     const { subject, textBody, htmlBody } = buildEmailTemplate({ type, code, language: lang, customData });
+
+console.log({ subject, textBody, htmlBody })
+
     const fromAddress = process.env.AWS_SES_FROM_EMAIL || systemConfig.SYSTEM_EMAIL || 'no-reply@tudominio.com';
 
     const params = {

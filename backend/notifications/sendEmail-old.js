@@ -34,7 +34,6 @@ export default async (data, user)=>{        // {task, name, email, lastName, url
 
     console.log('IN SendEmail !!!!')
     // console.log(data)
-    // console.log({usersByEmail})
 
     // token que se envia al correo del usuario para que lo ingrese en una formulario de acceso o para verificar algun paso
     if(data.task === "SEND_VALIDATION_TOKEN"){

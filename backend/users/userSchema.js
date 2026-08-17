@@ -36,6 +36,7 @@ export default function userSchema(body) {
     // 3. Estructura completa del documento
     const user = {
         _id: customId,
+        userId: userUuid,
         name: (body.name || '').trim(),
         email: normalizedEmail,
         password: body.password, // Llega ya hasheada desde userHandler

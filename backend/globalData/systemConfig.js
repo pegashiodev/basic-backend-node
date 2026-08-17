@@ -226,7 +226,7 @@ export default  {
         SITE_STATS: "site_stats_",                          // + año. Collection = mes
         USERS_ACTIVITY: 'users_activity_',                  // + año -> coll = name user
         USERS_ACCOUNTING: 'users_accounting_',              // + AÑO  -> coll = MONTH
-        USERS_DATA: 'users_data_2026',                          //  -> COLLECTION = MES DE ALTA DEL USUARIO
+        USERS_DATA: 'users_data',                          //  -> COLLECTION = MES DE ALTA DEL USUARIO
 
     },
     /** TIEMPO DE EXPIRACION DE LA COOKIE */
@@ -254,12 +254,12 @@ export default  {
     /** 
     *   NOMBRES DE LAS BASES DE DATOS QUE HAY QUE ABRIR ANTES DE LANZAR EL SERVIDOR HTTP  
     */
-    DBS_TO_OPEN: ["promotions", "products", "orders_2026", "payments_2026", "bills_2026", "users_accounting_2026", 'blacklist', 'users_data_2026', 'users_data', 'users_activity_2026', 'sessions_2026', "site_stats_2026"],
+    DBS_TO_OPEN: ["promotions", "products", "orders_2026", "payments_2026", "bills_2026", "users_accounting_2026", 'blacklist', 'users_data', 'users_activity_2026', 'sessions_2026', "site_stats_2026"],
 
     /** 
     *   BASES DE DATOS DE LAS QUE HAY QUE CACHEAR CIERTOS DATOS ENTES DE LANZAR EL SERVIDOR HTTP 
     */
-    DBS_TO_CATCH_DATA: ["promotions","blacklist", "products", "users_data_2026", "users_data", "sessions_2026"],
+    DBS_TO_CATCH_DATA: ["promotions","blacklist", "products", "users_data", "sessions_2026"],
 
     /**  
     *   CARPTETA BASE  DESDE LA QUE HAY QUE CACHEAR LOS ARCHIVOS ESTATICOS

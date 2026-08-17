@@ -10,12 +10,13 @@ import { createSession } from '../../sessions/sessionHandler.js';
 import { getUserPointer } from '../../db/userIndexService.js';
 import { redisClient } from '../../db/openRedis.js';
 import systemConfig from '../../globalData/systemConfig.js';
+import verifyTokensAndSetCookie from '../../tools/verifyTokensAndSetCookie.js';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default async function signUpEmailHandler(req, res) {
     const { email, password, name, code, userAgent, deviceId, language } = req.body || {};
-
+console.log({ email, password, name, code, userAgent, deviceId, language })
     if (!email || !EMAIL_REGEX.test(email.trim())) {
         res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
         return res.end(JSON.stringify({
@@ -30,14 +31,14 @@ export default async function signUpEmailHandler(req, res) {
     try {
         // 1. Comprobar existencia previa instantáneamente en Redis (O(1))
         const existingPointer = await getUserPointer(normalizedEmail);
-        if (existingPointer) {
-            res.writeHead(409, { 'Content-Type': 'application/json; charset=utf-8' });
-            return res.end(JSON.stringify({
-                status: 'error',
-                code: 409,
-                message: 'El correo electrónico ya se encuentra registrado.'
-            }));
-        }
+// if (existingPointer) {
+//     res.writeHead(409, { 'Content-Type': 'application/json; charset=utf-8' });
+//     return res.end(JSON.stringify({
+//         status: 'error',
+//         code: 409,
+//         message: 'El correo electrónico ya se encuentra registrado.'
+//     }));
+// }
 
         // =====================================================================
         // FASE 1: NO SE ENVIÓ CÓDIGO -> GENERAR Y ENVIAR CÓDIGO POR EMAIL
@@ -117,8 +118,8 @@ console.log({validationCode})
 
         // Crear sesión y generar cookies Set-Cookie
         req.user = userResult.user;
-        
-        let session_result = await createSession(req, 'SIGNUP');
+        req.user.ip = req.ip;
+        let session_result = await createSession(req.user, 'SIGNUP');
         if(session_result.status !== "ok"){
 console.log("Error creando la session !!")
             res.writeHead(505, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -129,6 +130,10 @@ console.log("Error creando la session !!")
             }));
 
         }
+
+
+        // Configurar tokens y cookies vinculando el sessionId
+        await verifyTokensAndSetCookie(req, req.user, "ADD_SESSION");
 
         const headers = { 'Content-Type': 'application/json; charset=utf-8' };
         if (req.cookie && Array.isArray(req.cookie)) {
