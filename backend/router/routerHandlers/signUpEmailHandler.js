@@ -59,7 +59,6 @@ export default async function signUpEmailHandler(req, res) {
 
             const validationCode = await generateValidationToken(normalizedEmail);
             const lang = language || systemConfig.MAIN_LANGUAGE || 'es';
-
             const emailResult = await sendEmail({
                 email: normalizedEmail,
                 code: validationCode,
@@ -75,7 +74,7 @@ export default async function signUpEmailHandler(req, res) {
                     message: 'No se pudo enviar el correo de verificación.'
                 }));
             }
-
+console.log({validationCode})
             res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
             return res.end(JSON.stringify({
                 status: 'ok',
@@ -117,7 +116,18 @@ export default async function signUpEmailHandler(req, res) {
 
         // Crear sesión y generar cookies Set-Cookie
         req.user = userResult.user;
-        await sessionHandler.addSession(req, 'SIGNUP');
+        
+        let session_result = await sessionHandler.addSession(req, 'SIGNUP');
+        if(session_result.status !== "ok"){
+console.log("Error creando la session !!")
+            res.writeHead(505, { 'Content-Type': 'application/json; charset=utf-8' });
+            return res.end(JSON.stringify({
+                status: 'error',
+                code: 505,
+                message: 'Error el crear la session'
+            }));
+
+        }
 
         const headers = { 'Content-Type': 'application/json; charset=utf-8' };
         if (req.cookie && Array.isArray(req.cookie)) {

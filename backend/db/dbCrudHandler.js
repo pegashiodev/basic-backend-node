@@ -6,6 +6,20 @@ import { ObjectId } from "mongodb";
 /** DICCIONARIO CON LA BASES DE DATOS ABIERTAS */
 import dbsOpened from '../globalData/dbsOpened.js';
 
+import { getDb } from './openDbs.js';
+
+
+/*
+export default async function dbCrudHandler(params) {
+    // Obtiene directamente la instancia de la base de datos solicitada
+    const db = getDb(params.dbName);
+    const collection = db.collection(params.collection);
+
+    // Realiza la operación solicitada (find, insertOne, updateOne, etc.)
+    return await collection[params.operation](...params.args);
+}
+    */
+
 
 /**
  * 
@@ -33,7 +47,8 @@ import dbsOpened from '../globalData/dbsOpened.js';
  */
 const findOne = async (query, params, options = {})=>{
   
-  const db = dbsOpened[params.dbName];
+  // const db = dbsOpened[params.dbName];
+  const db = getDb(params.dbName)
   const myColl = db.collection(params.collection);
 
 
@@ -86,11 +101,11 @@ const find = async (query, params, options)=>{
 
   console.log(options)
   console.log(params)
-  const dbName = params.dbName;
-  const coll = params.collection;
-  const db = dbsOpened[dbName];
+  
+  // const db = dbsOpened[params.dbName];
+  const db = getDb(params.dbName)
 
-  const myColl = db.collection(coll);
+  const myColl = db.collection(params.collection);
 
   try{
 
@@ -151,7 +166,8 @@ const insertOne = async (data, params, options = {})=>{
   console.log({params})
   const {dbName, collection} = params;
 
-  const db = dbsOpened[dbName];
+  const db = getDb(dbName)
+  // const db = dbsOpened[dbName];
 
   /** SI NO TIENE _ID LO CREAMOS */
   if(!data._id){
@@ -227,8 +243,8 @@ const insertOne = async (data, params, options = {})=>{
 const insertMany = async (data, params, options={})=>{
 
   const {dbName, collection} = params;
-
-  const db = dbsOpened[dbName];
+  const db = getDb(dbName)
+  // const db = dbsOpened[dbName];
   const myColl = db.collection(collection);
 
 
@@ -259,7 +275,8 @@ const insertMany = async (data, params, options={})=>{
 const deleteOne = async (params, query)=>{
 
   const {dbName, collection} = params;
-  const db = dbsOpened[dbName];
+  // const db = dbsOpened[dbName];
+  const db = getDb(dbName)
   const myColl = db.collection(collection);
 
   try{
@@ -292,7 +309,8 @@ const deleteOne = async (params, query)=>{
     // const coll = params.collection;
 
     const {dbName, collection} = params;
-    const db = dbsOpened[dbName];
+    // const db = dbsOpened[dbName];
+    const db = getDb(dbName)
     const myColl = db.collection(collection);
   
     try{
@@ -333,7 +351,8 @@ const deleteOne = async (params, query)=>{
     // console.log({params})
     // console.log({updateData})
 
-    const db = dbsOpened[params.dbName];
+    // const db = dbsOpened[params.dbName];
+    const db = getDb(params.dbName)
     const myColl = db.collection(params.collection);
     let options = {upsert: false}
     if(params.upsert){
@@ -392,7 +411,8 @@ const deleteOne = async (params, query)=>{
  */
 const updateMany = async (filter, updateData, params)=>{
 
-  const db = dbsOpened[params.dbName];
+  // const db = dbsOpened[params.dbName];
+  const db = getDb(params.dbName)
   const myColl = db.collection(params.collection);
   let options = {upsert: false}
 
@@ -426,7 +446,8 @@ const updateMany = async (filter, updateData, params)=>{
 
 const replaceOne = async (filter, replaceDoc)=>{
   
-  const db = dbsOpened[params.dbName];
+  // const db = dbsOpened[params.dbName];
+  const db = getDb(params.dbName)
   const myColl = db.collection(params.collection);
 
   try{
@@ -465,7 +486,8 @@ const findOneAndUpdate = async (filter, updateData, params)=>{
   // console.log({params})
   // console.log({updateData})
 
-  const db = dbsOpened[params.dbName];
+  // const db = dbsOpened[params.dbName];
+  const db = getDb(params.dbName)
   const myColl = db.collection(params.collection);
   let options = {upsert: false}
   if(params.upsert){
@@ -511,7 +533,8 @@ const findOneAndUpdate = async (filter, updateData, params)=>{
 const writeBulk = async (data, params)=>{
 
   // console.log(params)
-  const db = dbsOpened[params.dbName];
+  // const db = dbsOpened[params.dbName];
+  const db = getDb(params.dbName)
   const myColl = db.collection(params.collection);
 
   const result = await myColl.bulkWrite(data)

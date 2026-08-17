@@ -6,9 +6,8 @@
 
 import { redisClient } from './openRedis.js';
 import { setUserPointer } from './userIndexService.js';
-import { MongoClient } from 'mongodb'
-// import { mongoClient } from './openMongo.js'; // Tu conexión nativa a MongoDB
 import systemConfig from '../globalData/systemConfig.js';
+import { getDb } from './openDbs.js';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -19,7 +18,8 @@ export async function syncUsersIndexToRedis() {
     }
 
     try {
-        const db = MongoClient.client.db(systemConfig.DBS.USERS);
+
+        const db = getDb(systemConfig.DBS.USERS_DATA);
         const collections = await db.listCollections().toArray();
         const collectionNames = collections.map(c => c.name);
 
@@ -42,6 +42,6 @@ export async function syncUsersIndexToRedis() {
 
         console.log(`✅ Índice de usuarios sincronizado en Redis (${totalIndexed} usuarios indexados).`);
     } catch (err) {
-        console.error('❌ Error en syncUsersIndexToRedis:', err.message);
+        console.error('❌ Error en syncUsersIndexToRedis !!! :', err.message);
     }
 }

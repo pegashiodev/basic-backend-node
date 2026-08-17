@@ -21,11 +21,19 @@ export default  (req)=>{
     const now = Date.now()
     const [week_day, month, day, year, time] = new Date().toString().split(' ')
 
+     // Generamos un sessionId único para este inicio de sesión / dispositivo
+    const sessionId = new ObjectId().toHexString();
+    const customId = {
+        _id: sessionId,
+        email: user.email,
+        sessionId: sessionId,
+        userId: user.userId
+    }
+
     let session = {
-        _id: new ObjectId().toHexString(),
+        _id: customId,
         userId: user.userId,
-        // type: user.type,
-        // TOKENS DE LA COOKIE
+        sessionId: sessionId,
         atk: req.accessData.atk,
         atk_expireTime: req.accessData.expireTime,
         rtk: req.refreshData.rtk,

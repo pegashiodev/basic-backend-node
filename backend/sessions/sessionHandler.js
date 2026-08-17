@@ -27,17 +27,16 @@ export const addSession = async (req, from) => {
         }
     }
 
-    // Generamos un sessionId único para este inicio de sesión / dispositivo
-    const sessionId = randomUUID();
-    req.currentSessionId = sessionId;
-
+       
     // Configurar tokens y cookies vinculando el sessionId
     await verifyTokensAndSetCookie(req, req.user, "ADD_SESSION");
-
-    const session_data = sessionSchema(req);
-    const session = session_data.session;
-    session.sessionId = sessionId;
-
+    
+    const session = sessionSchema(req);
+    // const session = session_data.session;
+    // session.sessionId = sessionId;
+    const sessionId = session.sessionId;
+    req.currentSessionId = sessionId;
+    
     // 1. Almacenar sesión en MongoDB
     const params = {
         dbName: systemConfig.DBS.SESSIONS + session.date.year,
@@ -59,7 +58,7 @@ export const addSession = async (req, from) => {
         result.userDevices = req.user.userDevices;
     }
 
-    return result;
+    return {status: "ok", result:result}
 };
 
 /**

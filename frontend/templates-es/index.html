@@ -112,8 +112,8 @@
         btn_signup.addEventListener('click', async (ev)=>{
             ev.preventDefault();
             data_signup.name = document.querySelector('.signup_form .username').value;
-            // data_signup.email = document.querySelector(".signup_form .email").value;
-            // data_signup.password = document.querySelector(".signup_form .password").value;
+            data_signup.email = document.querySelector(".signup_form .email").value;
+            data_signup.password = document.querySelector(".signup_form .password").value;
 
             if(data_signup.name.length <2){
                 alert("Al menos 2 Caracteres en el Nombre")
