@@ -1,140 +1,117 @@
-/**
- * MANEJADOR DE SESIONES CON PERSISTENCIA EN MONGO Y CACHÉ CENTRALIZADA EN REDIS (INDEXADO POR SESSION_ID)
- */
 
-import { randomUUID } from 'node:crypto';
+
 import { redisClient } from '../db/openRedis.js';
-import systemConfig from '../globalData/systemConfig.js';
-import dbCrudHandler from '../db/dbCrudHandler.js';
-import sessionSchema from "./sessionSchema.js";
-import addNewUserDevice from "../tools/addNewUserDevice.js";
-import verifyTokensAndSetCookie from "../tools/verifyTokensAndSetCookie.js";
+import { getDb } from '../db/openDbs.js';
+import { createSessionObject } from './sessionSchema.js';
+
+// TTL por defecto para Redis (ej. 24 horas en segundos)
+const SESSION_TTL_SECONDS = 60 * 60 * 24;
 
 /**
- * CREAR UNA SESIÓN PARA EL USUARIO
+ * Crea y persiste una nueva sesión
+ * @param {Object} sessionInput - Parámetros para el sessionSchema
+ * @returns {Promise<Object>} Objeto de sesión completo creado
  */
-export const addSession = async (req, from) => {
-    if (!req.user) {
-        return { status: 'error', message: 'No hay usuario en la petición' };
-    }
+export async function createSession(sessionInput) {
+    const session = createSessionObject(sessionInput);
+    const { sessionId, userId } = session.customId;
 
-    if (from !== 'SIGNUP') {
-        const match = req.user.userDevices?.some((el) => {
-            return (el.userAgent === req.body?.userAgent && el.deviceId === req.body?.deviceId);
-        });
-        if (!match) {
-            addNewUserDevice(req);
-        }
-    }
+    // 1. Guardar en Redis con expiración automática (TTL)
+    const redisKey = `session:${sessionId}`;
+    await redisClient.set(redisKey, JSON.stringify(session), {
+        EX: SESSION_TTL_SECONDS
+    });
 
-       
-    // Configurar tokens y cookies vinculando el sessionId
-    await verifyTokensAndSetCookie(req, req.user, "ADD_SESSION");
-    
-    const session = sessionSchema(req);
-    // const session = session_data.session;
-    // session.sessionId = sessionId;
-    const sessionId = session.sessionId;
-    req.currentSessionId = sessionId;
-    
-    // 1. Almacenar sesión en MongoDB
-    const params = {
-        dbName: systemConfig.DBS.SESSIONS + session.date.year,
-        collection: session.date.month,
-        await: true
-    };
-    const result = await dbCrudHandler.insertOne(session, params);
+    // Opcional: Índice secundario en Redis para rastrear sesiones activas por usuario
+    await redisClient.sAdd(`user:sessions:${userId}`, sessionId);
 
-    // 2. Almacenar sesión en Redis indexada por sessionId
-    if (result.status === 'ok' && redisClient && redisClient.isOpen) {
-        const redisKey = `session:${sessionId}`;
-        const ttlSeconds = Math.ceil(systemConfig.TOKENS_AGE.SESSION_DURATION / 1000);
-        
-        await redisClient.set(redisKey, JSON.stringify(session), { EX: ttlSeconds });
-
-        result.sessionId = sessionId;
-        result.atk = req.accessData.accessToken;
-        result.rtk = req.refreshData.refreshToken;
-        result.userDevices = req.user.userDevices;
-    }
-
-    return {status: "ok", result:result}
-};
-
-/**
- * OBTENER SESIÓN DESDE REDIS POR SESSION_ID
- */
-export const getSession = async (sessionId) => {
-    if (!sessionId || !redisClient || !redisClient.isOpen) return null;
+    // 2. Persistir en MongoDB (colección centralizada de sesiones)
     try {
-        const sessionStr = await redisClient.get(`session:${sessionId}`);
-        return sessionStr ? JSON.parse(sessionStr) : null;
+        const db = getDb('users_data');
+        const sessionsCollection = db.collection('sessions');
+        await sessionsCollection.insertOne(session);
     } catch (err) {
-        console.error('Error obteniendo sesión de Redis:', err.message);
-        return null;
+        console.error('⚠️ No se pudo persistir la sesión en MongoDB (continúa con Redis):', err.message);
     }
-};
+
+    return session;
+}
 
 /**
- * ACTUALIZAR SESIÓN DEL USUARIO
+ * Obtiene y valida una sesión activa
+ * @param {string} sessionId
+ * @returns {Promise<Object|null>}
  */
-export const updateSession = async (data) => {
-    const [, month, , year] = new Date().toString().split(' ');
-    const params = {
-        dbName: systemConfig.DBS.SESSIONS + year,
-        collection: month,
-        await: data.await
-    };
+export async function getSession(sessionId) {
+    if (!sessionId) return null;
 
-    if (data.task === 'SESSION_ENDED') {
-        const filter = { _id: data.new_value._id };
-        const update_data = { $set: data.new_value };
+    // 1. Intentar leer desde Redis (rápido en RAM)
+    const redisKey = `session:${sessionId}`;
+    const sessionData = await redisClient.get(redisKey);
 
-        if (data.await) {
-            await dbCrudHandler.updateOne(filter, update_data, params);
-        } else {
-            dbCrudHandler.updateOne(filter, update_data, params);
-        }
-
-        // Eliminar sesión de Redis por sessionId
-        if (data.sessionId && redisClient && redisClient.isOpen) {
-            await redisClient.del(`session:${data.sessionId}`);
-        }
-
-    } else if (data.task === 'UPDATE_SESSION_STATUS') {
-        const filter = { sessionId: data.sessionId };
-        const update_data = { $set: { "status": data.new_value } };
-
-        if (data.await) {
-            await dbCrudHandler.updateOne(filter, update_data, params);
-        } else {
-            dbCrudHandler.updateOne(filter, update_data, params);
-        }
-
-        // Actualizar estado en Redis
-        if (data.sessionId && redisClient && redisClient.isOpen) {
-            const currentSession = await getSession(data.sessionId);
-            if (currentSession) {
-                currentSession.status = data.new_value;
-                const ttl = await redisClient.ttl(`session:${data.sessionId}`);
-                if (ttl > 0) {
-                    await redisClient.set(`session:${data.sessionId}`, JSON.stringify(currentSession), { EX: ttl });
-                }
-            }
-        }
+    if (sessionData) {
+        return JSON.parse(sessionData);
     }
-};
 
-export const deleteSesion = async (sessionId) => {
-    if (sessionId && redisClient && redisClient.isOpen) {
-        await redisClient.del(`session:${sessionId}`);
+    // 2. Fallback a MongoDB si expiró en Redis o hubo reinicio
+    try {
+        const db = getDb('users_data');
+        const sessionsCollection = db.collection('sessions');
+        const session = await sessionsCollection.findOne({ 'customId.sessionId': sessionId, isValid: true });
+
+        if (session) {
+            // Repoblar en Redis con TTL restante
+            await redisClient.set(redisKey, JSON.stringify(session), {
+                EX: SESSION_TTL_SECONDS
+            });
+            return session;
+        }
+    } catch (err) {
+        console.error('⚠️ Error al consultar sesión en MongoDB:', err.message);
     }
-    return { status: 'ok' };
-};
 
-export default {
-    addSession,
-    getSession,
-    updateSession,
-    deleteSesion
-};
+    return null;
+}
+
+/**
+ * Actualiza la marca de actividad y renueva el TTL
+ * @param {string} sessionId
+ */
+export async function touchSession(sessionId) {
+    const redisKey = `session:${sessionId}`;
+    const session = await getSession(sessionId);
+
+    if (session) {
+        session.lastActiveAt = Date.now();
+        await redisClient.set(redisKey, JSON.stringify(session), {
+            EX: SESSION_TTL_SECONDS
+        });
+    }
+}
+
+/**
+ * Invalida y elimina una sesión (Logout)
+ * @param {string} sessionId
+ */
+export async function destroySession(sessionId) {
+    const session = await getSession(sessionId);
+
+    // 1. Eliminar de Redis
+    await redisClient.del(`session:${sessionId}`);
+
+    if (session?.customId?.userId) {
+        await redisClient.sRem(`user:sessions:${session.customId.userId}`, sessionId);
+    }
+
+    // 2. Marcar como inválida o eliminar en MongoDB
+    try {
+        const db = getDb('users_data');
+        const sessionsCollection = db.collection('sessions');
+        await sessionsCollection.updateOne(
+            { 'customId.sessionId': sessionId },
+            { $set: { isValid: false, destroyedAt: Date.now() } }
+        );
+    } catch (err) {
+        console.error('⚠️ Error al invalidar sesión en MongoDB:', err.message);
+    }
+}

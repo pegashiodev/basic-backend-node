@@ -31,8 +31,7 @@ import systemConfig from "../../globalData/systemConfig.js"
 import sendEmail from "../../notifications/sendEmail.js"
 import dbCrudHandler from "../../db/dbCrudHandler.js"
 import verificationEndpoints from "../../globalData/verificationEndpoints.js"
-import sessionsCached from "../../globalData/sessionsCached.js"
-import sessionHandler from "../../sessions/sessionHandler.js"
+import { createSession } from "../../sessions/sessionHandler.js"
 import addNewUserDevice from "../../tools/addNewUserDevice.js"
 
 
@@ -319,7 +318,7 @@ async function renovePassword(req, res){
     // creamos una session + nueva cookie para machacar la existente
     // CREAMOS SESSION DE USUARIO
     // No es un refresco de sesion, es una creacion nueva
-    const result_session = await sessionHandler.addSession(req, "SIGNUP");
+    const result_session = await createSession(req, "SIGNUP");
 
     if(result_session.status !== 'ok'){
         console.log('Error Creando la SESSION')

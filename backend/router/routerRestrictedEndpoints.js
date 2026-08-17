@@ -8,6 +8,7 @@
 import systemConfig from '../globalData/systemConfig.js';
 import sendStaticFile from '../server/serverHandlers/sendStaticFile.js';
 import sessionHandler from '../sessions/sessionHandler.js';
+import { getSession, createSession } from '../sessions/sessionHandler.js';
 import usersByEmail from '../globalData/usersByEmail.js';
 
 import userTemplateHandler from '../restrictedEndpoints/userTemplateHandler.js';
@@ -82,7 +83,7 @@ export default async function routerRestrictedEndpoints(req, res) {
 
     // 3. Consultar sesión activa desde Redis mediante sessionId
     const sessionId = req.our_cookie.atk_decoded.sessionId;
-    let session = await sessionHandler.getSession(sessionId);
+    let session = await getSession(sessionId);
 
     if (session) {
         const now = Date.now();
@@ -95,7 +96,7 @@ export default async function routerRestrictedEndpoints(req, res) {
                 new_value: session,
                 await: false
             });
-            const result_session = await sessionHandler.addSession(req, from);
+            const result_session = await createSession(req, from);
             if (result_session.status !== 'ok') {
                 res.code = 302;
                 res.headers = { "Location": systemConfig.PAGES.SYSTEM_ERROR_OCURRED };

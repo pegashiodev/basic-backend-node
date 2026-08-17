@@ -16,21 +16,21 @@ async function bootstrap() {
     try {
         console.log(`\n🚀 Iniciando proceso PID ${process.pid} en modo ${process.env.MODE || 'DEV'}...`);
 
-        // 1. CONEXIÓN A REDIS
-        const redisResult = await initControler.openRedis();
-        if (redisResult.status !== 'ok') {
-            console.error(`❌ Fallo crítico abriendo Redis: ${redisResult.message}`);
-            process.exit(1);
-        }
        
-       
-        // 2. CONEXIÓN A BASES DE DATOS (MongoDB)
+        // 1. CONEXIÓN A BASES DE DATOS (MongoDB)
         const dbsResult = await initControler.openDbs(systemConfig.DBS_TO_OPEN);
         if (dbsResult.status !== 'ok') {
             console.error(`❌ Fallo crítico abriendo MongoDB: ${dbsResult.message}`);
             process.exit(1);
         }
         console.log('✅ Bases de datos MongoDB listas:', Object.keys(dbsOpened));
+
+        // 2. CONEXIÓN A REDIS
+        const redisResult = await initControler.openRedis();
+        if (redisResult.status !== 'ok') {
+            console.error(`❌ Fallo crítico abriendo Redis: ${redisResult.message}`);
+            process.exit(1);
+        }
 
         
 

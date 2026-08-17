@@ -1,93 +1,36 @@
 
-/**
- *  ESQUEMA DE LA SESION
- *  CREA NUEVA SESSION LOS LOS DATOS DEL USER
- * 
- */
 
-
-
-import {ObjectId} from "mongodb";
-import systemConfig from "../globalData/systemConfig.js";
-
+import { v4 as uuidv4 } from 'uuid';
 
 /**
- * @param{Object} -> Obleto Request de NodeJs
- * @returns{object} -> session
+ * Genera el esquema de una nueva sesión
+ * @param {Object} params
+ * @param {string} params.userId
+ * @param {string} params.email
+ * @param {string} [params.role='user']
+ * @param {string} [params.ip='unknown']
+ * @param {string} [params.userAgent='unknown']
+ * @param {Object} [params.extraData={}]
+ * @returns {Object} Estructura normalizada de sesión
  */
-export default  (req)=>{
+export function createSessionObject({ userId, email, role = 'user', ip = 'unknown', userAgent = 'unknown', extraData = {} }) {
+    const now = Date.now();
+    const sessionId = uuidv4();
 
-    let user = req.user;
-    const now = Date.now()
-    const [week_day, month, day, year, time] = new Date().toString().split(' ')
-
-     // Generamos un sessionId único para este inicio de sesión / dispositivo
-    const sessionId = new ObjectId().toHexString();
-    const customId = {
-        _id: sessionId,
-        email: user.email,
-        sessionId: sessionId,
-        userId: user.userId
-    }
-
-    let session = {
-        _id: customId,
-        userId: user.userId,
-        sessionId: sessionId,
-        atk: req.accessData.atk,
-        atk_expireTime: req.accessData.expireTime,
-        rtk: req.refreshData.rtk,
-        rtk_expireTime: req.refreshData.expireTime, 
-        // FECHA DE LA SESION
-        date: {
-            year: year,
-            month: month.toLowerCase(),
-            day: day,
-            since: now
+    return {
+        // Datos inmutables de identificación
+        customId: {
+            sessionId,
+            userId,
+            email: email.trim().toLowerCase()
         },
-        // DATOS DEL USUARIO
-        userDevices: user.userDevices,
-        name: user.name,
-        nick: user.nick || undefined,
-        email: user.email,
-        signup_method: user.signup_method || "USER-EMAIL",
-        role: user.role || undefined,
-        comercial_name: user.comercial_name || undefined,
-        language: user.language || 'es',
-        country: user.country || undefined,
-        ip: user.ip || undefined,
-        status: user.status, // 'ACTIVE' // 'HACKED' // 'ENDED' // 'BLOCKED' -> por si hay que anularla 
-
-        // DISTINTOS SALDOS DE LA CUENTA DEL USUARIO
-        saldoMoney: user.saldoMoney,
-        saldoAds: user.saldoAds,
-        saldoCoins: user.saldoCoins,
-
-        credentials: user.credentials || undefined,
-        fa2: user.fa2 || {},
-        // METODOS DE NOTIFICACION
-        notifications: user.notifications || {},
-        // SUSCRIPCION DEL USUARIO
-        subscription: user.subscription,
-        subscription_expireTime: user.subscription_expireTime,
-        // DURACION DE LA SESSION
-        start: now,
-        expireTime: now + systemConfig.TOKENS_AGE.SESSION_DURATION,
-        
-        last_time: now,                 // ULTIMA VEZ ACTIVO
-        cart: user.cart || [],          // CARRITO
-        favorites: user.favorites || [],        // FAVORITOS
-        preferences: user.preferences || [],    // PREFERENCIAS DEL USUARIO
-
-        navigate: [] ,       // urls por las que navega
-        actions:  [],        // pagos, ingresos, ...
-    
-    }
-
-    if(!systemConfig.HAS_FA2 && !systemConfig.HAS_FA2_SIGNUP){
-        session.id_verify_email = user.id_verify_email || undefined;
-        session.id_verify_expireTime = user.id_verify_expireTime || now + systemConfig.TOKENS_AGE.EMAIL_VERIFICATION_AGE;
-    }
-    return {session:session};
-
+        // Estado y metadatos mutables de la sesión
+        role,
+        createdAt: now,
+        lastActiveAt: now,
+        ip,
+        userAgent,
+        isValid: true,
+        extraData
+    };
 }
