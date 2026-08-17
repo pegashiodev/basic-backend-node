@@ -38,6 +38,56 @@ export async function createSession(sessionInput) {
 }
 
 /**
+ * ACTUALIZAR SESIÓN DEL USUARIO
+ */
+export const updateSession = async (data) => {
+    const [, month, , year] = new Date().toString().split(' ');
+    const params = {
+        dbName: systemConfig.DBS.SESSIONS + year,
+        collection: month,
+        await: data.await
+    };
+
+    if (data.task === 'SESSION_ENDED') {
+        const filter = { _id: data.new_value._id };
+        const update_data = { $set: data.new_value };
+
+        if (data.await) {
+            await dbCrudHandler.updateOne(filter, update_data, params);
+        } else {
+            dbCrudHandler.updateOne(filter, update_data, params);
+        }
+
+        // Eliminar sesión de Redis por sessionId
+        if (data.sessionId && redisClient && redisClient.isOpen) {
+            await redisClient.del(`session:${data.sessionId}`);
+        }
+
+    } else if (data.task === 'UPDATE_SESSION_STATUS') {
+        const filter = { sessionId: data.sessionId };
+        const update_data = { $set: { "status": data.new_value } };
+
+        if (data.await) {
+            await dbCrudHandler.updateOne(filter, update_data, params);
+        } else {
+            dbCrudHandler.updateOne(filter, update_data, params);
+        }
+
+        // Actualizar estado en Redis
+        if (data.sessionId && redisClient && redisClient.isOpen) {
+            const currentSession = await getSession(data.sessionId);
+            if (currentSession) {
+                currentSession.status = data.new_value;
+                const ttl = await redisClient.ttl(`session:${data.sessionId}`);
+                if (ttl > 0) {
+                    await redisClient.set(`session:${data.sessionId}`, JSON.stringify(currentSession), { EX: ttl });
+                }
+            }
+        }
+    }
+};
+
+/**
  * Obtiene y valida una sesión activa
  * @param {string} sessionId
  * @returns {Promise<Object|null>}

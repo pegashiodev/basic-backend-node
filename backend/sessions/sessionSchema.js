@@ -26,11 +26,12 @@ export function createSessionObject({ userId, email, role = 'user', ip = 'unknow
         },
         // Estado y metadatos mutables de la sesión
         role,
+        status: "ACTIVE",   // [ENDED, PAUSED, BLOCKED]
         createdAt: now,
         lastActiveAt: now,
         ip,
         userAgent,
         isValid: true,
-        extraData
+        extraData: {}
     };
 }

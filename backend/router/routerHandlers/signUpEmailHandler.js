@@ -5,7 +5,8 @@
 import generateValidationToken, { checkValidationToken } from '../../notifications/notificationsTools/generateValidationToken.js';
 import sendEmail from '../../notifications/sendEmail.js';
 import userHandler from '../../users/userHandler.js';
-import sessionHandler from '../../sessions/sessionHandler.js';
+// import sessionHandler from '../../sessions/sessionHandler.js';
+import { createSession } from '../../sessions/sessionHandler.js';
 import { getUserPointer } from '../../db/userIndexService.js';
 import { redisClient } from '../../db/openRedis.js';
 import systemConfig from '../../globalData/systemConfig.js';
@@ -117,7 +118,7 @@ console.log({validationCode})
         // Crear sesión y generar cookies Set-Cookie
         req.user = userResult.user;
         
-        let session_result = await sessionHandler.addSession(req, 'SIGNUP');
+        let session_result = await createSession(req, 'SIGNUP');
         if(session_result.status !== "ok"){
 console.log("Error creando la session !!")
             res.writeHead(505, { 'Content-Type': 'application/json; charset=utf-8' });

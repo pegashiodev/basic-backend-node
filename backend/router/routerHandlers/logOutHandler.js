@@ -6,7 +6,8 @@
 
 import systemConfig from "../../globalData/systemConfig.js";
 import sessionsCached from "../../globalData/sessionsCached.js";
-import sessionHandler from "../../sessions/sessionHandler.js";
+// import sessionHandler from "../../sessions/sessionHandler.js";
+import { updateSession } from "../../sessions/sessionHandler.js";
 import getOurCookie from "../../tools/getOurCookie.js";
 
 
@@ -76,7 +77,7 @@ export default function(req, res){
             new_value: session,
             await: false
         }
-        sessionHandler.updateSession(data)
+        updateSession(data)
     }
 
 

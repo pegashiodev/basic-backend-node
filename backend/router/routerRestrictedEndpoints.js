@@ -7,8 +7,8 @@
 
 import systemConfig from '../globalData/systemConfig.js';
 import sendStaticFile from '../server/serverHandlers/sendStaticFile.js';
-import sessionHandler from '../sessions/sessionHandler.js';
-import { getSession, createSession } from '../sessions/sessionHandler.js';
+// import sessionHandler from '../sessions/sessionHandler.js';
+import { getSession, createSession, updateSession } from '../sessions/sessionHandler.js';
 import usersByEmail from '../globalData/usersByEmail.js';
 
 import userTemplateHandler from '../restrictedEndpoints/userTemplateHandler.js';
@@ -82,27 +82,32 @@ export default async function routerRestrictedEndpoints(req, res) {
     req.body.userAgent = req.headers['user-agent'];
 
     // 3. Consultar sesión activa desde Redis mediante sessionId
-    const sessionId = req.our_cookie.atk_decoded.sessionId;
+    const sessionId = req.our_cookie?.atk_decoded?.sessionId;
     let session = await getSession(sessionId);
 
     if (session) {
         const now = Date.now();
-        if (session.status === 'ENDED' || now > session.expireTime) {
+        
+        // Si la sesión ha expirado o su estado es 'ENDED'
+        if (session.status === 'ENDED' || !session.isValid || (session.expireTime && now > session.expireTime)) {
             session.status = 'ENDED';
-            await sessionHandler.updateSession({
+            session.isValid = false;
+            
+            await updateSession({
                 task: 'SESSION_ENDED',
                 sessionId: sessionId,
                 email: req.user.email,
                 new_value: session,
                 await: false
             });
+
             const result_session = await createSession(req, from);
             if (result_session.status !== 'ok') {
                 res.code = 302;
                 res.headers = { "Location": systemConfig.PAGES.SYSTEM_ERROR_OCURRED };
                 return sendStaticFile(req, res);
             }
-        } else if (req.user.status === 'PAUSED' || req.user.status === 'BLOCKED') {
+        } else if (session.status === 'PAUSED' || session.status === 'BLOCKED' || req.user.status === 'PAUSED' || req.user.status === 'BLOCKED') {
             res.code = 302;
             res.headers = { "Location": systemConfig.PAGES.BLOCKED_ACCOUNT_INFO };
             return sendStaticFile(req, res);
@@ -111,7 +116,7 @@ export default async function routerRestrictedEndpoints(req, res) {
         // Renovar tokens y setear cookie si procede
         await verifyTokensAndSetCookie(req, req.user, "ROUTER_RESTRICTED_ENDPOINTS");
     } else {
-        // No hay sesión activa en Redis con ese sessionId -> redirigir al login
+        // No hay sesión activa en Redis -> Redirigir a Login
         res.code = 302;
         res.headers = { "Location": systemConfig.PAGES.ACCESS_PLATFORM };
         return sendStaticFile(req, res);
