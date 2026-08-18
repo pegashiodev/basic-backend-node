@@ -250,6 +250,7 @@ export default  {
         CLEAN_ALL_ACCESS_TOKENS: ["rtk=; expires=0; max-age=0; HttpOnly;" , "atk=; expires=0; max-age=0;", "deviceId=; expires=0; max-age=0;"],
         // CLEAN_ALL_ACCESS_TOKENS: ["rtk=; expires=0; max-age=0;" , "atk=; expires=0; max-age=0;", "deviceId=; expires=0; max-age=0;"],
         
+        //Set-Cookie: refreshToken=...; HttpOnly; Secure; SameSite=Strict; Path=/api/auth/refresh
     },  
     
     /** 
