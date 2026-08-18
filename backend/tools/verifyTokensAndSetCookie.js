@@ -20,7 +20,7 @@ export default async function verifyTokensAndSetCookie(req, user, from) {
     const sessionId = req.currentSessionId || req.our_cookie?.atk_decoded?.sessionId || req.our_cookie?.rtk_decoded?.sessionId;
 
     // 1. NUEVA SESIÓN (Login o Signup)
-    if (from === "ADD_SESSION") {
+    if (from === "SIGNUP-EMAIL" || from === "LOGIN-EMAIL") {
         req.set_new_cookie = true;
         refreshData = generateRefreshToken(userName, userEmail, sessionId);
         req.refreshData = refreshData;

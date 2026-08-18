@@ -8,22 +8,26 @@ import { redisClient } from '../../db/openRedis.js';
 import { getDb } from '../../db/openDbs.js';
 import { createSession } from '../../sessions/sessionHandler.js';
 import { comparePassword } from '../routerTools/passwordEncript.js';
+import systemConfig from '../../globalData/systemConfig.js';
 
 /**
  * Procesa la solicitud de login por email y contraseña
  * @param {Object} req - Objeto de petición HTTP
- * @param {Object} reply - Objeto de respuesta
+ * @param {Object} res - Objeto de respuesta
  * @returns {Promise<Object>}
  */
-export default async function logInEmailHandler(req, reply) {
+export default async function logInEmailHandler(req, res) {
     const { email, password } = req.body || {};
+    const headers = { 'Content-Type': 'application/json; charset=utf-8' };
 
     // 1. Validación de entrada
     if (!email || !password) {
-        return reply.code(400).send({
+        res.writeHead(400, headers);
+        return res.end(JSON.stringify({
             status: 'error',
-            message: 'Email y contraseña requeridos.'
-        });
+            message: 'Email y contraseña requeridos.',
+            
+        }));
     }
 
     const cleanEmail = email.trim().toLowerCase();
@@ -33,43 +37,56 @@ export default async function logInEmailHandler(req, reply) {
         const userIndexRaw = await redisClient.get(`user:email:${cleanEmail}`);
 
         if (!userIndexRaw) {
-            return reply.code(401).send({
+            res.writeHead(401, headers);
+            return res.end(JSON.stringify({
                 status: 'error',
-                message: 'Credenciales inválidas.'
-            });
+                message: 'Credenciales inválidas.',
+                
+            }));
         }
 
         const userIndex = JSON.parse(userIndexRaw);
         const { userId, collectionMonth } = userIndex;
+console.log({userIndex})
 
         // 3. Obtener el usuario de MongoDB
-        const db = getDb('users_data');
+        const db = getDb(systemConfig.DBS.USERS_DATA);
         const usersCollection = db.collection(collectionMonth);
 
-        const user = await usersCollection.findOne({ userId });
-
+        const user = await usersCollection.findOne({"_id._id": userId });
+console.log({user})
         if (!user || !user.password) {
-            return reply.code(401).send({
+console.log("No user o No Password")
+            res.writeHead(401, headers);
+            return res.end(JSON.stringify({
                 status: 'error',
-                message: 'Credenciales inválidas.'
-            });
+                message: 'Credenciales inválidas.',
+                
+            }));
         }
 
-        if (user.status && user.status !== 'active') {
-            return reply.code(403).send({
+        if (user.status && user.status !== 'ACTIVE') {
+            res.writeHead(403, headers);
+            return res.end(JSON.stringify({
                 status: 'error',
-                message: 'Cuenta deshabilitada o suspendida.'
-            });
+                message: 'Cuenta deshabilitada o suspendida.',
+                
+            }));
         }
+
+req.user = user;
 
         // 4. Comparar usando el método propio de passwordEncript
         const isPasswordMatch = await comparePassword(password, user.password);
 
         if (!isPasswordMatch) {
-            return reply.code(401).send({
+            res.writeHead(401, headers);
+            return res.end(JSON.stringify({
                 status: 'error',
-                message: 'Credenciales inválidas.'
-            });
+                message: 'Credenciales inválidas.',
+                
+            }));
+        
         }
 
         // 5. Metadatos de la sesión
@@ -83,26 +100,38 @@ export default async function logInEmailHandler(req, reply) {
             role: user.role || 'user',
             ip: clientIp,
             userAgent: userAgent
-        });
+            }, "LOGIN-EMAIL"
+        );
+
+// Configurar tokens y cookies vinculando el sessionId
+await verifyTokensAndSetCookie(req, req.user, "LOGIN-EMAIL");
 
         // 7. Respuesta al cliente
-        return reply.code(200).send({
+if (req.cookie && Array.isArray(req.cookie)) {
+    headers['Set-Cookie'] = req.cookie;
+}
+        res.writeHead(200, headers);
+        return res.end(JSON.stringify({
             status: 'ok',
             message: 'Autenticación correcta.',
-            sessionId: session.customId.sessionId,
+            sessionId: session._id.sessionId,
             user: {
                 userId: user.userId,
                 email: cleanEmail,
                 name: user.name || '',
                 role: user.role || 'user'
             }
-        });
+            
+        }));
 
     } catch (error) {
         console.error('❌ Error en logInEmailHandler:', error);
-        return reply.code(500).send({
+        
+        res.writeHead(500, headers);
+        return res.end(JSON.stringify({
             status: 'error',
-            message: 'Error interno del servidor durante la autenticación.'
-        });
+            message: 'Error interno del servidor durante la autenticación.',
+            
+        }));
     }
 }

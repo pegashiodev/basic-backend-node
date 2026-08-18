@@ -5,7 +5,6 @@
 import generateValidationToken, { checkValidationToken } from '../../notifications/notificationsTools/generateValidationToken.js';
 import sendEmail from '../../notifications/sendEmail.js';
 import userHandler from '../../users/userHandler.js';
-// import sessionHandler from '../../sessions/sessionHandler.js';
 import { createSession } from '../../sessions/sessionHandler.js';
 import { getUserPointer } from '../../db/userIndexService.js';
 import { redisClient } from '../../db/openRedis.js';
@@ -16,7 +15,9 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default async function signUpEmailHandler(req, res) {
     const { email, password, name, code, userAgent, deviceId, language } = req.body || {};
+
 console.log({ email, password, name, code, userAgent, deviceId, language })
+    
     if (!email || !EMAIL_REGEX.test(email.trim())) {
         res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
         return res.end(JSON.stringify({
@@ -119,21 +120,18 @@ console.log({validationCode})
         // Crear sesión y generar cookies Set-Cookie
         req.user = userResult.user;
         req.user.ip = req.ip;
-        let session_result = await createSession(req.user, 'SIGNUP');
+        let session_result = await createSession(req.user, 'SIGNUP-EMAIL');
         if(session_result.status !== "ok"){
-console.log("Error creando la session !!")
             res.writeHead(505, { 'Content-Type': 'application/json; charset=utf-8' });
             return res.end(JSON.stringify({
                 status: 'error',
                 code: 505,
                 message: 'Error el crear la session'
             }));
-
         }
 
-
         // Configurar tokens y cookies vinculando el sessionId
-        await verifyTokensAndSetCookie(req, req.user, "ADD_SESSION");
+        await verifyTokensAndSetCookie(req, req.user, "SIGNUP-EMAIL");
 
         const headers = { 'Content-Type': 'application/json; charset=utf-8' };
         if (req.cookie && Array.isArray(req.cookie)) {
