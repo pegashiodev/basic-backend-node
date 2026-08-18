@@ -3,7 +3,7 @@
 /**
  * routeGuard.js - Normalizador de rutas e interceptor de navegación restringida
  */
-import { authFetch } from './authFetch.js';
+import { authFetch } from './apiClient.js';
 
 // Lista de rutas restringidas del sistema (sin prefijo de idioma)
 const RESTRICTED_ROUTES = new Set([
@@ -62,7 +62,9 @@ export function initRouteGuard() {
             const { canonicalPath } = parseRoute(url.pathname);
             
             // Validamos/cargamos los datos contra el endpoint de la API con authFetch
-            const apiEndpoint = `/api${canonicalPath}`;
+//const apiEndpoint = `/api${canonicalPath}`;
+            const apiEndpoint = `${canonicalPath}`;
+
             try {
                 const response = await authFetch(apiEndpoint, { method: 'GET' });
                 
