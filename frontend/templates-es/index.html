@@ -175,8 +175,8 @@
         btn_login.addEventListener('click', async (ev)=>{
             ev.preventDefault();
             data_login.name = document.querySelector('.login_form .username').value;
-            // data_login.email = document.querySelector(".login_form .email").value;
-            // data_login.password = document.querySelector(".login_form .password").value;
+            data_login.email = document.querySelector(".login_form .email").value;
+            data_login.password = document.querySelector(".login_form .password").value;
 
             if(data_login.name.length <2){
                 alert("Name is < than 2 chars")
@@ -193,57 +193,14 @@
 
             console.log(result)
 
-            if(!result){
-                alert("ERROR EN EL LOGIN !! ")
-
-            }else if(result.fa2_required){
-                 // mOSTRAMOS EL RESTO DEL FORM
-                 document.querySelector(".login_form .fa2").style = "display: block"
-                // oCULTAMOS LO ANTERIOR
-                // document.querySelector(".login_form .top_data #btn_login").style = "display:none"
+            if(result.status === 'ok'){
+                alert("Usuario LOGEADO CON EXITO")
                 
-                btn_login.parentNode.removeChild(btn_login)
-                alert(result.message)
-                btn_verify_login.addEventListener("click", async (ev)=>{
-                    ev.preventDefault();
-                    
-                    // capturamos el valor del input CODE_VERIFICATION_ENVIADO
-                    // AÑADIMOS EL CODE
-                    // Y EL AVISO DE QUE YA HEMOS RECIBIDO EL TOKEN
-                    data_login.fa2 = "RECIBED"
-                    // data_login.token = "ABCDE"
-                    data_login.token = document.querySelector(".login_form .fa2 #login_validation_token").value;
-                    const result2 = await fetchRequest("http://localhost:3000/login-email.html", data_login)
-                    console.log(result2)
-
-                    if(!result2){
-                        alert('ERROR EN EL LOGIN -> 2º FETCH')
-                    }else if(result2.status === "ok"){
-                    
-                        document.location.href =  result2.location
-                    }else{
-                        console.log(result2.code)
-                        alert(result2.message)
-                    }
-                });
 
             }else{
+               alert("ERROR LOGIN: " + result.data.message);
+               // limpiamos el formulario [SOLO EL EMAIL]
 
-                // console.log(result)
-                if(result.status === 'ok'){
-                    document.location.href =  result.location
-                
-                }else{
-                    if(result.code === 475){
-                        alert("Password Incorrecto")
-                    }else if(result.code === 435 ){
-                        alert("Email Incorrecto")
-                    }else if(result.code === 480 ){
-                        alert("Usuario Bloqueado")
-                    }else{
-                        alert("Mantenimientto -> Prueba pasado unos minutos")
-                    }
-                }
             }
         })
 
