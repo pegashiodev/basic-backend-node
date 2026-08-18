@@ -9,7 +9,7 @@ import { setUserPointer } from './userIndexService.js';
 import systemConfig from '../globalData/systemConfig.js';
 import { getDb } from './openDbs.js';
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
 
 export async function syncUsersIndexToRedis() {
     if (!redisClient || !redisClient.isOpen) {

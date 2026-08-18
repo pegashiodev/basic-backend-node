@@ -9,7 +9,6 @@ import systemConfig from '../globalData/systemConfig.js';
 import sendStaticFile from '../server/serverHandlers/sendStaticFile.js';
 // import sessionHandler from '../sessions/sessionHandler.js';
 import { getSession, createSession, updateSession } from '../sessions/sessionHandler.js';
-import usersByEmail from '../globalData/usersByEmail.js';
 
 import userTemplateHandler from '../restrictedEndpoints/userTemplateHandler.js';
 import myBotsTemplateHandler from '../restrictedEndpoints/myBotsTemplateHandler.js';
@@ -57,14 +56,19 @@ export default async function routerRestrictedEndpoints(req, res) {
     }
 
     // 2. Extraer y verificar tokens
-    const result_getOurCookie = getOurCookie(req);
+    const result_getOurCookie = await getOurCookie(req);
+
+console.log("Router RESTRICTED !!!!")
+console.log(result_getOurCookie)
+
+
     if (result_getOurCookie.status !== 'ok') {
         if (result_getOurCookie.task === "SEND_STATIC_FILE") {
             return sendStaticFile(req, res);
         }
     }
 
-    req.user = usersByEmail[req.our_cookie.atk_decoded.email];
+    // req.user = usersByEmail[req.our_cookie.atk_decoded.email];
 
     if (!req.user) {
         res.code = 302;
@@ -84,7 +88,7 @@ export default async function routerRestrictedEndpoints(req, res) {
     // 3. Consultar sesión activa desde Redis mediante sessionId
     const sessionId = req.our_cookie?.atk_decoded?.sessionId;
     let session = await getSession(sessionId);
-
+console.log({session})
     if (session) {
         const now = Date.now();
         
@@ -114,8 +118,10 @@ export default async function routerRestrictedEndpoints(req, res) {
         }
 
         // Renovar tokens y setear cookie si procede
-        await verifyTokensAndSetCookie(req, req.user, "ROUTER_RESTRICTED_ENDPOINTS");
+        await verifyTokensAndSetCookie(req, "ROUTER_RESTRICTED_ENDPOINTS");
     } else {
+
+console.log("NO HAY SESSION !!!! ")
         // No hay sesión activa en Redis -> Redirigir a Login
         res.code = 302;
         res.headers = { "Location": systemConfig.PAGES.ACCESS_PLATFORM };

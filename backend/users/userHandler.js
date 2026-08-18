@@ -63,13 +63,15 @@ export const getUserByEmail = async (email) => {
 
         // 2. Buscar documento exacto en su colección mensual de MongoDB
         const params = {
-            dbName: systemConfig.DBS.USERS,
+            dbName: systemConfig.DBS.USERS_DATA,
             collection: pointer.from.month,
             await: true
         };
+        const options = {}
 
-        const result = await dbCrudHandler.findOne({ "_id.email": normalizedEmail }, params);
-        return result && result.data ? result.data : null;
+        const result = await dbCrudHandler.findOne({ "_id.email": normalizedEmail }, params, options);
+        // return result && result.data ? result.data : null;
+        return result;
 
     } catch (error) {
         console.error('❌ Error en userHandler.getUserByEmail:', error);

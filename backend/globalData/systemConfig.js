@@ -138,13 +138,14 @@ export default  {
         ACCESS_TOKEN: 60*1000,  // 1 minuto           //60*60*1000,           // 1 HORA
         REFRESH_TOKEN: 60*1000*5, // 5 minutos                 1000*60*60*12*2,     // 2 DIAS
         SECURITY_TOKEN: 60*1000*10,                        // 30 MINUTOS
-        SESSION_DURATION: 1000*60*10,   // 10 minutos   //1000*60*60*24*7    // 7 DIAS
+        // SESSION_DURATION: 1000*60*10,   // 10 minutos   //1000*60*60*24*7    // 7 DIAS
         EMAIL_VERIFICATION_AGE: 60*1000,            // 1 MINUTOS
         CATCH_STATICS_FILES_TIME: 1000*60*60*6,     // 6 HORAS
         VERIFICATION_ENDPOINTS_AGE: 1000*60*1,      // 10 MINUTOS
         VALIDATION_TOKENS: 1000*60*1,               // 10 MINUTOS
         VALIDATION_TOKENS_AGE: 90000,
         SMS_TOKEN: 1000*60*7,                       // 7 MINUTOS
+        SESSION_TTL_SECONDS: 60 * 60 * 0.15,        // 0.15 * 1 hora  -> lo dejaremos en 7 dias ?
     },
 
     /**

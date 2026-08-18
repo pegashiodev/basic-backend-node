@@ -6,28 +6,29 @@ import { createSessionObject } from './sessionSchema.js';
 import systemConfig from '../globalData/systemConfig.js';
 
 // TTL por defecto para Redis (ej. 24 horas en segundos)
-const SESSION_TTL_SECONDS = 60 * 60 * 24;
+//const SESSION_TTL_SECONDS = 60 * 60 * 24;
 
 /**
  * Crea y persiste una nueva sesión
  * @param {Object} user - {email, password, nombre ?, }
  * @returns {Promise<Object>} Objeto de sesión completo creado
  */
-export async function createSession(user, from) {
-
+export async function createSession(req, from) {
+    const user = req.user
     const [, month, , year] = new Date().toString().split(' ');
     
     const session = createSessionObject(user);
-    const { _id:sessionId, userId } = session._id
+    const { _id, userId } = session._id
+    req.currentSessionId = _id;
 
     // 1. Guardar en Redis con expiración automática (TTL)
-    const redisKey = `session:${sessionId}`;
+    const redisKey = `session:${_id}`;
     await redisClient.set(redisKey, JSON.stringify(session), {
-        EX: SESSION_TTL_SECONDS
+        EX: systemConfig.TOKENS_AGE.SESSION_TTL_SECONDS
     });
 
     // Opcional: Índice secundario en Redis para rastrear sesiones activas por usuario
-    await redisClient.sAdd(`user:sessions:${userId}`, sessionId);
+    await redisClient.sAdd(`user:sessions:${userId}`, _id);
 
     // 2. Persistir en MongoDB (colección centralizada de sesiones)
     try {
@@ -100,6 +101,8 @@ export const updateSession = async (data) => {
  * @returns {Promise<Object|null>}
  */
 export async function getSession(sessionId) {
+    const [, month, , year] = new Date().toString().split(' ');
+    const now = Date.now()
     if (!sessionId) return null;
 
     // 1. Intentar leer desde Redis (rápido en RAM)
@@ -112,16 +115,22 @@ export async function getSession(sessionId) {
 
     // 2. Fallback a MongoDB si expiró en Redis o hubo reinicio
     try {
-        const db = getDb('users_data');
-        const sessionsCollection = db.collection('sessions');
-        const session = await sessionsCollection.findOne({ 'customId.sessionId': sessionId, isValid: true });
+        const db = getDb(systemConfig.DBS.SESSIONS + year);
+        const sessionsCollection = db.collection(month.toLowerCase());
+        const session = await sessionsCollection.findOne({ '_id._id': sessionId, isValid: true });
 
-        if (session) {
+        if(session && now > session.expiresAt){
+            // SESION EXPIRADA -> ha de volver a loguearse
+            return null;
+        
+        }else if (session) {
             // Repoblar en Redis con TTL restante
             await redisClient.set(redisKey, JSON.stringify(session), {
-                EX: SESSION_TTL_SECONDS
+                EX: (session.expiresAt - (now)) / 1000          // Cuando Expiraba menos ahora y dividido por 1000 para pasarlo a segundos
             });
             return session;
+        }else{
+            return null;
         }
     } catch (err) {
         console.error('⚠️ Error al consultar sesión en MongoDB:', err.message);

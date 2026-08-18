@@ -120,7 +120,7 @@ console.log({validationCode})
         // Crear sesión y generar cookies Set-Cookie
         req.user = userResult.user;
         req.user.ip = req.ip;
-        let session_result = await createSession(req.user, 'SIGNUP-EMAIL');
+        let session_result = await createSession(req, 'SIGNUP-EMAIL');
         if(session_result.status !== "ok"){
             res.writeHead(505, { 'Content-Type': 'application/json; charset=utf-8' });
             return res.end(JSON.stringify({
@@ -131,7 +131,7 @@ console.log({validationCode})
         }
 
         // Configurar tokens y cookies vinculando el sessionId
-        await verifyTokensAndSetCookie(req, req.user, "SIGNUP-EMAIL");
+        await verifyTokensAndSetCookie(req, "SIGNUP-EMAIL");
 
         const headers = { 'Content-Type': 'application/json; charset=utf-8' };
         if (req.cookie && Array.isArray(req.cookie)) {

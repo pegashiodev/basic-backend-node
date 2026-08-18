@@ -4,134 +4,100 @@
  * HANDLER DE AUTENTICACIÓN (LOGIN DIRECTO: EMAIL + PASSWORD)
  */
 
-import { redisClient } from '../../db/openRedis.js';
-import { getDb } from '../../db/openDbs.js';
+import userHandler from '../../users/userHandler.js';
 import { createSession } from '../../sessions/sessionHandler.js';
-import { comparePassword } from '../routerTools/passwordEncript.js';
-import systemConfig from '../../globalData/systemConfig.js';
+import { comparePassword } from '../routerTools/passwordEncript.js'
+import verifyTokensAndSetCookie from "../../tools/verifyTokensAndSetCookie.js"
 
-/**
- * Procesa la solicitud de login por email y contraseña
- * @param {Object} req - Objeto de petición HTTP
- * @param {Object} res - Objeto de respuesta
- * @returns {Promise<Object>}
- */
 export default async function logInEmailHandler(req, res) {
-    const { email, password } = req.body || {};
-    const headers = { 'Content-Type': 'application/json; charset=utf-8' };
+    const { email, password, deviceId, userAgent } = req.body || {};
 
-    // 1. Validación de entrada
+    // 1. Validación básica del payload
     if (!email || !password) {
-        res.writeHead(400, headers);
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
         return res.end(JSON.stringify({
             status: 'error',
-            message: 'Email y contraseña requeridos.',
-            
+            code: 400,
+            message: 'Email y contraseña requeridos.'
         }));
     }
 
     const cleanEmail = email.trim().toLowerCase();
 
     try {
-        // 2. Localizar puntero del usuario en Redis
-        const userIndexRaw = await redisClient.get(`user:email:${cleanEmail}`);
-
-        if (!userIndexRaw) {
-            res.writeHead(401, headers);
-            return res.end(JSON.stringify({
-                status: 'error',
-                message: 'Credenciales inválidas.',
-                
-            }));
-        }
-
-        const userIndex = JSON.parse(userIndexRaw);
-        const { userId, collectionMonth } = userIndex;
-console.log({userIndex})
-
-        // 3. Obtener el usuario de MongoDB
-        const db = getDb(systemConfig.DBS.USERS_DATA);
-        const usersCollection = db.collection(collectionMonth);
-
-        const user = await usersCollection.findOne({"_id._id": userId });
-console.log({user})
+        // 2. Obtener usuario usando el puntero en Redis (user:idx:<email>) -> MongoDB
+        const user = await userHandler.getUserByEmail(cleanEmail);
+// console.log(user)
         if (!user || !user.password) {
-console.log("No user o No Password")
-            res.writeHead(401, headers);
+            res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
             return res.end(JSON.stringify({
                 status: 'error',
-                message: 'Credenciales inválidas.',
-                
+                code: 401,
+                message: 'Credenciales inválidas.'
             }));
         }
 
+        // 3. Comprobar estado de la cuenta
         if (user.status && user.status !== 'ACTIVE') {
-            res.writeHead(403, headers);
+            res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
             return res.end(JSON.stringify({
                 status: 'error',
-                message: 'Cuenta deshabilitada o suspendida.',
-                
+                code: 403,
+                message: 'Cuenta deshabilitada o suspendida.'
             }));
         }
 
-req.user = user;
-
-        // 4. Comparar usando el método propio de passwordEncript
+        // 4. Comparar hash de contraseña
         const isPasswordMatch = await comparePassword(password, user.password);
 
         if (!isPasswordMatch) {
-            res.writeHead(401, headers);
+            res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
             return res.end(JSON.stringify({
                 status: 'error',
-                message: 'Credenciales inválidas.',
-                
+                code: 401,
+                message: 'Credenciales inválidas.'
             }));
-        
         }
 
-        // 5. Metadatos de la sesión
-        const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
-        const userAgent = req.headers['user-agent'] || 'unknown';
+        // 5. Preparar datos de sesión e inyectar en req
+        req.user = user;
+        if (!req.body) req.body = {};
+        req.body.deviceId = deviceId || '';
+        req.body.userAgent = userAgent || req.headers['user-agent'] || '';
 
-        // 6. Crear la sesión (guarda en Redis + persiste en MongoDB)
-        const session = await createSession({
-            userId: user.userId,
-            email: cleanEmail,
-            role: user.role || 'user',
-            ip: clientIp,
-            userAgent: userAgent
-            }, "LOGIN-EMAIL"
-        );
+        // 6. Crear la sesión activa (persiste en Redis y MongoDB)
+        await createSession(req, 'LOGIN');
 
-// Configurar tokens y cookies vinculando el sessionId
-await verifyTokensAndSetCookie(req, req.user, "LOGIN-EMAIL");
+        // 7. Generar tokens vinculados al sessionId y poblar req.cookie con las cabeceras Set-Cookie
+        await verifyTokensAndSetCookie(req, 'LOGIN-EMAIL');
 
-        // 7. Respuesta al cliente
-if (req.cookie && Array.isArray(req.cookie)) {
-    headers['Set-Cookie'] = req.cookie;
-}
+        // 8. Construir cabeceras HTTP y adjuntar Set-Cookie
+        const headers = { 'Content-Type': 'application/json; charset=utf-8' };
+        if (req.cookie && Array.isArray(req.cookie)) {
+            headers['Set-Cookie'] = req.cookie;
+        }
+
+        // 9. Enviar respuesta exitosa al cliente
         res.writeHead(200, headers);
         return res.end(JSON.stringify({
             status: 'ok',
+            code: 200,
             message: 'Autenticación correcta.',
-            sessionId: session._id.sessionId,
-            user: {
-                userId: user.userId,
-                email: cleanEmail,
+            data: {
+                userId: user.userId || (user._id && user._id._id) || user._id,
+                email: user.email || (user._id && user._id.email),
                 name: user.name || '',
-                role: user.role || 'user'
+                role: user.role || 'USER'
             }
-            
         }));
 
     } catch (error) {
         console.error('❌ Error en logInEmailHandler:', error);
-        
-        res.writeHead(500, headers);
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
         return res.end(JSON.stringify({
             status: 'error',
-            message: 'Error interno del servidor durante la autenticación.',
-            
+            code: 500,
+            message: 'Error interno del servidor durante la autenticación.'
         }));
     }
 }

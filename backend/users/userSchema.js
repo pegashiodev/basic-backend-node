@@ -17,7 +17,7 @@ export default function userSchema(body) {
         _id: userUuid,
         email: normalizedEmail,
         from: {
-            month: month,
+            month: month.toLowerCase(),
             year: year
         },
         id2: id2

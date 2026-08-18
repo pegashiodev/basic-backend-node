@@ -51,12 +51,9 @@ const findOne = async (query, params, options = {})=>{
   const db = getDb(params.dbName)
   const myColl = db.collection(params.collection);
 
-
   try{
 
     const result = await myColl.findOne(query, options);
-    // console.log('Find Doc OK !!')
-    // console.log(result);
     return result
 
   }catch(error){

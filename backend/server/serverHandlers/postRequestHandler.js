@@ -85,7 +85,7 @@ export default async function postRequestHandler(req, res) {
     }
 
     // 6. Endpoints protegidos: Validación de Cookie y Sesión
-    const result_getOurCookie = getOurCookie(req);
+    const result_getOurCookie = await getOurCookie(req);
     if (result_getOurCookie.status !== 'ok') {
         return sendPostError(
             res, 
@@ -96,10 +96,9 @@ export default async function postRequestHandler(req, res) {
     }
 
     if (req.has_our_cookie) {
-        req.user = usersByEmail[req.our_cookie.atk_decoded.email];
-        
+
         // Verificar y renovar tokens de sesión
-        await verifyTokensAndSetCookie(req, req.user, "POST_REQUEST");
+        await verifyTokensAndSetCookie(req, "POST_REQUEST");
 
         req.body.language = req.urlData.language || systemConfig.MAIN_LANGUAGE;
         req.body.ip = req.ip;

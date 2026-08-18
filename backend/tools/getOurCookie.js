@@ -8,19 +8,25 @@
 import cookieParser from "./cookieParser.js";
 import systemConfig from "../globalData/systemConfig.js";
 import { decodeToken } from "./tokenGenerator.js";
-import usersByEmail from "../globalData/usersByEmail.js";
+import userHandler from "../users/userHandler.js";
 
-export default function getOurCookie(req) {
+export default async function getOurCookie(req) {
+console.log("GET OUR COOKIE !!!!")
     const result = {};
 
     // 1. Extraer cookies de las cabeceras HTTP
     req.cookie_parsed = cookieParser(req.headers.cookie || '');
+
+console.log(req.cookie_parsed)
+
     const deviceId = req.cookie_parsed?.deviceId;
     req.our_cookie = null;
     req.has_our_cookie = false;
 
     // 2. Si no hay cookies o faltan parámetros
-    if (!req.cookie_parsed || !req.cookie_parsed.atk || !req.cookie_parsed.rtk || !deviceId) {
+    //if (!req.cookie_parsed || !req.cookie_parsed.atk || !req.cookie_parsed.rtk || !deviceId) {
+    if (!req.cookie_parsed || !req.cookie_parsed.atk || !req.cookie_parsed.rtk) {
+console.log("eroor 1")
         result.status = "error";
         if (req.method === "GET") {
             if (!req.urlData) req.urlData = {};
@@ -45,6 +51,8 @@ export default function getOurCookie(req) {
     const rtk_decoded = decodeToken(req.cookie_parsed.rtk);
 
     if (!atk_decoded || !rtk_decoded) {
+console.log("eroor 2")
+
         result.status = "error";
         console.warn('⚠️ Token con firma alterada o inválido detectado.');
         return generateErrorResponse(req, result, 453, "Tokens de sesión inválidos");
@@ -52,13 +60,17 @@ export default function getOurCookie(req) {
 
     // 4. Vínculo de seguridad: Comprobar que pertenecen al mismo sessionId y usuario
     if (atk_decoded.sessionId !== rtk_decoded.sessionId || atk_decoded.email !== rtk_decoded.email) {
+console.log("eroor 3")
+
         result.status = "error";
         console.warn('🚨 Discrepancia detectada entre ATK y RTK (posible manipulación de tokens).');
         return generateErrorResponse(req, result, 453, "Discrepancia en tokens de sesión");
     }
 
-    const our_cookie = { atk_decoded, rtk_decoded, deviceId, sessionId: atk_decoded.sessionId };
+    //const our_cookie = { atk_decoded, rtk_decoded, deviceId, sessionId: atk_decoded.sessionId };
+    let our_cookie = { atk_decoded, rtk_decoded, sessionId: atk_decoded.sessionId };
 
+console.log({our_cookie})
     // Comprobar token especial de panel de control si viene presente
     if (req.cookie_parsed.stk) {
         const stk_decoded = decodeToken(req.cookie_parsed.stk);
@@ -68,7 +80,7 @@ export default function getOurCookie(req) {
     }
 
     if (!req.body) req.body = {};
-    req.body.deviceId = deviceId;
+//req.body.deviceId = deviceId;
 
     // 5. Asignación de datos válidos al objeto req
     req.has_our_cookie = true;
@@ -76,7 +88,10 @@ export default function getOurCookie(req) {
     req.currentSessionId = atk_decoded.sessionId;
     req.accessData = req.cookie_parsed.atk;
     req.refreshData = req.cookie_parsed.rtk;
-    req.user = usersByEmail[atk_decoded.email];
+
+    const cleanEmail = atk_decoded.email.trim().toLowerCase();
+    const user = await userHandler.getUserByEmail(cleanEmail);
+    req.user = user
 
     result.status = 'ok';
     return result;

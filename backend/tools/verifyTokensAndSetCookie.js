@@ -9,12 +9,13 @@ import generateRefreshToken from "./generateRefreshToken.js";
 import generateSecurityToken from "./generateSecurityToken.js";
 import systemConfig from "../globalData/systemConfig.js";
 
-export default async function verifyTokensAndSetCookie(req, user, from) {
+export default async function verifyTokensAndSetCookie(req, from) {
     let accessData, refreshData;
     let changeOnlyAtk = false;
     req.set_new_cookie = false;
     const now = Date.now();
 
+    const user = req.user
     const userEmail = user?.email || req.our_cookie?.atk_decoded?.email;
     const userName = user?.name || req.our_cookie?.atk_decoded?.name;
     const sessionId = req.currentSessionId || req.our_cookie?.atk_decoded?.sessionId || req.our_cookie?.rtk_decoded?.sessionId;
