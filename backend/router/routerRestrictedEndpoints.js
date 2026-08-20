@@ -68,8 +68,7 @@ console.log(result_getOurCookie)
         }
     }
 
-    // req.user = usersByEmail[req.our_cookie.atk_decoded.email];
-
+    // EL USER QUEDA REGISTRADO EN GET-OUR-COOKIE
     if (!req.user) {
         res.code = 302;
         res.headers = { "Location": location };
@@ -88,7 +87,8 @@ console.log(result_getOurCookie)
     // 3. Consultar sesión activa desde Redis mediante sessionId
     const sessionId = req.our_cookie?.atk_decoded?.sessionId;
     let session = await getSession(sessionId);
-console.log({session})
+
+    // COMPROBAMOS SI HAY SESION ABIERTA Y NO EXPIRADA
     if (session) {
         const now = Date.now();
         

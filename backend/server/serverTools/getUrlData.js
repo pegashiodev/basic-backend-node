@@ -22,7 +22,7 @@ export default (req)=>{
 
     // console.log(req.headers)
     //console.log(req.url)
-    req.its_bad_url_request = false;
+    req.its_bad_get_request = false;
 
     let data = {
         method: req.method,
@@ -110,7 +110,7 @@ console.log(data.url_to_verify_position)
 
         for( let i = data.url_to_verify_position; i<len_url_parts; i++){
             if( systemConfig.RESTRICTED_ENDPOINTS.includes(data.url_parts[i])){
-                req.its_bad_url_request = true;
+                req.its_bad_get_request = true;
             }
         }
     }

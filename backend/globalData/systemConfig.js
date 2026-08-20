@@ -1,9 +1,9 @@
 
 const DOMAIN_PROD = "tudominio.com"
 const DOMAIN_DEV = "localhost"
-const ACCESS_TOKEN_MAX_AGE = 60*5;           //  VALOR EN SEGUNDOS  // (10 minuto para dev)         60*60*12*7;     // 7 DIASS,
-const REFRESH_TOKEN_MAX_AGE = 60 * 7;      // HABRA QUE DARLE UN VALOR DE 7 DIAS ??
-
+const ACCESS_TOKEN_MAX_AGE_SECONDS= 60*1;           //  VALOR EN SEGUNDOS  // (10 minuto para dev)         60*60*12*7;     // 7 DIASS,
+const REFRESH_TOKEN_MAX_AGE_SECONDS = 60 * 3;      // HABRA QUE DARLE UN VALOR DE 7 DIAS ??
+const SESSION_AGE_SECONDS = 60 * 10;                // 10 MINUTOS PARA PRUEBAS
 
 export default  {
 
@@ -137,8 +137,8 @@ export default  {
     *   TIEMPOS DE EXPIRACION DE LOS DISTINTOS TOKENS
     */
     TOKENS_AGE:{
-        ACCESS_TOKEN: 60*1000,  // 1 minuto           //60*60*1000,           // 1 HORA
-        REFRESH_TOKEN: 60*1000*5, // 5 minutos                 1000*60*60*12*2,     // 2 DIAS
+        ACCESS_TOKEN: ACCESS_TOKEN_MAX_AGE_SECONDS * 1000,  // 1 minuto PARA PRUEBAS          //60*60*1000,           // 1 HORA
+        REFRESH_TOKEN: REFRESH_TOKEN_MAX_AGE_SECONDS * 1000, // 2 minutos PARA PRUEBAS                 1000*60*60*12*2,     // 2 DIAS
         SECURITY_TOKEN: 60*1000*10,                        // 30 MINUTOS
         // SESSION_DURATION: 1000*60*10,   // 10 minutos   //1000*60*60*24*7    // 7 DIAS
         EMAIL_VERIFICATION_AGE: 60*1000,            // 1 MINUTOS
@@ -147,7 +147,7 @@ export default  {
         VALIDATION_TOKENS: 1000*60*1,               // 10 MINUTOS
         VALIDATION_TOKENS_AGE: 90000,
         SMS_TOKEN: 1000*60*7,                       // 7 MINUTOS
-        SESSION_TTL_SECONDS: 60 * 60 * 0.15,        // 0.15 * 1 hora  -> lo dejaremos en 7 dias ?
+        SESSION_TTL_SECONDS: SESSION_AGE_SECONDS,   // 10 MINUTOS PARA PRUEBAS  -> lo dejaremos en 7 dias ?
     },
 
     /**
@@ -233,24 +233,24 @@ export default  {
 
     },
     /** TIEMPO DE EXPIRACION DE LA COOKIE */
-    COOKIE_AGE: ACCESS_TOKEN_MAX_AGE,  
-    REFRESS_TOKEN_AGE: REFRESH_TOKEN_MAX_AGE,
+    COOKIE_AGE: ACCESS_TOKEN_MAX_AGE_SECONDS,  
+    REFRESS_TOKEN_AGE: REFRESH_TOKEN_MAX_AGE_SECONDS,
 
     /**
      * PARAMETROS DE LAS COOKIES
      */
     COOKIE: {
-        PARAMS_ATK_SIGNIN_DEV: `max-age=${ACCESS_TOKEN_MAX_AGE}; expires=${ACCESS_TOKEN_MAX_AGE};`,
+        PARAMS_ATK_SIGNIN_DEV: `max-age=${ACCESS_TOKEN_MAX_AGE_SECONDS}; expires=${ACCESS_TOKEN_MAX_AGE_SECONDS};`,
         // PARAMS_RTK_SIGNIN_DEV: `max-age=${COOKIE_MAX_AGE}; expires=${COOKIE_MAX_AGE};`,
 //PARAMS_RTK_SIGNIN_DEV: `max-age=${COOKIE_MAX_AGE}; expires=${COOKIE_MAX_AGE}; HttpOnly;`,
-        PARAMS_RTK_SIGNIN_DEV: `max-age=${REFRESH_TOKEN_MAX_AGE}; expires=${REFRESH_TOKEN_MAX_AGE}; HttpOnly; Secure; SameSite=Strict; Path=/refresh-bridge.html;`,
+        PARAMS_RTK_SIGNIN_DEV: `max-age=${REFRESH_TOKEN_MAX_AGE_SECONDS}; expires=${REFRESH_TOKEN_MAX_AGE_SECONDS}; HttpOnly; Secure; SameSite=Strict; Path=/refresh-bridge.html;`,
 
-        PARAMS_ATK_SIGNIN_PROD: `max-age=${ACCESS_TOKEN_MAX_AGE}; expires=${ACCESS_TOKEN_MAX_AGE}; Domain=${DOMAIN_PROD};`,
+        PARAMS_ATK_SIGNIN_PROD: `max-age=${ACCESS_TOKEN_MAX_AGE_SECONDS}; expires=${ACCESS_TOKEN_MAX_AGE_SECONDS}; Domain=${DOMAIN_PROD};`,
 //PARAMS_RTK_SIGNIN_PROD: `max-age=${COOKIE_MAX_AGE}; expires=${COOKIE_MAX_AGE}; HttpOnly; Secure; Domain=${DOMAIN_PROD};`,
-        PARAMS_RTK_SIGNIN_PROD: `max-age=${REFRESH_TOKEN_MAX_AGE}; expires=${REFRESH_TOKEN_MAX_AGE}; HttpOnly; Secure; SameSite=Strict; Path=/refresh-bridge.html;`,
+        PARAMS_RTK_SIGNIN_PROD: `max-age=${REFRESH_TOKEN_MAX_AGE_SECONDS}; expires=${REFRESH_TOKEN_MAX_AGE_SECONDS}; HttpOnly; Secure; SameSite=Strict; Path=/refresh-bridge.html;`,
 
-        PARAMS_DEVIDE_ID_DEV: `max-age=${REFRESH_TOKEN_MAX_AGE}; expires=${REFRESH_TOKEN_MAX_AGE};`,
-        PARAMS_DEVIDE_ID_PROD: `max-age=${REFRESH_TOKEN_MAX_AGE}; expires=${REFRESH_TOKEN_MAX_AGE};`,
+        PARAMS_DEVIDE_ID_DEV: `max-age=${REFRESH_TOKEN_MAX_AGE_SECONDS}; expires=${REFRESH_TOKEN_MAX_AGE_SECONDS};`,
+        PARAMS_DEVIDE_ID_PROD: `max-age=${REFRESH_TOKEN_MAX_AGE_SECONDS}; expires=${REFRESH_TOKEN_MAX_AGE_SECONDS};`,
         CLEAN_RTK: ["rtk=; expires=0; max-age=0; HttpOnly;"],
         CLEAN_ATK: ["atk=; expires=0; max-age=0"],
         CLEAN_DEVICE_ID: ["deviceId=; expires=0; max-age=0"],

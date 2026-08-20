@@ -34,7 +34,7 @@ export default  async(req, res)=>{
 
     // SE SOLICITA UN "RESTRICTED ENDPOINT" EN UNA URL QUE NO LO PERMITE: EJ:  MI-DOMINIO.COM/BLOG/MIS-BOTS 
     // RESPONDEMOS UN 404
-    if(req.its_bad_url_request){
+    if(req.its_bad_get_request){
         res.code = 404;
         return sendStaticFile(req, res)
 
@@ -44,9 +44,9 @@ export default  async(req, res)=>{
     // PETICION QUE SE HACE CUANDO TIENES LAS HERRAMIENTAS DE DESARROLLADOR ABIERTAS
     // en este caso desde Chrome o Brave
     // NO COMPROBAMOS NADA MAS DE MOMENTO -> teRMINAMOS ESTA CONEXION
-// if(req.urlData.url === "/.well-known/appspecific/com.chrome.devtools.json"){
-//     return res.end()
-// }
+if(req.urlData.url === "/.well-known/appspecific/com.chrome.devtools.json"){
+    return res.end()
+}
     
     if(systemConfig.HAS_SUBDOMAINS){
 
