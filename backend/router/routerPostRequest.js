@@ -22,6 +22,7 @@ import uploadFilesHandler from "./routerHandlers/uploadFilesHandler.js";
 import getMainMenu from "../api/getMainMenu.js";
 import getHtmlItems from "../api/getHtmlItems.js";
 import verifyFromRemotePanel from "../remotePanel/verifyFromRemotePanel.js";
+import refreshBridgeHandler from "./routerHandlers/refreshBridgeHandler.js";
 process.loadEnvFile();
 
 

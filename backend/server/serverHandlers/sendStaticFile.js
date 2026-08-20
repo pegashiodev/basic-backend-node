@@ -70,7 +70,8 @@ export default function sendStaticFile(req, res) {
     const basePublicDir = path.resolve(process.cwd(), 'frontend');
     const safeTargetRelative = path.join(req.static_folder || '', req.urlData.fileName || '');
     const resolvedPath = path.resolve(basePublicDir, safeTargetRelative);
-
+console.log({safeTargetRelative})
+console.log({resolvedPath})
     // COMPROBACIÓN DE SEGURIDAD:
     // resolvedPath DEBE comenzar obligatoriamente por la carpeta base /frontend
     if (!resolvedPath.startsWith(basePublicDir)) {

@@ -10,60 +10,65 @@
     <h1>SOLICITANDO REFRESS TOKEN ...</h1>
 
     <script>
-        // OBTENEMOS LA URL DESDE LA QUE SE ENVIO EL TOKEN CADUCADO
-        const redirectUrl = location.search
-        console.log(redirectUrl)
 
-        // PETICION FETCH
-        const url = "/refresh-bridge.html"
-        const data = {redirectUrl}
-        
-        async function fetchRequest(url, data){
+        function main (){
+
+            // OBTENEMOS LA URL DESDE LA QUE SE ENVIO EL TOKEN CADUCADO
+            // ojo -> HABRIA QUE CREAR UN OBJETO CON LOS PARAMETROS DEL SEARCH Y QUEDARNOS CON EL VALOR DEL CAMPO "redirect"
+            const redirectUrl = location.search.split("=")[1]
+            console.log(redirectUrl)
+
+            // PETICION FETCH
+            const url = "refresh-bridge.html"
+            const data = {redirectUrl}
+
             
-            try{
-                const result = await fetch(url,
+            async function fetchRequest(url, data){
                 
-                {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: {  "Content-Type": "application/json",
-                                "Cookie": document.cookie
-                            },
-                    body:  JSON.stringify(data)
-                
-                });
-
-                const payload = await result.json()
-                console.log(payload)
-               
-                // LOS TOKENS HAN SIDO RENOVADOS (UNO O LOS DOS) -> REDIRIGIMOS A "redirectUrl"
-                if(result.status >= 200 && result.status <300){
-
-                    alert("Tokens REnovados")
-
-                    window.location.replace(redirectUrl);   // 'replace' no guarda la página en blanco en el historial de 'Atrás'
-                
-                // ALGO NO HA IDO BIEN, COMO POR EJEMPLO YA NO HAY SESSION -> ENVIAMOS AL LOGIN PARA RESETEAR TODO
-                }else{ 
-
-                   alert (`ERROR: ${payload.code} , ${payload.message}`)
-                    if(payload.message === "SEND-LOGIN"){
-                        window.location.replace(payload.location);
-                    }
+                try{
+                    const result = await fetch(url,
                     
+                    {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: {  "Content-Type": "application/json",
+                                    "Cookie": document.cookie
+                                },
+                        body:  JSON.stringify(data)
+                    
+                    });
+
+                    const payload = await result.json()
+                    console.log(payload)
+
+                    // LOS TOKENS HAN SIDO RENOVADOS (UNO O LOS DOS) -> REDIRIGIMOS A "redirectUrl"
+                    if(result.status >= 200 && result.status <300){
+
+                        window.location.replace(redirectUrl);   // 'replace' no guarda la página en blanco en el historial de 'Atrás'
+                    
+                    // ALGO NO HA IDO BIEN, COMO POR EJEMPLO YA NO HAY SESSION -> ENVIAMOS AL LOGIN PARA RESETEAR TODO
+                    }else{ 
+
+                    alert (`ERROR: ${payload.code} , ${payload.message}`)
+                        if(payload.message === "SEND-LOGIN"){
+                            window.location.replace(payload.location);
+                        }
+                        
+                    }
+
+                // ERROR EN LA PETICION FETCH -> ENVIAMOS AL LOGIN PARA RESETEAR TODO
+                }catch(e){
+                    alert (`ERROR: EN LA PETICION FETCH`)
+                    window.location.replace("/acceso-plataforma.html");
+                                
                 }
 
-            // ERROR EN LA PETICION FETCH -> ENVIAMOS AL LOGIN PARA RESETEAR TODO
-            }catch(e){
-                alert (`ERROR: EN LA PETICION FETCH`)
-                window.location.replace("/acceso-plataforma.html");
-                              
             }
 
+            fetchRequest(url, data);
         }
 
-
-        
+        main()
 
     </script>
     

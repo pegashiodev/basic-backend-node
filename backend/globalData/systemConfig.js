@@ -130,7 +130,7 @@ export default  {
         URL_AFTER_SIGNUP: '/bots.html',
         USER_EMAIL_VERIFIED: '/user-email-verified.html',
         USER_NOT_ACTIVE: '/user-not-active.html',
-        GET_REFRESS_TOKEN: "/auth/refresh-bridge.html",
+        GET_REFRESS_TOKEN: "/refresh-bridge.html",
     },
 
     /**   
@@ -156,11 +156,11 @@ export default  {
     */ 
 
     //ENDPOINTS A LOS QUE SE PUEDE ACCEDER MEDIANTE METODO POST SIN COOKIE 
-    VALID_POST_ENDPOINTS_WITHOUT_COOKIE: ["signup-email", "signup-email.html", "login-email", "login-email.html", "get-main-menu", "get-main-menu.html", "forgot-password", "forgot-password.html", "renove-password", "renove-password.html", "refress-bridge", "refress-bridge.html"],
+    VALID_POST_ENDPOINTS_WITHOUT_COOKIE: ["signup-email", "signup-email.html", "login-email", "login-email.html", "get-main-menu", "get-main-menu.html", "forgot-password", "forgot-password.html", "renove-password", "renove-password.html", "refresh-bridge", "refresh-bridge.html"],
     // ENDPOINTS A LOS QUE SE PUEDE ACCEDER MEDIANTE METODO POST SIN SESION
-    VALID_POST_ENDPOINTS_WITHOUT_SESSION: ["get-main-menu", "get-html-items"],
+    VALID_POST_ENDPOINTS_WITHOUT_SESSION: ["get-main-menu", "get-html-items", "refresh-bridge", "refresh-bridge.html"],
     // ENDPOINTS PARA CAMBIAR EL PASSWORD O RECUPERAR CUENTA
-    VERIFICATION_ENDPOINTS: ['recovery-account', 'recovery-account.html','renove-password', 'renove-password.html', "refress-bridge", "refress-bridge.html"],
+    VERIFICATION_ENDPOINTS: ['recovery-account', 'recovery-account.html','renove-password', 'renove-password.html'],
     
     // ESTE EL EL CORRECTO
     RESTRICTED_ENDPOINTS: ["upload-files", "upload-files.html","remote-control-access-bi89530", "remote-control-panel", 'mis-bots', 'mis-bots.html', 'user', 'user.html', 'my-bots', 'my-bots.html'],
@@ -243,11 +243,11 @@ export default  {
         PARAMS_ATK_SIGNIN_DEV: `max-age=${ACCESS_TOKEN_MAX_AGE}; expires=${ACCESS_TOKEN_MAX_AGE};`,
         // PARAMS_RTK_SIGNIN_DEV: `max-age=${COOKIE_MAX_AGE}; expires=${COOKIE_MAX_AGE};`,
 //PARAMS_RTK_SIGNIN_DEV: `max-age=${COOKIE_MAX_AGE}; expires=${COOKIE_MAX_AGE}; HttpOnly;`,
-        PARAMS_RTK_SIGNIN_DEV: `max-age=${REFRESH_TOKEN_MAX_AGE}; expires=${REFRESH_TOKEN_MAX_AGE}; HttpOnly; Secure; SameSite=Strict; Path=/api/auth/refresh;`,
+        PARAMS_RTK_SIGNIN_DEV: `max-age=${REFRESH_TOKEN_MAX_AGE}; expires=${REFRESH_TOKEN_MAX_AGE}; HttpOnly; Secure; SameSite=Strict; Path=/refresh-bridge.html;`,
 
         PARAMS_ATK_SIGNIN_PROD: `max-age=${ACCESS_TOKEN_MAX_AGE}; expires=${ACCESS_TOKEN_MAX_AGE}; Domain=${DOMAIN_PROD};`,
 //PARAMS_RTK_SIGNIN_PROD: `max-age=${COOKIE_MAX_AGE}; expires=${COOKIE_MAX_AGE}; HttpOnly; Secure; Domain=${DOMAIN_PROD};`,
-        PARAMS_RTK_SIGNIN_PROD: `max-age=${REFRESH_TOKEN_MAX_AGE}; expires=${REFRESH_TOKEN_MAX_AGE}; HttpOnly; Secure; SameSite=Strict; Path=/api/auth/refresh;`,
+        PARAMS_RTK_SIGNIN_PROD: `max-age=${REFRESH_TOKEN_MAX_AGE}; expires=${REFRESH_TOKEN_MAX_AGE}; HttpOnly; Secure; SameSite=Strict; Path=/refresh-bridge.html;`,
 
         PARAMS_DEVIDE_ID_DEV: `max-age=${REFRESH_TOKEN_MAX_AGE}; expires=${REFRESH_TOKEN_MAX_AGE};`,
         PARAMS_DEVIDE_ID_PROD: `max-age=${REFRESH_TOKEN_MAX_AGE}; expires=${REFRESH_TOKEN_MAX_AGE};`,

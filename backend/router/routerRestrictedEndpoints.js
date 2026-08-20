@@ -131,14 +131,9 @@ console.log({session})
          }else if(req.get_rtk){
 
             // RECUPERAMOS EL ENDPOINT DESDE EL QUE SE ENVIO EL TOKEN CADUCADO
-            const redirect = req.urlData.seachParams?.redirect
-            let location = "";
+            const redirect = req.urlData.url
             
-            if(req.urlData.seachParams?.redirect){
-                location = `${systemConfig.PAGES.GET_REFRESS_TOKEN}?redirect=${redirect}`
-            }else{
-                location = systemConfig.PAGES.GET_REFRESS_TOKEN
-            }
+            const location = `${systemConfig.PAGES.GET_REFRESS_TOKEN}?redirect=${redirect}`
 
             res.code = 302;
             res.headers = { "Location": location};

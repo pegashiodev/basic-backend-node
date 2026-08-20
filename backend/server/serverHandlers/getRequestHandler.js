@@ -30,14 +30,23 @@ export default  async(req, res)=>{
     // EXTRAEMOS TODA LA DATA DE LA REQUEST
     getUrlData(req);
     console.log(`URL: ${req.urlData.url}`)
+
+
+    // SE SOLICITA UN "RESTRICTED ENDPOINT" EN UNA URL QUE NO LO PERMITE: EJ:  MI-DOMINIO.COM/BLOG/MIS-BOTS 
+    // RESPONDEMOS UN 404
+    if(req.its_bad_url_request){
+        res.code = 404;
+        return sendStaticFile(req, res)
+
+    }
     // console.log(req.urlData);
 
     // PETICION QUE SE HACE CUANDO TIENES LAS HERRAMIENTAS DE DESARROLLADOR ABIERTAS
     // en este caso desde Chrome o Brave
     // NO COMPROBAMOS NADA MAS DE MOMENTO -> teRMINAMOS ESTA CONEXION
-    if(req.urlData.url === "/.well-known/appspecific/com.chrome.devtools.json"){
-        return res.end()
-    }
+// if(req.urlData.url === "/.well-known/appspecific/com.chrome.devtools.json"){
+//     return res.end()
+// }
     
     if(systemConfig.HAS_SUBDOMAINS){
 
@@ -122,7 +131,7 @@ export default  async(req, res)=>{
     
     // NO HAY HABILITADO NADA DE LO ANTERIOR
     // Es un Staic file o Static View
-    // 
+console.log("Es un Simple ENDPOINT !!!!")
     res.code = 200,
     res.headers = {}
     sendStaticFile(req, res)
@@ -131,5 +140,12 @@ export default  async(req, res)=>{
 }
 
 
+/*
 
+CUANDO LAS TOOLS ESTAN ABIERTAS NOS PIDE ESTE ARCHIVO ??
+
+// resolvedPath: '/home/carlos/dev/basic-project-old/frontend/statics/com.chrome.devtools.json'
+
+
+*/
 

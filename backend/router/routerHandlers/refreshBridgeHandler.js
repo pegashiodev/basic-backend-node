@@ -6,25 +6,20 @@
  * 
  */
 
-import systemConfig from "../../globalData/systemConfig";
-import getOurCookie from "../../tools/getOurCookie"
+import systemConfig from "../../globalData/systemConfig.js";
+import getOurCookie from "../../tools/getOurCookie.js"
+import verifyTokensAndSetCookie from "../../tools/verifyTokensAndSetCookie.js";
 
 
-const sendPostError = (res, statusCode, message, customCode = null, location = null) => {
-    res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({
-        status: 'error',
-        code: customCode || statusCode,
-        message: message
-    }));
-};
 
-export default refershBridgeHandler =  async function (params) {
+export default async function refershBridgeHandler(req, res) {
+
+    console.log("REFRESH-BRIDGE-HANDLER !!")
 
     // OBTENEMOS NUESTRA COOKIE CON ATK Y RTK
    const result_getOurCookie = await getOurCookie(req);
     if (result_getOurCookie.status !== 'ok') {
-        res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.writeHead(405, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
             status: 'error',
             code: 405,
@@ -32,10 +27,10 @@ export default refershBridgeHandler =  async function (params) {
         }));
         return;
     }
-
+console.log(req.our_cookie)
     // COMPROBAMOS SI FALTA ALGUN TOKEN
-    if(!req.has_our_cookie || !req.our_cookie.atk_decodec || !req.our_cookie.rtk_decodec){
-        res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' });
+    if(!req.has_our_cookie || !req.our_cookie.atk_decoded || !req.our_cookie.rtk_decoded){
+        res.writeHead(405, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
             status: 'error',
             code: 406,
@@ -49,10 +44,12 @@ export default refershBridgeHandler =  async function (params) {
     await verifyTokensAndSetCookie(req, "REFRESH-BRIDGE");
     
     // ACTUAMOS EN FUNCION DEL RESULTADO DE LOS TOKENS
-    
+   console.log("Despues de VERIFY") 
     // SI LA SESSION EXPIRO ENVIAMOS AL LOGIN
     if(req.session_expired){
-        res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' });
+
+console.log( "session Expirada")
+        res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
             status: 'error',
             code: 401,
@@ -64,10 +61,17 @@ export default refershBridgeHandler =  async function (params) {
     
     // TOKENS RENOVADOS
     }else{
-        res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' });
+
+console.log( "tOKENS RENOVADOS ")
+
+        let headers = {
+            'Content-Type': 'application/json; charset=utf-8' 
+        }
+
         if(req.set_new_cookie){
             headers['Set-Cookie'] = req.cookie;
         }
+        res.writeHead(200, headers);
         res.end(JSON.stringify({
             status: 'error',
             code: 200,

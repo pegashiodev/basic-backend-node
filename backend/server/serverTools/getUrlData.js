@@ -22,6 +22,7 @@ export default (req)=>{
 
     // console.log(req.headers)
     //console.log(req.url)
+    req.its_bad_url_request = false;
 
     let data = {
         method: req.method,
@@ -63,6 +64,7 @@ export default (req)=>{
         // ES hOME SIN LANGUAGE EN URL
         data.language = systemConfig.MAIN_LANGUAGE;
         data.url_to_verify = "";
+        data.url_to_verify_position = 0;
 
     }else {
         
@@ -70,6 +72,7 @@ export default (req)=>{
         if(data.url_parts[1].length === 2){
            
             data.url_language = data.url_parts[1].toLowerCase();
+            data.url_to_verify_position = 2;
            
             if(data.url_parts[2]){
                 data.url_to_verify = data.url_parts[2]
@@ -77,10 +80,13 @@ export default (req)=>{
                 data.url_to_verify = "";
             }
 
+
         // no hay language en la url: ES UN ENDPOINT
         }else if(data.url_parts[1].length > 2){
             
             data.url_to_verify = data.url_parts[1]
+            data.url_to_verify_position = 1;
+
             data.language = systemConfig.MAIN_LANGUAGE;
 
 
@@ -93,8 +99,26 @@ export default (req)=>{
    
     }
 
+    // COMPROBAMOS QUE EL EL RESTO DE URL_PARTS, desde "data.url_to_verify_position"  NO HAY UNA "RESTRICTED ENDPOINT" 
+    // PARA EVITAR EL ACCESO A UN RESTRICTED ENDPOINT COLOCANDO UNA RUTA COMO : MI-DOMINIO.COM/BLOG/MIS-BOTS
+    const len_url_parts = data.url_parts.length;
+console.log(data.url_parts)
+console.log(data.url_to_verify_position)
+    data.url_to_verify_position ++
+
+    if(data.url_to_verify_position < len_url_parts){
+
+        for( let i = data.url_to_verify_position; i<len_url_parts; i++){
+            if( systemConfig.RESTRICTED_ENDPOINTS.includes(data.url_parts[i])){
+                req.its_bad_url_request = true;
+            }
+        }
+    }
+
+
     // Eliminamos la extension si la tiene
     data.url_to_verify = data.url_to_verify.split('.')[0]
+
 
     // REVISAMOS EL LENGUAJE DE LA PETICION PARA RESPONDER CON EL QUE SE SOLICITA
     if(!data.url_language){
