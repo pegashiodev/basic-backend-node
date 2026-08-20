@@ -48,7 +48,6 @@ console.log(req.our_cookie)
     // SI LA SESSION EXPIRO ENVIAMOS AL LOGIN
     if(req.session_expired){
 
-console.log( "session Expirada")
         res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
             status: 'error',
@@ -62,7 +61,6 @@ console.log( "session Expirada")
     // TOKENS RENOVADOS
     }else{
 
-console.log( "tOKENS RENOVADOS ")
 
         let headers = {
             'Content-Type': 'application/json; charset=utf-8' 

@@ -31,7 +31,7 @@ export default async function postRequestHandler(req, res) {
     }
 
     // 1. Extraer y estructurar datos de la URL
-    getUrlData(req);
+    //getUrlData(req);
 
     if (!req.urlData.endpoint) {
         return sendPostError(res, 404, 'No se especificó un endpoint válido en la petición', 450);

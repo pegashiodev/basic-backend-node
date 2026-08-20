@@ -26,9 +26,9 @@ process.loadEnvFile();
 export default  async(req, res)=>{
     
     console.log("\n\n NUEVA PETICION GET ************************************")
-    
+
     // EXTRAEMOS TODA LA DATA DE LA REQUEST
-    getUrlData(req);
+    ///getUrlData(req);
     console.log(`URL: ${req.urlData.url}`)
 
 
@@ -39,14 +39,6 @@ export default  async(req, res)=>{
         return sendStaticFile(req, res)
 
     }
-    // console.log(req.urlData);
-
-    // PETICION QUE SE HACE CUANDO TIENES LAS HERRAMIENTAS DE DESARROLLADOR ABIERTAS
-    // en este caso desde Chrome o Brave
-    // NO COMPROBAMOS NADA MAS DE MOMENTO -> teRMINAMOS ESTA CONEXION
-if(req.urlData.url === "/.well-known/appspecific/com.chrome.devtools.json"){
-    return res.end()
-}
     
     if(systemConfig.HAS_SUBDOMAINS){
 

@@ -52,7 +52,7 @@ export default  async (req, res)=>{
     const contentType = req.headers['content-type']
     
     // Obtenemos Datos de la URL
-    getUrlData(req);
+    //getUrlData(req);
 
     if(!req.urlData.endpoint){
         console.log('POST -> NO endpoint IN REQUEST -> devolvemos 404')

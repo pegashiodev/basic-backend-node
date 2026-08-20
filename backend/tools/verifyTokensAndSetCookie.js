@@ -71,7 +71,14 @@ export default async function verifyTokensAndSetCookie(req, from) {
                 if(atk.sessionId !== rtk.sessionId){
                     // TOKENS NO RELACIONADOS O MANIPULADOS. MARCAMOS COMO QUE NO HAY SESSION Y ENVIAMOS AL LOGIN
 
-                    // HAY QUE ELIMINAR LA SESSION DE REDIS. 
+                    // Eliminar directamente ambas claves de Redis
+                    const keysToDelete = [];
+                    if (atk.sessionId) keysToDelete.push(`session:${atk.sessionId}`);
+                    if (rtk.sessionId) keysToDelete.push(`session:${rtk.sessionId}`);
+
+                    if (keysToDelete.length > 0) {
+                        await redisClient.del(keysToDelete); // redisClient.del acepta un array o múltiples claves
+                    }
                     req.session_expired = true
                     return;
                 
