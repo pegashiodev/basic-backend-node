@@ -25,8 +25,7 @@ console.log(req.cookie_parsed)
 
     // 2. Si no hay cookies o faltan parámetros
     //if (!req.cookie_parsed || !req.cookie_parsed.atk || !req.cookie_parsed.rtk || !deviceId) {
-    if (!req.cookie_parsed || !req.cookie_parsed.atk || !req.cookie_parsed.rtk) {
-console.log("eroor 1")
+    if (!req.cookie_parsed || !req.cookie_parsed.atk) {
         result.status = "error";
         if (req.method === "GET") {
             if (!req.urlData) req.urlData = {};
@@ -48,10 +47,13 @@ console.log("eroor 1")
 
     // 3. Decodificar y verificar firmas criptográficas HMAC
     const atk_decoded = decodeToken(req.cookie_parsed.atk);
-    const rtk_decoded = decodeToken(req.cookie_parsed.rtk);
+    let rtk_decoded;
+    
+    if(req.cookie_parsed.rtk){
+        rtk_decoded = decodeToken(req.cookie_parsed.rtk);
+    }
 
-    if (!atk_decoded || !rtk_decoded) {
-console.log("eroor 2")
+    if (!atk_decoded) {
 
         result.status = "error";
         console.warn('⚠️ Token con firma alterada o inválido detectado.');
@@ -59,23 +61,28 @@ console.log("eroor 2")
     }
 
     // 4. Vínculo de seguridad: Comprobar que pertenecen al mismo sessionId y usuario
-    if (atk_decoded.sessionId !== rtk_decoded.sessionId || atk_decoded.email !== rtk_decoded.email) {
-console.log("eroor 3")
+    if (!atk_decoded && !rtk_decoded) {
+        if (atk_decoded.sessionId !== rtk_decoded.sessionId || atk_decoded.email !== rtk_decoded.email) {
 
-        result.status = "error";
-        console.warn('🚨 Discrepancia detectada entre ATK y RTK (posible manipulación de tokens).');
-        return generateErrorResponse(req, result, 453, "Discrepancia en tokens de sesión");
+            result.status = "error";
+            console.warn('🚨 Discrepancia detectada entre ATK y RTK (posible manipulación de tokens).');
+            return generateErrorResponse(req, result, 453, "Discrepancia en tokens de sesión");
+        }
     }
 
     //const our_cookie = { atk_decoded, rtk_decoded, deviceId, sessionId: atk_decoded.sessionId };
-    let our_cookie = { atk_decoded, rtk_decoded, sessionId: atk_decoded.sessionId };
+    let our_cookie = { atk_decoded, sessionId: atk_decoded.sessionId };
+    
+    if(rtk_decoded){
+        our_cookie["rtk_decoded"] = rtk_decoded;
+    }
 
 console.log({our_cookie})
     // Comprobar token especial de panel de control si viene presente
     if (req.cookie_parsed.stk) {
         const stk_decoded = decodeToken(req.cookie_parsed.stk);
         if (stk_decoded) {
-            our_cookie.stk_decoded = stk_decoded;
+            our_cookie["stk_decoded"] = stk_decoded;
         }
     }
 

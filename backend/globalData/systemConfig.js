@@ -1,7 +1,8 @@
 
 const DOMAIN_PROD = "tudominio.com"
 const DOMAIN_DEV = "localhost"
-const COOKIE_MAX_AGE = 60*10;  //  VALOR EN SEGUNDOS  // (10 minuto para dev)         60*60*12*7;     // 7 DIASS,
+const ACCESS_TOKEN_MAX_AGE = 60*5;           //  VALOR EN SEGUNDOS  // (10 minuto para dev)         60*60*12*7;     // 7 DIASS,
+const REFRESH_TOKEN_MAX_AGE = 60 * 7;      // HABRA QUE DARLE UN VALOR DE 7 DIAS ??
 
 
 export default  {
@@ -129,6 +130,7 @@ export default  {
         URL_AFTER_SIGNUP: '/bots.html',
         USER_EMAIL_VERIFIED: '/user-email-verified.html',
         USER_NOT_ACTIVE: '/user-not-active.html',
+        GET_REFRESS_TOKEN: "/auth/refresh-bridge.html",
     },
 
     /**   
@@ -154,11 +156,11 @@ export default  {
     */ 
 
     //ENDPOINTS A LOS QUE SE PUEDE ACCEDER MEDIANTE METODO POST SIN COOKIE 
-    VALID_POST_ENDPOINTS_WITHOUT_COOKIE: ["signup-email", "signup-email.html", "login-email", "login-email.html", "get-main-menu", "get-main-menu.html", "forgot-password", "forgot-password.html", "renove-password", "renove-password.html"],
+    VALID_POST_ENDPOINTS_WITHOUT_COOKIE: ["signup-email", "signup-email.html", "login-email", "login-email.html", "get-main-menu", "get-main-menu.html", "forgot-password", "forgot-password.html", "renove-password", "renove-password.html", "refress-bridge", "refress-bridge.html"],
     // ENDPOINTS A LOS QUE SE PUEDE ACCEDER MEDIANTE METODO POST SIN SESION
     VALID_POST_ENDPOINTS_WITHOUT_SESSION: ["get-main-menu", "get-html-items"],
     // ENDPOINTS PARA CAMBIAR EL PASSWORD O RECUPERAR CUENTA
-    VERIFICATION_ENDPOINTS: ['recovery-account', 'recovery-account.html','renove-password', 'renove-password.html'],
+    VERIFICATION_ENDPOINTS: ['recovery-account', 'recovery-account.html','renove-password', 'renove-password.html', "refress-bridge", "refress-bridge.html"],
     
     // ESTE EL EL CORRECTO
     RESTRICTED_ENDPOINTS: ["upload-files", "upload-files.html","remote-control-access-bi89530", "remote-control-panel", 'mis-bots', 'mis-bots.html', 'user', 'user.html', 'my-bots', 'my-bots.html'],
@@ -231,19 +233,24 @@ export default  {
 
     },
     /** TIEMPO DE EXPIRACION DE LA COOKIE */
-    COOKIE_AGE: COOKIE_MAX_AGE,  
+    COOKIE_AGE: ACCESS_TOKEN_MAX_AGE,  
+    REFRESS_TOKEN_AGE: REFRESH_TOKEN_MAX_AGE,
 
     /**
      * PARAMETROS DE LAS COOKIES
      */
     COOKIE: {
-        PARAMS_ATK_SIGNIN_DEV: `max-age=${COOKIE_MAX_AGE}; expires=${COOKIE_MAX_AGE};`,
+        PARAMS_ATK_SIGNIN_DEV: `max-age=${ACCESS_TOKEN_MAX_AGE}; expires=${ACCESS_TOKEN_MAX_AGE};`,
         // PARAMS_RTK_SIGNIN_DEV: `max-age=${COOKIE_MAX_AGE}; expires=${COOKIE_MAX_AGE};`,
-        PARAMS_RTK_SIGNIN_DEV: `max-age=${COOKIE_MAX_AGE}; expires=${COOKIE_MAX_AGE}; HttpOnly;`,
-        PARAMS_ATK_SIGNIN_PROD: `max-age=${COOKIE_MAX_AGE}; expires=${COOKIE_MAX_AGE}; Domain=${DOMAIN_PROD};`,
-        PARAMS_RTK_SIGNIN_PROD: `max-age=${COOKIE_MAX_AGE}; expires=${COOKIE_MAX_AGE}; HttpOnly; Secure; Domain=${DOMAIN_PROD};`,
-        PARAMS_DEVIDE_ID_DEV: `max-age=${COOKIE_MAX_AGE}; expires=${COOKIE_MAX_AGE};`,
-        PARAMS_DEVIDE_ID_PROD: `max-age=${COOKIE_MAX_AGE}; expires=${COOKIE_MAX_AGE};`,
+//PARAMS_RTK_SIGNIN_DEV: `max-age=${COOKIE_MAX_AGE}; expires=${COOKIE_MAX_AGE}; HttpOnly;`,
+        PARAMS_RTK_SIGNIN_DEV: `max-age=${REFRESH_TOKEN_MAX_AGE}; expires=${REFRESH_TOKEN_MAX_AGE}; HttpOnly; Secure; SameSite=Strict; Path=/api/auth/refresh;`,
+
+        PARAMS_ATK_SIGNIN_PROD: `max-age=${ACCESS_TOKEN_MAX_AGE}; expires=${ACCESS_TOKEN_MAX_AGE}; Domain=${DOMAIN_PROD};`,
+//PARAMS_RTK_SIGNIN_PROD: `max-age=${COOKIE_MAX_AGE}; expires=${COOKIE_MAX_AGE}; HttpOnly; Secure; Domain=${DOMAIN_PROD};`,
+        PARAMS_RTK_SIGNIN_PROD: `max-age=${REFRESH_TOKEN_MAX_AGE}; expires=${REFRESH_TOKEN_MAX_AGE}; HttpOnly; Secure; SameSite=Strict; Path=/api/auth/refresh;`,
+
+        PARAMS_DEVIDE_ID_DEV: `max-age=${REFRESH_TOKEN_MAX_AGE}; expires=${REFRESH_TOKEN_MAX_AGE};`,
+        PARAMS_DEVIDE_ID_PROD: `max-age=${REFRESH_TOKEN_MAX_AGE}; expires=${REFRESH_TOKEN_MAX_AGE};`,
         CLEAN_RTK: ["rtk=; expires=0; max-age=0; HttpOnly;"],
         CLEAN_ATK: ["atk=; expires=0; max-age=0"],
         CLEAN_DEVICE_ID: ["deviceId=; expires=0; max-age=0"],

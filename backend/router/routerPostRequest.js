@@ -72,6 +72,9 @@ export default function (req, res){
 
         "verify-from-remote-panel": {handler: verifyFromRemotePanel, access: systemConfig.HAS_USERS},
 
+        "refresh-bridge":       {handler: refreshBridgeHandler, access: systemConfig.HAS_USERS},
+        "refresh-bridge.html":  {handler: refreshBridgeHandler, access: systemConfig.HAS_USERS},
+
     }
     // postHandlers[REMOTE_CONTROL_PANNEL_ENDPOINT] = {handler: remoteControlPannelHandler, access: systemConfig.HAS_USERS}
     // Controlador para mostrar el pannel

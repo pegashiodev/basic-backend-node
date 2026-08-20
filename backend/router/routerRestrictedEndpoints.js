@@ -119,6 +119,34 @@ console.log({session})
 
         // Renovar tokens y setear cookie si procede
         await verifyTokensAndSetCookie(req, "ROUTER_RESTRICTED_ENDPOINTS");
+
+        // ACTUAMOS EN FUNCION DEL RESULTADO DE LOS TOKENS
+        // SI LA SESSION EXPIRO ENVIAMOS AL LOGIN
+        if(req.session_expired){
+            res.code = 302;
+            res.headers = { "Location": systemConfig.PAGES.ACCESS_PLATFORM };
+            return sendStaticFile(req, res);
+        
+        // ACCESS-TOKEN EXPIRADO: Enviamos a "  " para que se nos envie el REFRESS-TOKEN
+         }else if(req.get_rtk){
+
+            // RECUPERAMOS EL ENDPOINT DESDE EL QUE SE ENVIO EL TOKEN CADUCADO
+            const redirect = req.urlData.seachParams?.redirect
+            let location = "";
+            
+            if(req.urlData.seachParams?.redirect){
+                location = `${systemConfig.PAGES.GET_REFRESS_TOKEN}?redirect=${redirect}`
+            }else{
+                location = systemConfig.PAGES.GET_REFRESS_TOKEN
+            }
+
+            res.code = 302;
+            res.headers = { "Location": location};
+            return sendStaticFile(req, res);
+            return;
+        }
+
+
     } else {
 
 console.log("NO HAY SESSION !!!! ")

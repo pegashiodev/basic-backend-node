@@ -11,11 +11,10 @@ import routerPostRequest from "../../router/routerPostRequest.js";
 import systemConfig from "../../globalData/systemConfig.js";
 import getOurCookie from "../../tools/getOurCookie.js";
 import subdomainPostRequestHandler from "./subdomainPostRequestHandler.js";
-import usersByEmail from "../../globalData/usersByEmail.js";
 import verifyTokensAndSetCookie from "../../tools/verifyTokensAndSetCookie.js";
 
 // Función auxiliar para responder errores POST en JSON
-const sendPostError = (res, statusCode, message, customCode = null) => {
+const sendPostError = (res, statusCode, message, customCode = null, location = null) => {
     res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({
         status: 'error',
@@ -99,6 +98,39 @@ export default async function postRequestHandler(req, res) {
 
         // Verificar y renovar tokens de sesión
         await verifyTokensAndSetCookie(req, "POST_REQUEST");
+        
+        // ACTUAMOS EN FUNCION DEL RESULTADO DE LOS TOKENS
+       
+        // SI LA SESSION EXPIRO ENVIAMOS AL LOGIN
+        if(req.session_expired){
+            return sendPostError(
+                res, 
+                302, 
+                result_getOurCookie.response_data?.message || 'Autenticación requerida',
+                result_getOurCookie.response_data?.code || 302, 
+                systemConfig.PAGES.ACCESS_PLATFORM
+            );
+        
+        // ACCESS-TOKEN EXPIRADO: Enviamos a "  " para que se nos envie el REFRESS-TOKEN
+        }else if(req.get_rtk){
+            
+            // RECUPERAMOS EL ENDPOINT DESDE EL QUE SE ENVIO EL TOKEN CADUCADO
+            const redirect = req.urlData.seachParams?.redirect
+            let location = "";
+            
+            if(req.urlData.seachParams?.redirect){
+                location = `${systemConfig.PAGES.GET_REFRESS_TOKEN}?redirect=${redirect}`
+            }else{
+                location = systemConfig.PAGES.GET_REFRESS_TOKEN
+            }
+            return sendPostError(
+                res, 
+                401, 
+                'SEND-REFRESS-TOKEN',
+                result_getOurCookie.response_data?.code || 401, 
+                location
+            );
+        }
 
         req.body.language = req.urlData.language || systemConfig.MAIN_LANGUAGE;
         req.body.ip = req.ip;
