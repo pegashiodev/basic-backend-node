@@ -46,6 +46,7 @@ export default function (req, res){
         "login-email.html":      {handler: logInEmailHandler, access: systemConfig.HAS_USERS},
         "logout":               {handler: logOutHandler, access: systemConfig.HAS_USERS},
         "logout.html":          {handler: logOutHandler, access: systemConfig.HAS_USERS},
+        
         "forgot-password":      {handler: forgotPasswordHandler, access: systemConfig.HAS_USERS},
         "forgot-password.html": {handler: forgotPasswordHandler, access: systemConfig.HAS_USERS},
         //"expired-endpoint":     {handler: expiredEndpointHandler, access: systemConfig.HAS_USERS},
@@ -95,7 +96,7 @@ export default function (req, res){
         
     const response_data = {
         code: 460,
-        message: "IMVALID ENDPOINT"
+        message: "INVALID ENDPOINT"
     }
     res.writeHead(460, { 'Content-Type': 'text/plain' });
     res.end(JSON.stringify(response_data));

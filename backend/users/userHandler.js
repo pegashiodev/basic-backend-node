@@ -79,7 +79,37 @@ export const getUserByEmail = async (email) => {
     }
 };
 
+
+/**
+ *  ACTUALIZA ALGUN CAMPO DEL USER EN MONGODB Y EN REDIS
+ */
+export const updateUser = async (data, user)=>{
+
+
+    if(data.task === "UPDATE_USER_PASSWORD"){
+
+        // 3. Guardar en MongoDB en la colección del mes de alta
+        const params = {
+            dbName: systemConfig.DBS.USERS_DATA,
+            collection: user._id.from.month.toLowerCase(),
+        };
+        const filter = {
+            "_id.email": user._id.email
+        }
+        const updateData =  { "$set": { password: data.password } }
+        const dbResult = await dbCrudHandler.updateOne(filter, updateData, params);
+        
+        if (dbResult.status !== 'ok') {
+            return { status: 'error', code: 500, message: 'Error guardando usuario en Base de Datos' };
+        }
+        return { status: 'ok', message: "PASWORD ACTUALIZADO CON EXITO"} 
+    }
+
+
+}
+
 export default {
     addUser,
-    getUserByEmail
+    getUserByEmail, 
+    updateUser
 };

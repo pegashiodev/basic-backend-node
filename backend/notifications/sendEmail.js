@@ -24,6 +24,7 @@ function buildEmailTemplate({ type, code, language = 'es', customData = {} }) {
 
     const isEn = language === 'en';
 
+    // 1.- ENVIAMOS UN CODIGO DE VERIFICACON PARA HACER UNA ACCION EN LA PLATAFORMA
     if (type === 'VERIFICATION_CODE') {
         const subject = isEn 
             ? `Your verification code: ${code}` 
@@ -55,6 +56,44 @@ function buildEmailTemplate({ type, code, language = 'es', customData = {} }) {
         `;
 
         return { subject, textBody, htmlBody };
+
+    // 2.-ENVIAMOS UN ENDPOINT PARA HACER UNA ACCION EN LA PLATAFORMA: POR EJEMPLO UN CAMBIO DE PASSWORD
+    }else if(type === "VERIFICATION_ENDPOINT"){
+        const subject = 'CAMBIO DE PASSWORD'
+        const textBody = `Hola,\n\nTu código de verificación es: ${code}\nEste código caduca en 15 minutos.\nSi no has solicitado este código, puedes ignorar este correo.`
+        const htmlBody = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                <h2 style="color: #333; text-align: center;">${isEn ? 'Verification Code' : 'Código de Verificación'}</h2>
+                <p style="color: #555; font-size: 16px;">
+                    ${isEn ? 'Please use the following code to complete your registration or verification:' : 'Utiliza el siguiente código para completar tu registro o verificación:'}
+                </p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1a73e8; background: #f1f3f4; padding: 10px 24px; border-radius: 6px; display: inline-block;">
+                        ${code}
+                    </span>
+                </div>
+                <p style="color: #777; font-size: 14px;">
+                    ${isEn ? 'This code is valid for 15 minutes.' : 'Este código es válido durante 15 minutos.'}
+                </p>
+                <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;">
+                <p style="color: #999; font-size: 12px; text-align: center;">
+                    ${isEn ? 'If you did not request this code, you can safely ignore this email.' : 'Si no solicitaste este código, puedes ignorar este correo de forma segura.'}
+                </p>
+            </div>
+        `;
+        return { subject, textBody, htmlBody };
+    
+    // 3.- ENVIAMOS UN EMAIL AL USUARIO CONFIRMANDO EL CAMBIO DEL PASSWORD
+    }else if(type === "PASSWORD_UPDATE_SUCCESS"){
+        const subject = 'CAMBIO DE PASSWORD'
+        const textBody = `Hola,\n\nSE HA CAMBIADO EL PASSWORD CORRECTAMENTE\n`
+        const htmlBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+            <h2 style="color: #333; text-align: center;">${isEn ? 'Verification Code' : 'Código de Verificación'}</h2>
+        </div>`
+
+        return { subject, textBody, htmlBody };
+
     }
 
     // Plantilla por defecto o personalizada

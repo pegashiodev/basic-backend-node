@@ -88,6 +88,10 @@ export default createServer(async (req, res) => {
             '/renove-password.html': 'renove-password.html',
             '/refresh-bridge': "refresh-bridge.html",
             '/refresh-bridge.html': "refresh-bridge.html",
+            '/logout': "logout.html",
+            '/logout.html': "logout.html",
+    '/forgot-password.html': 'renove-password.html',
+    '/forgot-password': 'renove-password.html',
             
             '/get-main-menu': "get-main-menu.html",
             '/get-main-menu.html': "get-main-menu.html",

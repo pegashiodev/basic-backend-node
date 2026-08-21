@@ -241,24 +241,22 @@ export default  {
      */
     COOKIE: {
         // AUMENTAMOS UN POCO SU CADUCIDAD PARA QUE CUANDO EXPIRE EL TOKEN AUN HAYA COOKIE QUE ENVIAR
-        PARAMS_ATK_SIGNIN_DEV: `max-age=${ACCESS_TOKEN_MAX_AGE_SECONDS * 2}; expires=${ACCESS_TOKEN_MAX_AGE_SECONDS * 2};`,
+        PARAMS_ATK_SIGNIN_DEV: `max-age=${ACCESS_TOKEN_MAX_AGE_SECONDS * 1.5}; expires=${ACCESS_TOKEN_MAX_AGE_SECONDS * 1.5};`,
         // PARAMS_RTK_SIGNIN_DEV: `max-age=${COOKIE_MAX_AGE}; expires=${COOKIE_MAX_AGE};`,
 //PARAMS_RTK_SIGNIN_DEV: `max-age=${COOKIE_MAX_AGE}; expires=${COOKIE_MAX_AGE}; HttpOnly;`,
-        PARAMS_RTK_SIGNIN_DEV: `max-age=${REFRESH_TOKEN_MAX_AGE_SECONDS * 2}; expires=${REFRESH_TOKEN_MAX_AGE_SECONDS * 2}; HttpOnly; Secure; SameSite=Strict; Path=/refresh-bridge.html;`,
+        PARAMS_RTK_SIGNIN_DEV: `max-age=${REFRESH_TOKEN_MAX_AGE_SECONDS * 1.5}; expires=${REFRESH_TOKEN_MAX_AGE_SECONDS * 1.5}; HttpOnly; Secure; SameSite=Strict; Path=/refresh-bridge.html;`,
 
-        PARAMS_ATK_SIGNIN_PROD: `max-age=${ACCESS_TOKEN_MAX_AGE_SECONDS}; expires=${ACCESS_TOKEN_MAX_AGE_SECONDS}; Domain=${DOMAIN_PROD};`,
+        PARAMS_ATK_SIGNIN_PROD: `max-age=${ACCESS_TOKEN_MAX_AGE_SECONDS * 1.5}; expires=${ACCESS_TOKEN_MAX_AGE_SECONDS * 1.5}; Domain=${DOMAIN_PROD};`,
 //PARAMS_RTK_SIGNIN_PROD: `max-age=${COOKIE_MAX_AGE}; expires=${COOKIE_MAX_AGE}; HttpOnly; Secure; Domain=${DOMAIN_PROD};`,
-        PARAMS_RTK_SIGNIN_PROD: `max-age=${REFRESH_TOKEN_MAX_AGE_SECONDS}; expires=${REFRESH_TOKEN_MAX_AGE_SECONDS}; HttpOnly; Secure; SameSite=Strict; Path=/refresh-bridge.html;`,
+        PARAMS_RTK_SIGNIN_PROD: `max-age=${REFRESH_TOKEN_MAX_AGE_SECONDS * 1.5}; expires=${REFRESH_TOKEN_MAX_AGE_SECONDS * 1.5}; HttpOnly; Secure; SameSite=Strict; Path=/refresh-bridge.html;`,
 
-        PARAMS_DEVIDE_ID_DEV: `max-age=${REFRESH_TOKEN_MAX_AGE_SECONDS}; expires=${REFRESH_TOKEN_MAX_AGE_SECONDS};`,
-        PARAMS_DEVIDE_ID_PROD: `max-age=${REFRESH_TOKEN_MAX_AGE_SECONDS}; expires=${REFRESH_TOKEN_MAX_AGE_SECONDS};`,
+        PARAMS_DEVIDE_ID_DEV: `max-age=${REFRESH_TOKEN_MAX_AGE_SECONDS * 1.5}; expires=${REFRESH_TOKEN_MAX_AGE_SECONDS * 1.5};`,
+        PARAMS_DEVIDE_ID_PROD: `max-age=${REFRESH_TOKEN_MAX_AGE_SECONDS * 1.5}; expires=${REFRESH_TOKEN_MAX_AGE_SECONDS * 1.5};`,
         CLEAN_RTK: ["rtk=; expires=0; max-age=0; HttpOnly;"],
         CLEAN_ATK: ["atk=; expires=0; max-age=0"],
         CLEAN_DEVICE_ID: ["deviceId=; expires=0; max-age=0"],
         CLEAN_ALL_ACCESS_TOKENS: ["rtk=; expires=0; max-age=0; HttpOnly;" , "atk=; expires=0; max-age=0;", "deviceId=; expires=0; max-age=0;"],
         // CLEAN_ALL_ACCESS_TOKENS: ["rtk=; expires=0; max-age=0;" , "atk=; expires=0; max-age=0;", "deviceId=; expires=0; max-age=0;"],
-        
-        //Set-Cookie: refreshToken=...; HttpOnly; Secure; SameSite=Strict; Path=/api/auth/refresh
     },  
     
     /** 

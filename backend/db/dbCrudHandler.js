@@ -358,15 +358,12 @@ const deleteOne = async (params, query)=>{
     
     try{
 
-      if(params.await){
+    
 
-        const result = await myColl.updateOne(filter, updateData, options);
-        // console.log(' DATA ACTUALIZADO EN DB')
-        return {status: "ok"}
+      const result = await myColl.updateOne(filter, updateData, options);
+      // console.log(' DATA ACTUALIZADO EN DB')
+      return {status: "ok"}
      
-      }else{
-        myColl.updateOne(filter, updateData, options);
-      }
 
 
     }catch(error){

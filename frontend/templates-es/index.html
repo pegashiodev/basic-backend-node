@@ -66,7 +66,7 @@
             <div id="forgot-password-wrap">
                 <p>¿Olvidó su contraseña?</p>
                 <div id="forgot-password-content">
-                    <p><input type="email" value="Introduzca su Email"></p>
+                    <p><input class="password" type="email" placeholder="Introduzca su Email"></p>
                     <button id="btn_forgot_password">Renovar Contraseña</button>
                 </div>
             </div>
@@ -104,7 +104,7 @@
            
         }
         data_forgot_password = {
-            email: "pegashio@gmail.com",
+            email: "",
         }
 
         btn_signup.addEventListener('click', async (ev)=>{
@@ -211,6 +211,8 @@
 
         btn_forgot_password.addEventListener('click', (ev)=>{
             ev.preventDefault();
+            data_forgot_password.email = document.querySelector(" #forgot-password-content .password").value;
+
             console.log(data_forgot_password);
 
             fetch("http://localhost:3000/forgot-password.html", 

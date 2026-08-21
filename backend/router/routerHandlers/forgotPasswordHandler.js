@@ -14,7 +14,8 @@
 
 import sendEmail from "../../notifications/sendEmail.js";
 import systemConfig from "../../globalData/systemConfig.js";
-import usersByEmail from "../../globalData/usersByEmail.js";
+import generateVerificationEndpoint from "../../notifications/notificationsTools/generateVerificationEndpoint.js";
+import userHandler from "../../users/userHandler.js";
 
 
 /**
@@ -26,9 +27,25 @@ import usersByEmail from "../../globalData/usersByEmail.js";
 export default async function(req, res){
 
     const from = "FORGOT_PASSWORD"
+    console.log("FORGOT PASSWORD !!!!")
+    console.log(req.body)
 
     if(!req.body.email){
         console.log('NO HAY EMAIL EN EL FORGOT-PASSWORD')
+        const response_data = {
+        status: systemConfig.STATUS.ERROR_FETCH,
+        message: 'FALTAN DATOS EN LA PETICION: EMAIL',
+        code: 435
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(response_data))
+        return;
+    }
+    const normalizedEmail = req.body.email.trim().toLowerCase();
+    req.user = await userHandler.getUserByEmail(normalizedEmail);
+
+    if(!req.user){
+        console.log('NO HAY USUARIO CON ESE EMAIL')
         const response_data = {
         status: systemConfig.STATUS.ERROR_FETCH,
         message: 'EMAIL INCORRECTO',
@@ -39,41 +56,28 @@ export default async function(req, res){
         return;
     }
 
-    if(!usersByEmail[req.body.email]){
-        console.log('NO HAY USUARIO CON ESE EMAIL')
-        const response_data = {
-        status: systemConfig.STATUS.ERROR_FETCH,
-        message: 'EL EMAIL NO PERTENECE A NINGUN USUARIO',
-        code: 436
-        }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(response_data))
-        return;
-    }
-    
-    req.user = usersByEmail[req.body.email]
-
     // ENVIAMOS EMAIL PARA HACER EL CAMBIO DE PASSWORD 
-    let data_email = {
-        // ... data_gen_endpoint, 
-        task: "SEND_FORGOT_PASSWORD_EMAIL",
-        from: "FORGOT_PASSWORD", 
-        await: true, 
-    }
+    const validationEndpoint = await generateVerificationEndpoint(normalizedEmail);
+    const lang = req.urlData?.language || systemConfig.MAIN_LANGUAGE || 'es';
+console.log({validationEndpoint})
+    
+    const emailResult = await sendEmail({
+        email: normalizedEmail,
+        code: validationEndpoint,
+        type: 'VERIFICATION_ENDPOINT',
+        language: lang
+    });
 
-    const result_email = await sendEmail(data_email, req.user);
-
-    if(result_email.status != 'ok'){
-        console.log('Error en el Envio del Email')
-        const response_data = {
+    if (emailResult && emailResult.status === 'error') {
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({
             status: 'error',
-            message: 'ERROR EN EL ENVIO DEL EMAIL',
-            code: 535
-        }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(response_data))
-        return;
+            code: 500,
+            message: 'No se pudo enviar el correo de verificación.'
+        }));
     }
+
+
     const response_data = {
         status: 'ok',
         message: 'LE HEMOS ENVIADO UN EMAIL PARA EL CAMBIO DE CONTRASEÑA',

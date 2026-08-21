@@ -18,6 +18,8 @@ export default async function generateValidationEndpoint(email) {
 
     if (redisClient && redisClient.isOpen) {
         await redisClient.set(`verify:endpoint:${email}`, code, { EX: ttlSeconds });
+    }else{
+
     }
 
     console.log(base_url_endpoint + code)
@@ -26,7 +28,7 @@ export default async function generateValidationEndpoint(email) {
 }
 
 export async function checkValidationEndpoint(email, code) {
-    if (!redisClient || !redisClient.isOpen) return false;
+    if (!redisClient || !redisClient.isOpen || !email || !code) return false;
     const storedEndpoint = await redisClient.get(`verify:endpoint:${email}`);
 console.log({storedEndpoint})
     if (storedEndpoint && storedEndpoint === code.toString()) {

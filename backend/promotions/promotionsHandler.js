@@ -74,7 +74,7 @@ export const applyPromoCode = (req)=>{
  * @param {*} promo 
  */
 
-export const addPromo = (promo)=>{
+export const addPromotion = (promotion)=>{
 
     console.log("ADD_PROMO")
 
@@ -88,7 +88,7 @@ export const addPromo = (promo)=>{
  * @param {*} promo 
  */
 
-export const updatePromo = (promo)=>{
+export const updatePromotion = (promotion)=>{
 
     console.log("UPDATE_PROMO_CODE")
     const filter = {_id: promo._id}
@@ -110,7 +110,7 @@ export const updatePromo = (promo)=>{
  * 
  * @param {*} promo 
  */
-export const deletePromo = (promo)=>{
+export const deletePromotion = (promotion)=>{
 
     console.log("DELETE_PROMO_CODE")
 
@@ -119,7 +119,7 @@ export const deletePromo = (promo)=>{
 
 export default  {
     applyPromoCode,
-    addPromo,
-    updatePromo,
-    deletePromo,
+    addPromotion,
+    updatePromotion,
+    deletePromotion,
 }
