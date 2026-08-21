@@ -76,7 +76,7 @@
 
                 // OJO -> IMPORTANTE EN PETICIONES POST QUE PUEDEN REQUERIR INICIAR SESION
                 // ENVIAMOS TAMBIEN LA RUTA EL LA QUE ESTAMOS POR SI NOS REENVIAN AL LOGIN
-                let post_endpoint = `http://localhost:3000/checkout.html/?from=${location.pathname}/`
+                let post_endpoint = `http://localhost:3000/checkout.html/?redirect=${location.pathname}/`
                 if(location.search.length > 2){
                     post_endpoint += `@@&${location.search.slice(1)}`;
                 }
@@ -85,8 +85,6 @@
                 method: "POST",
                 credentials: "include",
                 headers: {"content-type": "application/json"},
-                // Set the FormData instance as the request body
-                // body: formData,
                 body: JSON.stringify({order:order}),
 
                 });
@@ -99,13 +97,8 @@
                         document.location.href =  "/"
                     }
                 }else{
-                    // Un error en el checkout: Productos no disponibles, erroes de ref, ...
-                    // if(data.listCodes && data.code){
-                    //     const message = data.listCodes[data.code];
-                    //     if(!message){message="ERROR EN EL CHECKOUT"}
-                    //     alert(message)
-                    // }
-                   
+                    
+                   console.log(data)
                     alert(data.message + ", CODE: " + data.code)
                     // Segun el codigo devuelto daremos un mensaje u otro
                     if(data.location){

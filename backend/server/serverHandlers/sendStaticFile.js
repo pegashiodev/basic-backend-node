@@ -28,10 +28,10 @@ export default function sendStaticFile(req, res) {
     const currentLang = req.urlData?.language || systemConfig.MAIN_LANGUAGE;
 
     if (res.code === 404) {
-        req.urlData.fileName = `${systemConfig.PAGES.PAGE_NOT_FOUND}-${currentLang}`;
+        req.urlData.fileName = `${systemConfig.PAGES.PAGE_NOT_FOUND}-${currentLang}.${systemConfig.EXTENSION_STATIC_VIEWS}`;
         req.urlData.ext = systemConfig.EXTENSION_STATIC_VIEWS;
     } else if (res.code === 500) {
-        req.urlData.fileName = `${systemConfig.PAGES.REQUEST_INVALID}-${currentLang}`;
+        req.urlData.fileName = `${systemConfig.PAGES.REQUEST_INVALID}-${currentLang}.${systemConfig.EXTENSION_STATIC_VIEWS}`;
         req.urlData.ext = systemConfig.EXTENSION_STATIC_VIEWS;
     }
 

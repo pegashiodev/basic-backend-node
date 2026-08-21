@@ -138,6 +138,12 @@ console.log({validationCode})
             headers['Set-Cookie'] = req.cookie;
         }
 
+        // recuperamos la direccion desde la que llego al login si exite
+        let location = systemConfig.PAGES.URL_AFTER_SIGNUP
+        if(req.urlData.searchParams?.redirect){
+            location = req.urlData.searchParams.redirect
+        }
+
         res.writeHead(200, headers);
         return res.end(JSON.stringify({
             status: 'ok',
@@ -148,7 +154,8 @@ console.log({validationCode})
                 name: userResult.user.name,
                 email: userResult.user.email,
                 role: userResult.user.role
-            }
+            },
+            location
         }));
 
     } catch (error) {

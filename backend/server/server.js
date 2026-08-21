@@ -8,6 +8,7 @@ import postRequestHandler from './serverHandlers/postRequestHandler.js';
 import systemConfig from '../globalData/systemConfig.js';
 import { systemRequestsHandler } from './serverHandlers/systemRequestHandler.js';
 import getUrlData from './serverTools/getUrlData.js';
+import sendStaticFile from './serverHandlers/sendStaticFile.js';
 
 export default createServer(async (req, res) => {
 
@@ -25,7 +26,81 @@ export default createServer(async (req, res) => {
         // 2. EXTRACCIÓN Y NORMALIZACIÓN DE LA URL
         // -------------------------------------------------------------
         getUrlData(req);
+        console.log(req.urlData)
+        
+        if(req.its_bad_get_request){
+            res.code = 404;
+            return sendStaticFile(req, res)
+        }
 
+        // COMPROBAMOS SI LA RUTA COMPLETA ESTA EN NUESTRO SITEMAP
+        // 1. Tu diccionario de rutas canónicas mapping a su archivo físico
+        const sitemapRoutes = {
+            '/': 'index.html',
+            '/index': "index.html",
+            '/index.html': "index.html",
+
+            '/acceso-plataforma': 'acceso-plataforma.html',
+            '/acceso-plataforma.html': 'acceso-plataforma.html',
+
+           
+            '/blog': 'blog.html',
+            '/blog.html': 'blog.html',
+            
+            '/blog/el-origen-de-la-ia': 'el-origen-de-la-ia.html',
+            '/blog/el-origen-de-la-ia.html': 'el-origen-de-la-ia.html',
+
+            
+            '/bots': 'bots.html',
+            '/bots.html': 'bots.html',
+            '/bots/bot1': 'bot1.html',
+            '/bots/bot1.html': 'bot1.html',
+
+
+            '/mis-bots': 'mis-bots.html',
+            '/mis-bots.html': 'mis-bots.html',
+
+            '/user': "user.html",
+            "/user.html": "user.html",
+
+            '/404-es': '404-es.html',
+            '/404-es.html': '404-es.html',
+            '/500-es': '500-es.html',
+            '/500-es.html': '500-es.html',
+            '/505-es': '505-es.html',
+            '/505-es.html': '505-es.html',
+
+            
+            '/shopping-cart': 'shoping-cart.html',
+            '/shopping-cart.html': 'shoping-cart.html',
+            '/cancel-checkout': 'cancel-checkout.html',
+            '/cancel-checkout.html': 'cancel-checkout.html',
+            '/success-checkout': 'success-checkout.html',
+            '/success-checkout.html': 'success-checkout.html',
+
+            '/login-email': 'acceso-plataforma.html',
+            '/login-email.html': 'acceso-plataforma.html',
+            '/signup-email': 'acceso-plataforma.html',
+            '/signup-email.html': 'acceso-plataforma.html',
+            '/session-is-required': 'session-is-required.html',
+            '/session-is-required.html': 'session-is-required.html',
+            '/renove-password': 'renove-password.html',
+            '/renove-password.html': 'renove-password.html',
+            '/refresh-bridge': "refresh-bridge.html",
+            '/refresh-bridge.html': "refresh-bridge.html",
+            
+            '/get-main-menu': "get-main-menu.html",
+            '/get-main-menu.html': "get-main-menu.html",
+
+        };
+        const canonicalPath = req.urlData.canonicalPath
+        // SOLO REVISAMOS LOS ENDPINTS SIN EXTENSION O SON EXTENSION HTML
+        if(req.urlData.ext === "html" || req.urlData.ext === ""){
+            if(!sitemapRoutes[canonicalPath]){
+                res.code = 404;
+                return sendStaticFile(req, res)
+            }
+        }
 
         // 3. Obtener la IP real normalizada
         req.ip = getClientIp(req);

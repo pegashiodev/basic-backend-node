@@ -7,7 +7,6 @@
 
 import systemConfig from '../globalData/systemConfig.js';
 import sendStaticFile from '../server/serverHandlers/sendStaticFile.js';
-// import sessionHandler from '../sessions/sessionHandler.js';
 import { getSession, createSession, updateSession } from '../sessions/sessionHandler.js';
 
 import userTemplateHandler from '../restrictedEndpoints/userTemplateHandler.js';
@@ -45,7 +44,7 @@ export default async function routerRestrictedEndpoints(req, res) {
         return sendStaticFile(req, res);
     }
 
-    let location = `${systemConfig.PAGES.SESSION_IS_REQUIRED}?from=${encodeURIComponent(req.urlData.url)}`;
+    let location = `${systemConfig.PAGES.SESSION_IS_REQUIRED}?redirect=${encodeURIComponent(req.urlData.url)}`;
 
     // 1. Validar presencia de Cookie
     if (!req.headers.cookie) {

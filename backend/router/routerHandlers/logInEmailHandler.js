@@ -8,6 +8,7 @@ import userHandler from '../../users/userHandler.js';
 import { createSession } from '../../sessions/sessionHandler.js';
 import { comparePassword } from '../routerTools/passwordEncript.js'
 import verifyTokensAndSetCookie from "../../tools/verifyTokensAndSetCookie.js"
+import systemConfig from '../../globalData/systemConfig.js';
 
 export default async function logInEmailHandler(req, res) {
     const { email, password, deviceId, userAgent } = req.body || {};
@@ -78,6 +79,12 @@ export default async function logInEmailHandler(req, res) {
         }
 
         // 9. Enviar respuesta exitosa al cliente
+
+        // recuperamos la direccion desde la que llego al login si exite
+        let location = systemConfig.PAGES.URL_AFTER_LOGIN
+        if(req.urlData.searchParams?.redirect){
+            location = req.urlData.searchParams.redirect
+        }
         res.writeHead(200, headers);
         return res.end(JSON.stringify({
             status: 'ok',
@@ -87,7 +94,8 @@ export default async function logInEmailHandler(req, res) {
                 userId: user.userId || (user._id && user._id._id) || user._id,
                 email: user.email || (user._id && user._id.email),
                 name: user.name || '',
-                role: user.role || 'USER'
+                role: user.role || 'USER',
+                location
             }
         }));
 

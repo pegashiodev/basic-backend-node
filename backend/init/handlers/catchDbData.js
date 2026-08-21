@@ -20,11 +20,11 @@
 
 
 import systemConfig from "../../globalData/systemConfig.js"
-import usersByEmail from "../../globalData/usersByEmail.js"
-import sessionsCached from "../../globalData/sessionsCached.js"
+// import usersByEmail from "../../globalData/usersByEmail.js"
+// import sessionsCached from "../../globalData/sessionsCached.js"
 import blackList from "../../globalData/blackList.js"
 import dbsOpened from "../../globalData/dbsOpened.js"
-import verificationEndpoints from "../../globalData/verificationEndpoints.js"
+// import verificationEndpoints from "../../globalData/verificationEndpoints.js"
 import productsCached from "../../globalData/productsCached.js"
 import promotionsCached from "../../globalData/promotionsCached.js"
 
@@ -83,6 +83,7 @@ export default async ()=>{
                            
                             for await (const doc of cursor) {
 
+                                /*
                                 if(dbName === "sessions_2025" || dbName === "sessions_2026"){
                                 // SOLO LAS ACTIVAS Y NO EXPIRADAS
                                     if(doc.status === "ACTIVE" && doc.expireTime > now){
@@ -97,8 +98,9 @@ export default async ()=>{
                                     if(doc.status === "ACTIVE" && doc.expireTime > now){
                                         verificationEndpoints[doc.tokenId] = doc
                                     }
-        
-                                }else if(dbName === "blacklist"){
+                                */
+                                
+                                    if(dbName === "blacklist"){
         
                                     if(doc.status === "BLOCKED" ||  doc.status === "PAUSED"){
                                         blackList[doc._id] = doc
@@ -118,10 +120,7 @@ export default async ()=>{
     
             }
         }
-        // console.log(systemPromotionsCodes)
-        // console.log(blackList)
-        // console.log(sessionsCached)
-        // console.log(usersByEmail)
+    
         return {status: 'ok'}
     }catch(e){
         return {status: 'error'}

@@ -86,8 +86,9 @@ export default (req) => {
     canonicalPath: canonicalPath, // Ruta normalizada sin idioma
     url_to_verify: rootEndpoint.split(".")[0],
     is_restricted: isRestricted,
-    endpoint: rootEndpoint.split(".")[0],
     fileName: fileName,
+    //endpoint: rootEndpoint.split(".")[0],
+    endpoint: fileName.split(".")[0],         // 
     ext: ext,
     search: queryString || "",
     searchParams: searchParams,
@@ -98,6 +99,10 @@ export default (req) => {
     userAgent: req.headers["user-agent"] || "",
     authorization: req.headers["authorization"] || "",
   };
+
+  if(!isRestricted && systemConfig.RESTRICTED_ENDPOINTS.includes(fileName)){
+    req.its_bad_get_request = true;
+  }
 
   return;
 };

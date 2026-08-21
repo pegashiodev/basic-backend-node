@@ -15,7 +15,6 @@ import paymentsMethods from "../../payments/paymentsMethods.js";
 import errorsCodes from "../../tools/errorsCodes.js"
 import siteStats from "../routerTools/siteStats.js";
 import verifyCart from "../../orders/verifyCart.js";
-import usersByEmail from "../../globalData/usersByEmail.js";
 
 
 

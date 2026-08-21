@@ -2,7 +2,7 @@
 const DOMAIN_PROD = "tudominio.com"
 const DOMAIN_DEV = "localhost"
 const ACCESS_TOKEN_MAX_AGE_SECONDS= 60*1;           //  VALOR EN SEGUNDOS  // (10 minuto para dev)         60*60*12*7;     // 7 DIASS,
-const REFRESH_TOKEN_MAX_AGE_SECONDS = 60 * 3;      // HABRA QUE DARLE UN VALOR DE 7 DIAS ??
+const REFRESH_TOKEN_MAX_AGE_SECONDS = 60 * 5;      // HABRA QUE DARLE UN VALOR DE 7 DIAS ??
 const SESSION_AGE_SECONDS = 60 * 10;                // 10 MINUTOS PARA PRUEBAS
 
 export default  {
@@ -113,8 +113,8 @@ export default  {
         INVALID_SUBDOMAIN_REQUEST: "invalid-subdomain-request.html",
         MAIN_CAT_ENPOINT: "/bots.html",
         MAIN_BLOG_ENDPOINT: "/blog.html",
-        PAGE_NOT_FOUND: '/404.html',
-        REQUEST_INVALID: '/500.html',
+        PAGE_NOT_FOUND: '/404',
+        REQUEST_INVALID: '/500',
         RENOVE_PASSWORD: "/renove-password.html", 
         RENOVE_PASSWORD_EXPIRES: "/renove-password-expired.html",
         RECOVERY_ACCOUNT: "/recovery-account.html", 
@@ -240,10 +240,11 @@ export default  {
      * PARAMETROS DE LAS COOKIES
      */
     COOKIE: {
-        PARAMS_ATK_SIGNIN_DEV: `max-age=${ACCESS_TOKEN_MAX_AGE_SECONDS}; expires=${ACCESS_TOKEN_MAX_AGE_SECONDS};`,
+        // AUMENTAMOS UN POCO SU CADUCIDAD PARA QUE CUANDO EXPIRE EL TOKEN AUN HAYA COOKIE QUE ENVIAR
+        PARAMS_ATK_SIGNIN_DEV: `max-age=${ACCESS_TOKEN_MAX_AGE_SECONDS * 2}; expires=${ACCESS_TOKEN_MAX_AGE_SECONDS * 2};`,
         // PARAMS_RTK_SIGNIN_DEV: `max-age=${COOKIE_MAX_AGE}; expires=${COOKIE_MAX_AGE};`,
 //PARAMS_RTK_SIGNIN_DEV: `max-age=${COOKIE_MAX_AGE}; expires=${COOKIE_MAX_AGE}; HttpOnly;`,
-        PARAMS_RTK_SIGNIN_DEV: `max-age=${REFRESH_TOKEN_MAX_AGE_SECONDS}; expires=${REFRESH_TOKEN_MAX_AGE_SECONDS}; HttpOnly; Secure; SameSite=Strict; Path=/refresh-bridge.html;`,
+        PARAMS_RTK_SIGNIN_DEV: `max-age=${REFRESH_TOKEN_MAX_AGE_SECONDS * 2}; expires=${REFRESH_TOKEN_MAX_AGE_SECONDS * 2}; HttpOnly; Secure; SameSite=Strict; Path=/refresh-bridge.html;`,
 
         PARAMS_ATK_SIGNIN_PROD: `max-age=${ACCESS_TOKEN_MAX_AGE_SECONDS}; expires=${ACCESS_TOKEN_MAX_AGE_SECONDS}; Domain=${DOMAIN_PROD};`,
 //PARAMS_RTK_SIGNIN_PROD: `max-age=${COOKIE_MAX_AGE}; expires=${COOKIE_MAX_AGE}; HttpOnly; Secure; Domain=${DOMAIN_PROD};`,

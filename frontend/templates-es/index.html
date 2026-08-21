@@ -151,8 +151,10 @@
                         const result2 = await fetchRequest(url_signup, data_signup)
                         
                         if(result2.status === "ok"){
-
+                            console.log(result2)
                             alert("Usuario Registrado CON EXITO")
+
+                            // enviaremos al location recibido
 
                         }else{
                             alert("Error: " + result2.data.message)
@@ -194,7 +196,10 @@
             console.log(result)
 
             if(result.status === 'ok'){
+                console.log(result)
                 alert("Usuario LOGEADO CON EXITO")
+                // enviaremos al location recibido
+
                 
 
             }else{
