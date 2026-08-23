@@ -46,7 +46,6 @@ export default  {
     
     /** HABILITA LOS CODIGOS PROMOCIONALES EN EL SITIO */
     HAS_PROMO_CODES: true,      
-    PROMO_CODE_MIN_LENGTH : 6,
     
     /** HABILITAR PROXY INTERNO PARA ATAQUES DDOS */
     HAS_OWN_PROXY_DDOS: true,
@@ -159,9 +158,7 @@ export default  {
     VALID_POST_ENDPOINTS_WITHOUT_COOKIE: ["signup-email", "signup-email.html", "login-email", "login-email.html", "get-main-menu", "get-main-menu.html", "forgot-password", "forgot-password.html", "renove-password", "renove-password.html", "refresh-bridge", "refresh-bridge.html"],
     // ENDPOINTS A LOS QUE SE PUEDE ACCEDER MEDIANTE METODO POST SIN SESION
     VALID_POST_ENDPOINTS_WITHOUT_SESSION: ["get-main-menu", "get-html-items", "refresh-bridge", "refresh-bridge.html"],
-    // ENDPOINTS PARA CAMBIAR EL PASSWORD O RECUPERAR CUENTA
-    VERIFICATION_ENDPOINTS: ['recovery-account', 'recovery-account.html','renove-password', 'renove-password.html'],
-    
+   
     // ESTE EL EL CORRECTO
     RESTRICTED_ENDPOINTS: ["upload-files", "upload-files.html","remote-control-access-bi89530", "remote-control-panel", 'mis-bots', 'mis-bots.html', 'user', 'user.html', 'my-bots', 'my-bots.html'],
 
@@ -224,12 +221,14 @@ export default  {
         PAYMENTS: "payments_" ,                             // + año. Colecction = mes
         MICROPAYMENTS: "micro_payments_",                   // + año. Coleccion = mes
         PENDING_TASKS: 'pending_tasks_',                    // + año
-        PRODUCTS: "products",                               //             
+        PRODUCTS: "products",                               //    
+        PROMOTIONS: "promotions",                           // -> collection = "codes"         
         SESSIONS: 'sessions_',                              // + AÑO EN EL QUE SE CREA LA SESSION ACTUAL -> COLLECTION = MES ... IDEM
         SITE_STATS: "site_stats_",                          // + año. Collection = mes
         USERS_ACTIVITY: 'users_activity_',                  // + año -> coll = name user
         USERS_ACCOUNTING: 'users_accounting_',              // + AÑO  -> coll = MONTH
         USERS_DATA: 'users_data',                          //  -> COLLECTION = MES DE ALTA DEL USUARIO
+        AFILIATES: 'afiliates',                             // -> COLLECTION = codes
 
     },
     /** TIEMPO DE EXPIRACION DE LA COOKIE */
@@ -262,7 +261,7 @@ export default  {
     /** 
     *   NOMBRES DE LAS BASES DE DATOS QUE HAY QUE ABRIR ANTES DE LANZAR EL SERVIDOR HTTP  
     */
-    DBS_TO_OPEN: ["promotions", "products", "orders_2026", "payments_2026", "bills_2026", "users_accounting_2026", 'blacklist', 'users_data', 'users_activity_2026', 'sessions_2026', "site_stats_2026"],
+    DBS_TO_OPEN: ["afiliates", "promotions", "products", "orders_2026", "payments_2026", "bills_2026", "users_accounting_2026", 'blacklist', 'users_data', 'users_activity_2026', 'sessions_2026', "site_stats_2026"],
 
     /** 
     *   BASES DE DATOS DE LAS QUE HAY QUE CACHEAR CIERTOS DATOS ENTES DE LANZAR EL SERVIDOR HTTP 

@@ -19,7 +19,11 @@ export const addUser = async (body) => {
         const bodyWithHashedPass = { ...body, email: normalizedEmail, password: hashedPassword };
 
         // 2. Construir el documento con su esquema y _id compuesto
-        const { user, month } = userSchema(bodyWithHashedPass);
+        const { user, month, year } = await userSchema(bodyWithHashedPass);
+
+        if(!user || ! month){
+            return { status: 'error', code: 500, message: 'Error Creando esquema del usuario' };
+        }
 
         // 3. Guardar en MongoDB en la colección del mes de alta
         const params = {

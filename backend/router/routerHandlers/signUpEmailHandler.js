@@ -10,23 +10,25 @@ import { getUserPointer } from '../../db/userIndexService.js';
 import { redisClient } from '../../db/openRedis.js';
 import systemConfig from '../../globalData/systemConfig.js';
 import verifyTokensAndSetCookie from '../../tools/verifyTokensAndSetCookie.js';
+import passwordValidation from '../routerTools/passwordValidation.js';
+import emailValidation from '../routerTools/emailValidation.js';
+import { validatePromotion } from '../../promotions/promotionsHandler.js';
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+//const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default async function signUpEmailHandler(req, res) {
-    const { email, password, name, code, userAgent, deviceId, language } = req.body || {};
+    const { email, password, name, code, userAgent, deviceId, language, promoCode } = req.body || {};
 
-console.log({ email, password, name, code, userAgent, deviceId, language })
+console.log({ email, password, name, code, userAgent, deviceId, language, promoCode })
     
-    if (!email || !EMAIL_REGEX.test(email.trim())) {
-        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+    if (!email || !emailValidation(email)) {
+        res.writeHead(415, { 'Content-Type': 'application/json; charset=utf-8' });
         return res.end(JSON.stringify({
             status: 'error',
-            code: 400,
+            code: 415,
             message: 'Dirección de correo electrónico inválida.'
         }));
     }
-
     const normalizedEmail = email.toLowerCase().trim();
 
     try {
@@ -109,6 +111,44 @@ console.log({validationCode})
                 message: 'El código de verificación es incorrecto o ha expirado.'
             }));
         }
+
+        // VALIDAMOS QUE EL FORMATO DE LA PASSWORD ES CORRECTO
+        const isValidPassword = passwordValidation(password)
+
+        if (!isValidPassword) {
+            res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+            return res.end(JSON.stringify({
+                status: 'error',
+                code: 401,
+                message: 'El formato del Password es incorrecto'
+            }));
+        }
+
+        // COMPROBAMOS EL CODIGO DE LA PROMO SI EXISTE Y EL SISTEMA LOS ADMITE
+        if(promoCode && promoCode.trim().length > 2){
+
+            if(promoCode && !systemConfig.HAS_PROMO_CODES){
+                res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+                return res.end(JSON.stringify({
+                    status: 'error',
+                    code: 466,
+                    message: 'La plataforma no admite PROMO CODES'
+                }));
+            }
+            
+            // VERIFICAMOS EL CODIGO DE LA PROMO RECIBIDO
+            const result_promoCode = await validatePromotion(req, "SIGNUP")
+            if(result_promoCode.status !== "ok"){
+                res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+                return res.end(JSON.stringify({
+                    status: result_promoCode.status,
+                    code: result_promoCode.code,
+                    message: result_promoCode.message
+                }));
+            }
+
+        }
+
 
         // Crear usuario mediante userHandler (Mongo + Redis Pointer)
         const userResult = await userHandler.addUser(req.body);

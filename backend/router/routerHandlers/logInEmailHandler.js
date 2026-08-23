@@ -9,6 +9,7 @@ import { createSession } from '../../sessions/sessionHandler.js';
 import { comparePassword } from '../routerTools/passwordEncript.js'
 import verifyTokensAndSetCookie from "../../tools/verifyTokensAndSetCookie.js"
 import systemConfig from '../../globalData/systemConfig.js';
+import emailValidation from '../routerTools/emailValidation.js';
 
 export default async function logInEmailHandler(req, res) {
     const { email, password, deviceId, userAgent } = req.body || {};
@@ -20,6 +21,15 @@ export default async function logInEmailHandler(req, res) {
             status: 'error',
             code: 400,
             message: 'Email y contraseña requeridos.'
+        }));
+    }
+    // COMPROBAMOS EL FORMATO DEL EMAIL
+    if (!emailValidation(email)) {
+        res.writeHead(415, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({
+            status: 'error',
+            code: 415,
+            message: 'Formato del email incorrecto'
         }));
     }
 
@@ -83,7 +93,7 @@ export default async function logInEmailHandler(req, res) {
         // recuperamos la direccion desde la que llego al login si exite
         let location = systemConfig.PAGES.URL_AFTER_LOGIN
         if(req.urlData.searchParams?.redirect){
-            location = req.urlData.searchParams.redirect
+            location = `${systemConfig.PAGES.URL_AFTER_LOGIN}/?${req.urlData.searchParams.redirect}`
         }
         res.writeHead(200, headers);
         return res.end(JSON.stringify({
@@ -95,8 +105,8 @@ export default async function logInEmailHandler(req, res) {
                 email: user.email || (user._id && user._id.email),
                 name: user.name || '',
                 role: user.role || 'USER',
-                location
-            }
+            }, 
+            location
         }));
 
     } catch (error) {

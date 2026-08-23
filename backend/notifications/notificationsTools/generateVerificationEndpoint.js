@@ -27,11 +27,13 @@ export default async function generateValidationEndpoint(email) {
 
 }
 
-export async function checkValidationEndpoint(email, code) {
+export async function checkValidationEndpoint(email, code, task) {
     if (!redisClient || !redisClient.isOpen || !email || !code) return false;
     const storedEndpoint = await redisClient.get(`verify:endpoint:${email}`);
 console.log({storedEndpoint})
-    if (storedEndpoint && storedEndpoint === code.toString()) {
+
+    // SE BORRA EL TOKEN CUANDO ESTAMOS EN EL ULTIMO PASO DEL "RENOVE PASSWORD"
+    if (storedEndpoint && storedEndpoint === code.toString() && task === "DELETE_ENDPOINT") {
         await redisClient.del(`verify:endpoint:${email}`); // Consumir código (un solo uso)
         return true;
     }

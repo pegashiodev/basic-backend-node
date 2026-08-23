@@ -12,14 +12,11 @@
 import sendStaticFile from "../../server/serverHandlers/sendStaticFile.js"
 import bodyDataFormatVerify from "../routerTools/bodyDataFormatVerify.js"
 import userHandler from "../../users/userHandler.js"
-import usersByEmail from "../../globalData/usersByEmail.js"
 import { passwordEncript } from "../routerTools/passwordEncript.js"
 import systemConfig from "../../globalData/systemConfig.js"
-import sendEmail from "../../notifications/sendEmail.js"
-import verificationEndpoints from "../../globalData/verificationEndpoints.js"
-import dbCrudHandler from "../../db/dbCrudHandler.js"
 import { hashPassword } from "../routerTools/passwordEncript.js"
-
+import passwordValidation from "../routerTools/passwordValidation.js"
+import emailValidation from "../routerTools/emailValidation.js"
 import { checkValidationEndpoint } from "../../notifications/notificationsTools/generateVerificationEndpoint.js"
 
 
@@ -49,22 +46,29 @@ console.log(req.urlData)
             res.headers = {}
             return sendStaticFile(req, res)
         }
+         
+        if (!email || !emailValidation(email)) {
+            console.log("EL FORMATO DEL EMAIL ES INCORRECTO ??? !!!")
+            res.code = 400
+            res.headers = {}
+            return sendStaticFile(req, res)
+        }
        
 
-        // const normalizedEmail = email.toLowerCase().trim();
+        const normalizedEmail = email.toLowerCase().trim();
         
-        // // 2. Verificar el código de validación almacenado en Redis
-        // const isValidEndpoint = await checkValidationEndpoint(normalizedEmail, url_token);
-        // console.log({isValidEndpoint})
+        // 2. Verificar el código de validación almacenado en Redis
+        const isValidEndpoint = await checkValidationEndpoint(normalizedEmail, url_token, "VERIFY_ENDPOINT");
+        console.log({isValidEndpoint})
 
-        // if (!isValidEndpoint) {
-        //     // MOSTRAR PAGINA DICIENDO QUE HA ESPIRADO PARA VOLVER A GENERAR EL CODIGO
-        //     res.code = 200;
-        //     req.urlData.filename = systemConfig.PAGES.RENOVE_PASSWORD_EXPIRES
-        //     req.urlData.ext = systemConfig.EXTENSION_STATIC_VIEWS
-        //     return sendStaticFile(req, res)
+        if (!isValidEndpoint) {
+            // MOSTRAR PAGINA DICIENDO QUE HA ESPIRADO PARA VOLVER A GENERAR EL CODIGO
+            res.code = 200;
+            req.urlData.filename = systemConfig.PAGES.RENOVE_PASSWORD_EXPIRES
+            req.urlData.ext = systemConfig.EXTENSION_STATIC_VIEWS
+            return sendStaticFile(req, res)
             
-        // }
+        }
 
         // Enviamos la pagina solicitada
         res.code = 200;
@@ -93,26 +97,46 @@ async function renovePassword(req, res){
             
     // COMPROBAMOS LOS DATOS DEL BODY [ EMAIL, NAME, NUEVO-PASSWORD]
     if(!req.body.tk || !req.body.password || !req.body.email){
-        res.writeHead(200, { 'Content-Type': 'application/json'});
+        res.writeHead(401, { 'Content-Type': 'application/json'});
         res.end(JSON.stringify({message: 'faltan datos en la request'}))
         return;
     }
 
-    // COMPROBAMOS EL token del endpoint enviado 
-
-
+    if (!emailValidation(req.body.email)) {
+        res.writeHead(415, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({
+            status: 'error',
+            code: 415,
+            message: 'Dirección de correo electrónico inválida.'
+        }));
+    }
     const normalizedEmail = req.body.email.toLowerCase().trim();
         
     // 2. Verificar el código de validación almacenado en Redis
-    const isValidEndpoint = await checkValidationEndpoint(normalizedEmail, req.body.tk);
+    const isValidEndpoint = await checkValidationEndpoint(normalizedEmail, req.body.tk, "DELETE_ENDPOINT");
     console.log({isValidEndpoint})
+    
     if (!isValidEndpoint) {
-        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.writeHead(410, { 'Content-Type': 'application/json; charset=utf-8' });
         return res.end(JSON.stringify({
             status: 'error',
-            code: 401,
+            code: 410,
             message: 'El código de verificación es incorrecto o ha expirado.',
+            // SI HA EXPIRADO DESDE ESTA PAGINA LO PUEDE VOLVER A SOLICITAR
             location: systemConfig.PAGES.RENOVE_PASSWORD_EXPIRES
+        }));
+    }
+
+    // VALIDAMOS QUE EL FORMATO DE LA PASSWORD ES CORRECTO
+    const isValidPassword = passwordValidation(password)
+
+    if (!isValidPassword) {
+        res.writeHead(415, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({
+            status: 'error',
+            code: 415,
+            message: 'El formato del password es incorrecto',
+            
         }));
     }
    
@@ -123,9 +147,9 @@ async function renovePassword(req, res){
         const response_data = {
             status: 'error',
             message: 'NO HAY USER CON ESE EMAIL',
-            code: 525
+            code: 401
         }
-        res.writeHead(200, { 'Content-Type': 'application/json'});
+        res.writeHead(401, { 'Content-Type': 'application/json'});
         res.end(JSON.stringify(response_data))
         return;
     }
@@ -138,9 +162,9 @@ async function renovePassword(req, res){
         const response_data = {
             status: 'error',
             message: 'ERROR HASHEANDO EL  PASSWORD',
-            code: 531
+            code: 501
         }
-        res.writeHead(200, { 'Content-Type': 'application/json'});
+        res.writeHead(501, { 'Content-Type': 'application/json'});
         res.end(JSON.stringify(response_data))
         return;
     }
@@ -158,27 +182,11 @@ async function renovePassword(req, res){
         const response_data = {
             status: 'error',
             message: 'ERROR Actualizando UserDB',
-            code: 530
+            code: 502
         }
-        res.writeHead(200, { 'Content-Type': 'application/json'});
+        res.writeHead(502, { 'Content-Type': 'application/json'});
         res.end(JSON.stringify(response_data))
         return;
-    }
-
-    // ENVIAMOS EMAIL CONFIRMANDO EL CAMBIO DE PASSWORD
-    const emailResult = await sendEmail({
-        email: normalizedEmail,
-        type: 'PASSWORD_UPDATE_SUCCESS',
-        language: req.urlData.language
-    });
-    
-    if (emailResult?.status === 'error') {
-        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-        return res.end(JSON.stringify({
-            status: 'error',
-            code: 500,
-            message: 'No se pudo enviar el correo de verificación.'
-        }));
     }
     
     console.log('PASSWORD ACTUALIZADO')
@@ -189,7 +197,7 @@ async function renovePassword(req, res){
         status: 'ok',
         message: 'PASSWORD ACTUALIZADO CON EXITO',
         location: systemConfig.PAGES.ACCESS_PLATFORM,
-        code: 225
+        code: 225,
     }
     res.writeHead(225, { 'Content-Type': 'application/json'});
     res.end(JSON.stringify(response_data))

@@ -83,17 +83,6 @@ function buildEmailTemplate({ type, code, language = 'es', customData = {} }) {
         `;
         return { subject, textBody, htmlBody };
     
-    // 3.- ENVIAMOS UN EMAIL AL USUARIO CONFIRMANDO EL CAMBIO DEL PASSWORD
-    }else if(type === "PASSWORD_UPDATE_SUCCESS"){
-        const subject = 'CAMBIO DE PASSWORD'
-        const textBody = `Hola,\n\nSE HA CAMBIADO EL PASSWORD CORRECTAMENTE\n`
-        const htmlBody = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-            <h2 style="color: #333; text-align: center;">${isEn ? 'Verification Code' : 'Código de Verificación'}</h2>
-        </div>`
-
-        return { subject, textBody, htmlBody };
-
     }
 
     // Plantilla por defecto o personalizada

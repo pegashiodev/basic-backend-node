@@ -3,7 +3,7 @@
 /**
  * 
  * 
- *      EL USER HA CLICADO EN QUE "FORGOT PASSWORD"
+ *      EL USER HA SOLICITADO UN CAMBIO DE PASSWORD: "FORGOT PASSWORD"
  * 
  *          - nos envia un {body} con el email
  * 
@@ -16,7 +16,7 @@ import sendEmail from "../../notifications/sendEmail.js";
 import systemConfig from "../../globalData/systemConfig.js";
 import generateVerificationEndpoint from "../../notifications/notificationsTools/generateVerificationEndpoint.js";
 import userHandler from "../../users/userHandler.js";
-
+import emailValidation from "../routerTools/emailValidation.js";
 
 /**
  * 
@@ -37,10 +37,20 @@ export default async function(req, res){
         message: 'FALTAN DATOS EN LA PETICION: EMAIL',
         code: 435
         }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.writeHead(435, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(response_data))
         return;
     }
+
+    if (!emailValidation(req.body.email)) {
+        res.writeHead(415, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({
+            status: 'error',
+            code: 415,
+            message: 'Dirección de correo electrónico inválida.'
+        }));
+    }
+
     const normalizedEmail = req.body.email.trim().toLowerCase();
     req.user = await userHandler.getUserByEmail(normalizedEmail);
 
@@ -51,7 +61,7 @@ export default async function(req, res){
         message: 'EMAIL INCORRECTO',
         code: 435
         }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.writeHead(435, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(response_data))
         return;
     }
@@ -72,12 +82,12 @@ console.log({validationEndpoint})
         res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
         return res.end(JSON.stringify({
             status: 'error',
-            code: 500,
+            code: 504,
             message: 'No se pudo enviar el correo de verificación.'
         }));
     }
 
-
+    // RESPONDEMOS QUE LE HEMOS ENVIADO UN EMAIL CON UNA URL PARA CAMBIAR EL PASSWORD
     const response_data = {
         status: 'ok',
         message: 'LE HEMOS ENVIADO UN EMAIL PARA EL CAMBIO DE CONTRASEÑA',

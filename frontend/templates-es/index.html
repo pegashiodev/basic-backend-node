@@ -43,8 +43,8 @@
 
                 <button id="btn_signup">ENVIAR CODIGO</button>
             </div>
-            <div id="promo_code_wrap">
-                <input id="promo_code" type="text" placeholder="BIENVENIDA">
+            <div id="promoCodeWrap">
+                <input id="promoCode" type="text" placeholder="BIENVENIDA">
             </div>
             <div class="fa2">
                 <p><input id="signup_validation_token" type="text" placeholder="CODIGO"></p>
@@ -92,7 +92,7 @@
             email: "",
             signup_method: "USER-EMAIL",
             password: "",
-           
+            promoCode: undefined          
            
         }
 
@@ -146,7 +146,7 @@
                         ev.preventDefault();
                         
                         // AÑADIMOS EL CODE
-                        data_signup.promo_code = ""
+                        data_signup.promoCode = document.querySelector("#promoCodeWrap #promoCode").value
                         data_signup.code = document.querySelector(".signup_form .fa2 #signup_validation_token").value;
                         const result2 = await fetchRequest(url_signup, data_signup)
                         
@@ -154,9 +154,12 @@
                             console.log(result2)
                             alert("Usuario Registrado CON EXITO")
 
-                            // enviaremos al location recibido
+                            window.location.replace(result2.data.location)
 
+                        }else if(result2.code === 415){
+                            alert(result2.data.message)
                         }else{
+
                             alert("Error: " + result2.data.message)
 
                         }
@@ -196,11 +199,13 @@
             console.log(result)
 
             if(result.status === 'ok'){
-                console.log(result)
-                alert("Usuario LOGEADO CON EXITO")
+                console.log(result.data)
+                alert(result.data.message)
                 // enviaremos al location recibido
+                window.location.replace(result.data.location)
 
-                
+            }else if(result2.code === 415){
+                alert(result.data.message)  
 
             }else{
                alert("ERROR LOGIN: " + result.data.message);
@@ -209,45 +214,50 @@
             }
         })
 
-        btn_forgot_password.addEventListener('click', (ev)=>{
+        btn_forgot_password.addEventListener('click', async (ev)=>{
             ev.preventDefault();
             data_forgot_password.email = document.querySelector(" #forgot-password-content .password").value;
 
             console.log(data_forgot_password);
+            const url = "http://localhost:3000/forgot-password.html"
 
-            fetch("http://localhost:3000/forgot-password.html", 
+            try{
+                const result = await fetch(url,
+                
+                {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {  "Content-Type": "application/json",
+                                "Cookie": document.cookie
+                            },
+                    body:  JSON.stringify(data_forgot_password)
+                
+                });
+
+                const payload = await result.json()
             
-            {
-                method: 'POST',
-                credentials: 'include',
-                headers: {  "Content-Type": "application/json",
-                            "cookie": document.cookie,
-                        },
-                body:  JSON.stringify(data_forgot_password)
-            
-            })
-            .then(response=>{
+                if(result.status >= 200 && result.status <300){
 
-                if(response.ok){
-                    return response.json()
-                }else{
-                    throw new Error("Error en la solicitud de cambio de password-> MAs tarde!!");
-                }   
-
-            }).then(result=>{
-                console.log(result);
-
-                if(result.status === 'ok'){
-                    alert(result.message)
+                    alert(payload.message)
+                    if(payload.location){
+                        window.location.replace(payload.location)
+                    }
                     
-                }else{
-                    console.log('ERROR en la respuesta del LOGIN')
+                }else{ 
+                    
+                    alert(payload.message)
+                    if(payload.location){
+                        window.location.replace(payload.location)
+                    }
+                    
                 }
-            }).catch(err=>{
-                console.log(err)
-                // Redirigir a HOME
 
-            })
+            }catch(e){
+                
+                console.log(e)
+                alert("Error en el Fetch -> redirigir a home")
+                
+            }
             
         })
         
@@ -317,11 +327,14 @@
                 if(result.status >= 200 && result.status <300){
 
                     return {status: "ok", data: payload}
-                    
-                }else{ 
+                }else if(result.status >= 300 && result.status <399){ 
+                    return {status: "ok", data: payload}
+                }else if(result.status >= 400 && result.status <500){ 
 
                     return {status: "error", data: payload}
                     
+                }else if(result.status >= 500 && result.status <599){ 
+                    return {status: "error", data: {code: 500, message: "Error en el Server. Prueba pasados unos minutos"}}
                 }
 
             }catch(e){

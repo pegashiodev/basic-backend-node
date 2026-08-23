@@ -82,16 +82,21 @@ export default createServer(async (req, res) => {
             '/login-email.html': 'acceso-plataforma.html',
             '/signup-email': 'acceso-plataforma.html',
             '/signup-email.html': 'acceso-plataforma.html',
+
             '/session-is-required': 'session-is-required.html',
             '/session-is-required.html': 'session-is-required.html',
+
             '/renove-password': 'renove-password.html',
             '/renove-password.html': 'renove-password.html',
+            '/renove-password-expired': 'renove-password-expired.html',
+            '/renove-password-expired.html': 'renove-password-expired.html',
+            '/forgot-password': 'renove-password.html',
+            '/forgot-password.html': 'renove-password.html',
+
             '/refresh-bridge': "refresh-bridge.html",
             '/refresh-bridge.html': "refresh-bridge.html",
             '/logout': "logout.html",
             '/logout.html': "logout.html",
-    '/forgot-password.html': 'renove-password.html',
-    '/forgot-password': 'renove-password.html',
             
             '/get-main-menu': "get-main-menu.html",
             '/get-main-menu.html': "get-main-menu.html",

@@ -7,8 +7,6 @@
 
 import sendStaticFile from './sendStaticFile.js';
 import systemConfig from '../../globalData/systemConfig.js';
-import getUrlData from "../serverTools/getUrlData.js"
-import routerVerificationEndpoints from '../../router/routerVerificationEndpoints.js'
 import routerRestrictedEndpoints from '../../router/routerRestrictedEndpoints.js';
 import routerDinamicEndpoints from '../../router/routerDinamicEndpoints.js';
 import subdomainGetRequestHandler from "./subdomainGetRequestHandler.js"
@@ -83,14 +81,9 @@ export default  async(req, res)=>{
     req.urlData.pay_endpoint = false;
     req.urlData.master_endpoint = false;
 
-    // comprobamos si el sistema permite URLS DE VERIFICACION y ES UNA DE ELLAS
-    if(systemConfig.HAS_VERIFICATION_ENDPOINTS && systemConfig.VERIFICATION_ENDPOINTS.includes(req.urlData.endpoint)){
-        req.urlData.verification_endpoint = true
-        routerVerificationEndpoints(req, res)
-        return;
-
+   
     // COMPROBAMOS SI ES UNA RUTA DE PAGOS
-    }else if(systemConfig.HAS_PAY_ENDPOINTS && systemConfig.PAY_ENDPOINTS.includes(req.urlData.endpoint)){
+    if(systemConfig.HAS_PAY_ENDPOINTS && systemConfig.PAY_ENDPOINTS.includes(req.urlData.endpoint)){
         req.urlData.pay_endpoint = true;
         routerPayEndpoints(req, res)
         return;
@@ -103,12 +96,6 @@ export default  async(req, res)=>{
             return;
         
         }
-    
-    // COMPROBAMOS SI TRABAJAMOS CON DINAMIC_URLS -> sE CREAN PARA ATENDER UN SERVIVIO PUNTUAL 
-    }else if(systemConfig.HAS_DINAMIC_ENDPOINTS && systemConfig.DINAMIC_ENDPOINTS.includes(req.urlData.endpoint)){
-        req.urlData.dinamic_endpoint = true;
-        routerDinamicEndpoints(req, res)
-        return;
     
     // COMPROBAMOS SI TRABAJAMOS CON MASTERS_ENDPOINTS y SI EXISTE  ESE MASTER  
     }else if(systemConfig.HAS_MASTERS_ENDPOINTS){

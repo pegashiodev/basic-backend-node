@@ -12,6 +12,7 @@
 
 
 import dbCrudHandler from "../db/dbCrudHandler.js"
+import { getDb } from "../db/openDbs.js";
 import promotionsCached from "../globalData/promotionsCached.js"
 import systemConfig from "../globalData/systemConfig.js";
 
@@ -23,50 +24,118 @@ import systemConfig from "../globalData/systemConfig.js";
  * @returns 
  */
 
-export const applyPromoCode = (req)=>{
+const promotions = [
+    {
+        _id: 'WELCOME',
+        status: 'ACTIVE',               
+        endpoint: "SIGNUP",
+        promoCode: 'WELCOME',
+        expiresAt: new Date('2027-12-31T23:59:59').getTime(),
+        owner: {
+        name: 'system',
+        email: 'system@gmail.com',
+        userId: '12312nmnmkj123jk'
+        },
+        type: "DISCOUNT",        
+        discount_percent: 20,
+        units: 120,
+        
+    },
+    {
+        _id: 'BIENVENIDA',
+        status: 'ACTIVE',
+        endpoint: "SIGNUP",
+        promoCode: 'BIENVENIDA',
+        expiresAt: new Date('2027-12-31T23:59:59').getTime(),
+        owner: {
+          name: 'system',
+          email: 'system@gmail.com',
+          userId: '12312nmnmkj123jk'
+        },
+        type: "COINS",        
+        coins:{
+            generator: 500,
+            trainnig: 200,
+            coaching: 200,
+            audio: 50,
+            images: 50,
+            video: 10
+        },
+        units: 120,
+       
+      },
+    
+    ]
+
+
+export const  validatePromotion = async (req, from)=>{
 
     console.log("VERIFY_PROMO_CODE")
 
-    let promo_code = req.body.promo_code.trim();
-
-    if(promo_code.length < systemConfig.PROMO_CODE_MIN_LENGTH){
-        return {status: "invalid", code: 561, message: "El código promocional no es correcto"}
-    }
-   
-    const promo = promotionsCached.find((el)=>{
-        return el.promo_code === promo_code.toUpperCase()
-    })
-
-
-    if(!promo){
-        return {status: "blocked", code: 561, message: "El código de la promoción ya no esta disponible"}
-
-    }else if(promo.expireTime < Date.now()){
-        return {status: "expired", code: 562 , message: "Este codigo promocional ya ha caducado"}
+    const promoCode = req.body.promoCode.toUpperCase();
+    // getDB
     
-    }else if(promo.status && promo.status !== "ACTIVE"){
-        return {status: "blocked", code: 561, message: "El código de la promoción ya no esta disponible"}
+    // Verificar DAtos de la promocion
+    let dbPromotions;
+    try{
+        dbPromotions = getDb(systemConfig.DBS.PROMOTIONS)
+    }catch(e){
 
-    }else if(promo.units <= 0){
-        return {status: "consumed", code: 563, message: "El código de la promoción ya se ha agotado"}
+        console.log("ERROR al Obtener getDb()")
+        return {status: "error", code: 565, message: "ERROR AL ACCEDER A LA BASE DE DATOS DE LAS PROMOCIONES"}
+    }
+
+    // BUSCAMOS LA PROMO
+    const promotionsCollection = dbPromotions.collection("codes");
+    const promotion = await promotionsCollection.findOne({_id:promoCode});
+
+    if(!promotion){
+        return {status: "invalid", code: 461, message: "El codigo de Promocion no esta disponible"}
+
+    }else if(promotion.endpoint !== from){
+        return {status: "invalid", code: 464 , message: "Este codigo no es valido para este endpoint"}
+    
+    }else if(promotion.expiresAt < Date.now()){
+        return {status: "expired", code: 462 , message: "Este codigo promocional ya ha caducado"}
+    
+    }else if(promotion.status !== "ACTIVE"){
+        return {status: "blocked", code: 461, message: "El código de la promoción ya no esta disponible"}
+
+    }else if(promotion.units !== "INFINITE" && promotion.units <= 0){
+        return {status: "consumed", code: 463, message: "El código de la promoción ya se ha agotado"}
 
     }
 
-    promo.units --;
-    promo.used = true;
-
-    // AÑADIMOS LOS DATOS DE LA PROMOCION
-
-    req.body.saldoAds = promo.saldoAds ? promo.saldoAds : 0;
-    req.body.saldoCoins = promo.saldoCoins ? promo.saldoCoins : 0;
-    req.body.saldoMoney = promo.saldoMoney ? promo.saldoMoney : 0;
-
-    updatePromo(promo)
-
-    return {status: "ok", message: "Valid Promotional Code "}
-
+    // AÑADIMOS LOS DATOS DE LA PROMOCION AL BODY
+    req.body.promotion = promotion;
+    // ACTUALIZAMOS LAS UNNIDADES DE LA PROOCION
+    const update_promotion_result = await promotionsCollection.updateOne({_id:promoCode}, {$inc:{units: -1}});
+   
+    return {status: "ok", code: 200, message: "Valid Promotional Code "}
 
 }
+
+
+/**
+ * APLICA LA PROMOTION AL USUARIO DESPUES DEL SIGNUP O DESPUES DE UNA COMPRA CREAR UNA NUEVA PROMOCION
+ * 
+ * @param {*} promo 
+ */
+
+export const applyPromotion = (req)=>{
+
+    const promotion = req.body.promotion
+
+    console.log("apply_PROMO")
+    // actualiza los datos en el user
+
+    // actualiza la promocion restando items
+
+    // almacenar el usuario en la lista de los afiliados de dueño del token
+
+}
+
+
 
 /**
  * PARA CREAR UNA NUEVA PROMOCION
@@ -118,7 +187,7 @@ export const deletePromotion = (promotion)=>{
 
 
 export default  {
-    applyPromoCode,
+    applyPromotion,
     addPromotion,
     updatePromotion,
     deletePromotion,
