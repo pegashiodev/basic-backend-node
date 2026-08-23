@@ -48,7 +48,7 @@ export default async function dbCrudHandler(params) {
 const findOne = async (query, params, options = {})=>{
   
   // const db = dbsOpened[params.dbName];
-  const db = getDb(params.dbName)
+  const db = await getDb(params.dbName)
   const myColl = db.collection(params.collection);
 
   try{
@@ -100,7 +100,7 @@ const find = async (query, params, options)=>{
   console.log(params)
   
   // const db = dbsOpened[params.dbName];
-  const db = getDb(params.dbName)
+  const db = await getDb(params.dbName)
 
   const myColl = db.collection(params.collection);
 
@@ -240,7 +240,7 @@ const insertOne = async (data, params, options = {})=>{
 const insertMany = async (data, params, options={})=>{
 
   const {dbName, collection} = params;
-  const db = getDb(dbName)
+  const db = await getDb(dbName)
   // const db = dbsOpened[dbName];
   const myColl = db.collection(collection);
 
@@ -273,7 +273,7 @@ const deleteOne = async (params, query)=>{
 
   const {dbName, collection} = params;
   // const db = dbsOpened[dbName];
-  const db = getDb(dbName)
+  const db = await  getDb(dbName)
   const myColl = db.collection(collection);
 
   try{
@@ -307,7 +307,7 @@ const deleteOne = async (params, query)=>{
 
     const {dbName, collection} = params;
     // const db = dbsOpened[dbName];
-    const db = getDb(dbName)
+    const db = await getDb(dbName)
     const myColl = db.collection(collection);
   
     try{
@@ -349,7 +349,7 @@ const deleteOne = async (params, query)=>{
     // console.log({updateData})
 
     // const db = dbsOpened[params.dbName];
-    const db = getDb(params.dbName)
+    const db = await getDb(params.dbName)
     const myColl = db.collection(params.collection);
     let options = {upsert: false}
     if(params.upsert){
@@ -406,7 +406,7 @@ const deleteOne = async (params, query)=>{
 const updateMany = async (filter, updateData, params)=>{
 
   // const db = dbsOpened[params.dbName];
-  const db = getDb(params.dbName)
+  const db = await getDb(params.dbName)
   const myColl = db.collection(params.collection);
   let options = {upsert: false}
 
@@ -441,7 +441,7 @@ const updateMany = async (filter, updateData, params)=>{
 const replaceOne = async (filter, replaceDoc)=>{
   
   // const db = dbsOpened[params.dbName];
-  const db = getDb(params.dbName)
+  const db = await getDb(params.dbName)
   const myColl = db.collection(params.collection);
 
   try{
@@ -481,7 +481,7 @@ const findOneAndUpdate = async (filter, updateData, params)=>{
   // console.log({updateData})
 
   // const db = dbsOpened[params.dbName];
-  const db = getDb(params.dbName)
+  const db = await getDb(params.dbName)
   const myColl = db.collection(params.collection);
   let options = {upsert: false}
   if(params.upsert){
@@ -528,7 +528,7 @@ const writeBulk = async (data, params)=>{
 
   // console.log(params)
   // const db = dbsOpened[params.dbName];
-  const db = getDb(params.dbName)
+  const db = await getDb(params.dbName)
   const myColl = db.collection(params.collection);
 
   const result = await myColl.bulkWrite(data)

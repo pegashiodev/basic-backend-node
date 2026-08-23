@@ -177,9 +177,10 @@ export const updatePromotion = async (promotion, user)=>{
             year: user._id.from.year,
             month: user._id.from.month,
             day: user._id.from.day,
-            from: promotion.endpoint,
-            promoCode: promotion.promoCode
+            
         },
+        from: promotion.endpoint,
+        promoCode: promotion.promoCode,
         userId: user._id._id
     }
     const customAfiliateId = {

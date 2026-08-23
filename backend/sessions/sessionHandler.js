@@ -115,7 +115,7 @@ export async function getSession(sessionId) {
 
     // 2. Fallback a MongoDB si expiró en Redis o hubo reinicio
     try {
-        const db = getDb(systemConfig.DBS.SESSIONS + year);
+        const db = await getDb(systemConfig.DBS.SESSIONS + year);
         const sessionsCollection = db.collection(month.toLowerCase());
         const session = await sessionsCollection.findOne({ '_id._id': sessionId, isValid: true });
 
@@ -171,7 +171,7 @@ export async function destroySession(sessionId) {
 
     // 2. Marcar como inválida o eliminar en MongoDB
     try {
-        const db = getDb('users_data');
+        const db = await getDb('users_data');
         const sessionsCollection = db.collection('sessions');
         await sessionsCollection.updateOne(
             { 'customId.sessionId': sessionId },

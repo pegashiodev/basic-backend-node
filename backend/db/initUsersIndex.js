@@ -19,7 +19,7 @@ export async function syncUsersIndexToRedis() {
 
     try {
 
-        const db = getDb(systemConfig.DBS.USERS_DATA);
+        const db = await getDb(systemConfig.DBS.USERS_DATA);
         const collections = await db.listCollections().toArray();
         const collectionNames = collections.map(c => c.name);
 

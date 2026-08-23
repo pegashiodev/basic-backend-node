@@ -9,40 +9,30 @@ import { MongoClient } from 'mongodb';
 export let mongoClient = null;
 // Mapa interno con las instancias Db de las bases de datos abiertas
 const dbsInstances = new Map();
-const uri = process.env.MONGODB_URI;
-
-// Almacenamos la promesa del cliente para evitar que múltiples llamadas dupliquen la conexión
-let clientMongoPromise = null;
-
-function getClient() {
-    if (!uri) {
-        throw new Error("La variable de entorno MONGODB_URI no está configurada.");
-    }
-
-    // Si ya hay una promesa de conexión (en curso o resuelta), la reutilizamos
-    if (!clientMongoPromise) {
-        const mongoClient = new MongoClient(uri, {
-            maxPoolSize: 10,
-            serverSelectionTimeoutMS: 5000
-        });
-        // Guardamos la promesa directamente
-        clientMongoPromise = mongoClient.connect();
-    }
-    return clientMongoPromise;
-}
-
-
 
 /**
  * Conecta al servidor MongoDB e inicializa las bases de datos indicadas en dbNames
  * @param {Array<string>|string} dbNames - Nombres de las bases de datos a preparar
  */
 export default async function openDbs(dbNames) {
-   
+    const uri = process.env.MONGODB_URI;
+    if (!uri) {
+        return { status: 'error', message: 'Variable de entorno MONGODB_URI no encontrada' };
+    }
+
     try {
         // 1. Conectar el cliente global si aún no está conectado
-        const mongoClient = await getClient();
-       
+        if (!mongoClient) {
+            console.log('Iniciando conexión con MongoDB...');
+            mongoClient = new MongoClient(uri, {
+                maxPoolSize: 10,
+                serverSelectionTimeoutMS: 5000
+            });
+
+            await mongoClient.connect();
+            console.log('✅ Conexión con el servidor MongoDB establecida.');
+        }
+
         // 2. Normalizar dbNames a un Array
         const databasesToOpen = Array.isArray(dbNames) ? dbNames : [dbNames];
 
@@ -78,19 +68,28 @@ export default async function openDbs(dbNames) {
  */
 export async function getDb(dbName) {
 
+    const uri = process.env.MONGODB_URI;
    
     // 1. Si ya se abrió al inicio, la devuelve de inmediato
     if (dbsInstances.has(dbName)) {
         return dbsInstances.get(dbName);
     }
+    
+    // 2. Si no estaba en la lista inicial de bases de datos a abrir,  crea la instancia dinámicamente
+    if(!mongoClient){
+        mongoClient = new MongoClient(uri, {
+            maxPoolSize: 10,
+            serverSelectionTimeoutMS: 5000
+        });
 
-    // 1. Esperamos a que el cliente esté conectado (reutiliza la misma conexión siempre)
-    const mongoClient = await getClient();
+        await mongoClient.connect();
+    }
     
     const dbInstance = mongoClient.db(dbName);
     dbsInstances.set(dbName, dbInstance);
     return dbInstance;
 
+    throw new Error(`MongoClient no inicializado. No se pudo acceder a la BD: ${dbName}`);
 }
 
 /**
