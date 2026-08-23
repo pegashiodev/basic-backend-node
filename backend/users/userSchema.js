@@ -6,7 +6,7 @@
 
 import { randomUUID } from 'node:crypto';
 import systemConfig from '../globalData/systemConfig.js';
-import { getDb } from '../db/openDbs.js';
+import { updatePromotion } from '../promotions/promotionsHandler.js';
 
 export default async function userSchema(body) {
 
@@ -63,32 +63,8 @@ export default async function userSchema(body) {
     };
 
     if(systemConfig.HAS_PROMO_CODES && body.promotion){
+        await updatePromotion(body.promotion, user)
        
-        // ACTUALIZAMOS EL LISTADO DE USUARIOS DEL AFILIADO
-        let dbAfiliates;
-        try{
-            dbAfiliates = getDb(systemConfig.DBS.AFILIATES)
-        }catch(e){
-            console.log("ERROR al Obtener getDb()")
-            return {status: "error", code: 565, message: "ERROR AL ACCEDER A LA BASE DE DATOS DE LAS PROMOCIONES"}
-        }
-        const afiliatesCollection = dbAfiliates.collection("codes");
-        const afiliate_data = {
-            email: user.email,
-            createdAtTimestamp: user.createdAtTimestamp,
-            createdAt:{
-                year: user._id.from.year,
-                month: user._id.from.month,
-                day: user._id.from.day,
-            },
-            userId: user._id._id
-        }
-        const customAfiliateId = {
-            _id: body.promotion.owner.userId,
-            email: body.promotion.owner.email
-        }
-        const update_afiliates = await afiliatesCollection.updateOne({_id:customAfiliateId}, {$push: {afiliates: afiliate_data}}, {upsert:true});
-        
     }
 
     return { user, month, year };

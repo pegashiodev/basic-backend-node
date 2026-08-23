@@ -66,18 +66,29 @@ export default async function openDbs(dbNames) {
  * @param {string} dbName 
  * @returns {import('mongodb').Db}
  */
-export function getDb(dbName) {
+export async function getDb(dbName) {
+
+    const uri = process.env.MONGODB_URI;
+   
     // 1. Si ya se abrió al inicio, la devuelve de inmediato
     if (dbsInstances.has(dbName)) {
         return dbsInstances.get(dbName);
     }
+console.log("NO HAY INSTANCIA ABIERTA DE LA DB: " + dbName)
+    
+// 2. Si no estaba en la lista inicial pero el cliente está conectado, la crea dinámicamente
+    if(!mongoClient){
+        mongoClient = new MongoClient(uri, {
+            maxPoolSize: 10,
+            serverSelectionTimeoutMS: 5000
+        });
 
-    // 2. Si no estaba en la lista inicial pero el cliente está conectado, la crea dinámicamente
-    if (mongoClient) {
-        const dbInstance = mongoClient.db(dbName);
-        dbsInstances.set(dbName, dbInstance);
-        return dbInstance;
+        await mongoClient.connect();
     }
+    const dbInstance = mongoClient.db(dbName);
+    dbsInstances.set(dbName, dbInstance);
+console.log(dbInstance)
+    return dbInstance;
 
     throw new Error(`MongoClient no inicializado. No se pudo acceder a la BD: ${dbName}`);
 }

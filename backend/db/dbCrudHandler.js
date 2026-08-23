@@ -163,7 +163,7 @@ const insertOne = async (data, params, options = {})=>{
   console.log({params})
   const {dbName, collection} = params;
 
-  const db = getDb(dbName)
+  const db = await getDb(dbName)
   // const db = dbsOpened[dbName];
 
   /** SI NO TIENE _ID LO CREAMOS */

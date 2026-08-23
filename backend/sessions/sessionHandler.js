@@ -32,7 +32,7 @@ export async function createSession(req, from) {
 
     // 2. Persistir en MongoDB (colección centralizada de sesiones)
     try {
-        const db = getDb(systemConfig.DBS.SESSIONS + year);
+        const db = await getDb(systemConfig.DBS.SESSIONS + year);
         const sessionsCollection = db.collection(month.toLowerCase());
         await sessionsCollection.insertOne(session);
     } catch (err) {

@@ -13,7 +13,6 @@
 
 import dbCrudHandler from "../db/dbCrudHandler.js"
 import { getDb } from "../db/openDbs.js";
-import promotionsCached from "../globalData/promotionsCached.js"
 import systemConfig from "../globalData/systemConfig.js";
 
 
@@ -78,13 +77,13 @@ export const  validatePromotion = async (req, from)=>{
     // Verificar DAtos de la promocion
     let dbPromotions;
     try{
-        dbPromotions = getDb(systemConfig.DBS.PROMOTIONS)
+        dbPromotions = await getDb(systemConfig.DBS.PROMOTIONS)
     }catch(e){
 
         console.log("ERROR al Obtener getDb()")
         return {status: "error", code: 565, message: "ERROR AL ACCEDER A LA BASE DE DATOS DE LAS PROMOCIONES"}
     }
-
+console.log(dbPromotions)
     // BUSCAMOS LA PROMO
     const promotionsCollection = dbPromotions.collection("codes");
     const promotion = await promotionsCollection.findOne({_id:promoCode});
@@ -157,20 +156,45 @@ export const addPromotion = (promotion)=>{
  * @param {*} promo 
  */
 
-export const updatePromotion = (promotion)=>{
+export const updatePromotion = async (promotion, user)=>{
 
-    console.log("UPDATE_PROMO_CODE")
-    const filter = {_id: promo._id}
-    const params = {
-        dbName: "promotions",
-        collection: "codes",
-        await: false,
+    // ACTUALIZAMOS EL LISTADO DE USUARIOS DEL AFILIADO
+    let dbAfiliates;
+
+    // OBTENEMOS LA BASE DE DATOS PARA ACTUALIZAR EL CONTENIDO DE LA PROMOCION
+    try{
+        dbAfiliates = await getDb(systemConfig.DBS.AFILIATES)
+    }catch(e){
+        console.log("ERROR al Obtener getDb()")
+        throw new Error(`Error en "promotionsHandler.updatePromotion"  al Obtener la base de datos`);
+        // return {status: "error", code: 565, message: "ERROR AL ACCEDER A LA BASE DE DATOS DE LAS PROMOCIONES"}
     }
-    const update_data = {$set: promo}
+    const afiliatesCollection = dbAfiliates.collection("codes");
+    const afiliate_data = {
+        email: user.email,
+        createdAtTimestamp: user.createdAtTimestamp,
+        createdAt:{
+            year: user._id.from.year,
+            month: user._id.from.month,
+            day: user._id.from.day,
+            from: promotion.endpoint,
+            promoCode: promotion.promoCode
+        },
+        userId: user._id._id
+    }
+    const customAfiliateId = {
+        _id: promotion.owner.userId,
+        email: promotion.owner.email,
+        promoCode: promotion.promoCode
+    }
 
-    dbCrudHandler.updateOne(filter, update_data, params)
-
-
+    // ACTUALIZAMOS LA PROMOCION EN DB
+    try{
+        await afiliatesCollection.updateOne({_id:customAfiliateId}, {$push: {afiliates: afiliate_data}}, {upsert:true});
+    }catch(e){
+        throw new Error(`Error en "promotionsHandler.updatePromotion"  al Actualizar los datos en la Promocion`);
+    }
+   
 }
 
 
