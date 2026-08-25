@@ -103,3 +103,43 @@ export async function closeDbs() {
         console.log('🔌 Conexión de MongoDB cerrada.');
     }
 }
+
+
+// NUEVA FUNCIÓN: Cierra el cliente de MongoDB de forma limpia
+export async function closeDbConnection() {
+    if (mongoClient) {
+        try {
+            console.log('Cerrando pool de conexiones de MongoDB...');
+            await mongoClient.close();
+            console.log('Conexión a MongoDB cerrada con éxito.');
+            
+            // Limpiamos las variables por si la app necesita volver a conectar
+            mongoClient = null;
+            clientPromise = null;
+        } catch (error) {
+            console.error('Error al cerrar la conexión de MongoDB:', error);
+        }
+    }
+}
+
+// =========================================================================
+// ESCUCHADORES DE EVENTOS DE APAGADO (Añadir en el punto de entrada de tu app, ej: index.js o server.js)
+// =========================================================================
+const handleShutdown = async (signal) => {
+    console.log(`Recibida señal ${signal}. Iniciando apagado limpio...`);
+    
+    // 1. Aquí cerrarías primero tu servidor HTTP (Express, Fastify, etc.) si tuvieras uno:
+    // server.close(() => { ... })
+
+    // 2. Cerramos la base de datos
+    await closeDbConnection();
+    
+    // 3. Salimos del proceso sin errores (código 0)
+    process.exit(0);
+};
+
+// Escuchar Ctrl+C en la terminal
+process.on('SIGINT', () => handleShutdown('SIGINT'));
+
+// Escuchar señal de terminación del sistema (Docker, PM2, Kubernetes, etc.)
+process.on('SIGTERM', () => handleShutdown('SIGTERM'));

@@ -76,7 +76,7 @@
 
                 // OJO -> IMPORTANTE EN PETICIONES POST QUE PUEDEN REQUERIR INICIAR SESION
                 // ENVIAMOS TAMBIEN LA RUTA EL LA QUE ESTAMOS POR SI NOS REENVIAN AL LOGIN
-                let post_endpoint = `http://localhost:3000/checkout.html/?redirect=${location.pathname}/`
+                let post_endpoint = `http://localhost:3000/checkout.html/?redirect=${location.pathname}`
                 if(location.search.length > 2){
                     post_endpoint += `@@&${location.search.slice(1)}`;
                 }
@@ -89,24 +89,21 @@
 
                 });
                 const data = await response.json()
-                console.log(data)
-                if(data.status === 'ok'){
+
+                if(response.status >= 200 && response.status < 300){
                     if(data.location){
                         document.location.href =  data.location
                     }else{
                         document.location.href =  "/"
                     }
-                }else{
-                    
-                   console.log(data)
-                    alert(data.message + ", CODE: " + data.code)
-                    // Segun el codigo devuelto daremos un mensaje u otro
-                    if(data.location){
-                            document.location.href =  data.location
-                    }else{
-                        document.location.href =  "/"
-                    }
+                }else if(response.status >= 400 && response.status < 400){
+                    alert("Error CON LOS DATOS ENVIADOS en el Checkout")
+                    console.log(data)
+                }else if(response.status >= 500 && response.status < 599){
+                    alert("Error en el Checkout en el Servidor")
+                    console.log(data)
                 }
+                
                 
 
             } catch (e) {

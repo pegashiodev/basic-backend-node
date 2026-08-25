@@ -27,34 +27,28 @@ import verifyCart from "../../orders/verifyCart.js";
 export default async (req, res)=>{
 
     console.log("CHECK_OUT_HANDLER --> POST !!")
-
-// ¡¡¡¡¡ IMPORTANTE
-// LA COOKIE Y SESSION YA SE HAN VERIFICADO EN postRequestHandler
-// HA DE LLEGAR CON searchParams.from que he es la url del carrito, por si no hay session para poder reenviarlo despues de loguearse.
-
     
     // console.log(req.body.order)
     let order = req.body.order;
     let payment_result;
     let paymentMethod = req.body.order.paymentMethod.toUpperCase()
 
-    // VERIFICAMOS EL CARRO DE LA COMPRA ES CORRECTO CON LOS DATOS DEL SERVIDOR
+    // VERIFICAMOS EL CARRO DE LA COMPRA ES CORRECTO CON LOS DATOS DE LOS PRODUCTOS  DEL SERVIDOR
     let cart_verified = verifyCart(order)
 
     if(cart_verified.status !== 'ok'){
         const response_data = {
-            status: systemConfig.STATUS.ERROR_FETCH,
-            code: errorsCodes.c560.code,
-            message: "ERROR EN EL CHECKOUT",            
+            status: cart_verified.status,
+            code: cart_verified.code,
+            message: cart_verified.message,            
         }
 
-        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(response_data))
         return;
     }
 
-// INICIAMOS EL PROCESO DE PAGO
-
+    // INICIAMOS EL PROCESO DE PAGO
     if( paymentMethod === "STRIPE-CARD"){
        
         // OBTENEMOS LA SESSION DE STRIPE -> SE COMPLETA EL PAGO DESDE SUSSCESS-CHECKOUT O CANCEL-CHECKOUT
@@ -71,8 +65,8 @@ export default async (req, res)=>{
             const response_data = {
                 status: systemConfig.STATUS.ERROR_FETCH,
                 location: systemConfig.PAGES.CONNECTION_ERROR_PAYMENT_PROVIDER,
-                code: errorsCodes.c452.code,
-                message: "ERROR EN EL CHECKOUT",            //errorCodes.c531.message,
+                code: 452,
+                message: "ERROR EN EL CHECKOUT",            
             }
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify(response_data))
@@ -86,36 +80,40 @@ export default async (req, res)=>{
 
         payment_result = {}
    
-   
+    // NO ES UN METODO DE PAGO ADMITIDO
     }else{
         const response_data = {
             status: "error",
-            code: errorsCodes.c565.code,
+            code: 565,
             message: "ERROR EN EL CHECKOUT",            //errorCodes.c531.message,
         }
 
-        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(response_data))
         return;
     }
 
+
+    // SI EL METODO DE PAGO HO HA IDO BIEN RESPONDEMOS CON EL ERROR
     if(payment_result.status !== "ok"){
         console.log("ERROR en checkOutHandler -> HACIENDO PAGO EN STRIPE")
 
         const response_data = {
             status: systemConfig.STATUS.ERROR_FETCH,
             location: systemConfig.PAGES.CONNECTION_ERROR_PAYMENT_PROVIDER,
-            code: errorsCodes.c566.code,
+            code: 566,
             message: "ERROR EN EL CHECKOUT",            //errorCodes.c531.message,
         }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(response_data))
         return;
 
     }
+
+
+    // ALMACENAMOS EL PAGO EN LA BASE DE DATOS COMO "PENDING"
     let data_payment = null;
 
-// ALMACENAMOS EL PAGO COMO "PENDING"
     if(paymentMethod === "STRIPE-CARD"){
 
         data_payment = {
@@ -147,8 +145,7 @@ export default async (req, res)=>{
 
     }
 
-// GUARDAMOS EL PAGO A LA ESPERA DE SABER SI ES SUCCESS OR CANCEL
-    
+    // GUARDAMOS EL PAGO A LA ESPERA DE SABER SI ES "SUCCESS2 OR "CANCELED"
     const result_insert_payment_db = await paymentsDataStorage.insertOne(data_payment)
         
     if(result_insert_payment_db.status !== 'ok'){
@@ -156,14 +153,14 @@ export default async (req, res)=>{
         // ENVIAMOS PAGINA DE ERROR DE CONEXION CON PASARELA DE PAGOS
     
         const response_data = {
-            status: systemConfig.STATUS.ERROR_FETCH,
+            status:"error",
             location: systemConfig.PAGES.CONNECTION_ERROR_PAYMENT_PROVIDER,
-            code: errorsCodes.c567.code,
-            message: "ERROR EN EL CHECKOUT",            //errorCodes.c531.message,
+            code: 567,
+            message: "ERROR EN EL CHECKOUT",            
         }
 
 // OJO -> hay que notificar de este pago no Guardado en DB
-        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(response_data))
         return;
     }

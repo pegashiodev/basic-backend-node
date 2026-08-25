@@ -48,7 +48,7 @@ export const manageOrder = async (data)=>{
 
 }
 
-
+// AÑADIMOS EL PEDIDO A LA BASE DE DATOS
 const addOrder =  async (data_order)=>{
 
     console.log("ordersHandler -> addOrder !!")

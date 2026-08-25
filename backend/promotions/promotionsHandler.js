@@ -165,7 +165,7 @@ export const updatePromotion = async (promotion, user)=>{
     try{
         dbAfiliates = await getDb(systemConfig.DBS.AFILIATES)
     }catch(e){
-        console.log("ERROR al Obtener getDb()")
+        console.log("ERROR al Obtener getDb() desde promotionsHandler.js")
         throw new Error(`Error en "promotionsHandler.updatePromotion"  al Obtener la base de datos`);
         // return {status: "error", code: 565, message: "ERROR AL ACCEDER A LA BASE DE DATOS DE LAS PROMOCIONES"}
     }

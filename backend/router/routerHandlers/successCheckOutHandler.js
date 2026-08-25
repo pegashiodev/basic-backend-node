@@ -4,9 +4,9 @@
 /****
  * 
  * 
- *      ACCEDES DESDE LA PAGINA DEL SUCCESS CHECKOUT -> PAY ENDPOINT -> 
- *          - RECUPERAMOS EL PAYMENT QUE ESTABA PENDING
- *          - LO ENVIAMOS A MANAGE-ORDER -> ADDoRDER, AFTER-ORDER, SEND-ORDER, ...
+ *      SUCCESS CHECHOUT
+*       - RECUPERAMOS EL PAYMENT DE LA BASE DE DATOS QUE ESTABA CON STATUS= PENDING Y LO ACTUALIZAMOS A "SUCCESS"
+ *      - LO ENVIAMOS A MANAGE-ORDER -> ADDoRDER, AFTER-ORDER, SEND-ORDER, ...
  * 
  */
 
@@ -30,17 +30,18 @@ export default async (req, res)=>{
 
     console.log("success_CHECKOUT  !!")
     // Enviamos pagina DE SUCCESS AL USUARIO Y SEGUIMOS CON LA TRAMITACION DEL PEDIDO
+    // enviamos "success-checkout.html"
     res.code = 200;
     sendStaticFile(req, res)
     
-    // console.log(req.urlData)
-
-    // OBTENEMOS LOS DATOS DE LA TRANSACCION DE LA URL 
-    const retrieve = await stripe.checkout.sessions.retrieve(req.urlData.searchParams.session_id, {expand:["payment_intent.payment_method"]})
-    // Nos da la informacion de como se ha hecho el pago: Tarjeta, revolut, ...
-
     // HABIAMOS ALMACENADO EN LA URL EL "session:id" de STRIPE
-    const stripeId = req.urlData.searchParams.session_id
+    const stripeId = req.urlData?.searchParams?.session_id
+
+    // CON EL ID DE LA TRANSACCION, QUE ESTA EN LA URL, OBTENEMOS MAS INFORMACION DEL PEDIDO PARA ALMACENARLA
+    if(!stripeId){
+        const retrieve = await stripe.checkout.sessions.retrieve(stripeId, {expand:["payment_intent.payment_method"]})
+    }
+
 
     // ACTUALIZAMOS LA COMPRA A "SUCCESS"
     const data_payment = {
@@ -64,13 +65,10 @@ export default async (req, res)=>{
 
     }
 
-// console.log(data_payment)
-// return;
-
-
-
     let payment_order;
+    
     // "stripeId" es el filtro para encontrar el documento
+    // ACTUALIZAMOS EL STATUS DEL DOCUMENTO EN LA BASE DE DATOS
     if(stripeId){
 
         payment_order = await paymentsDataStorage.updateOne(data_payment)
@@ -80,8 +78,8 @@ export default async (req, res)=>{
     // SI HAY ERROR NO TENEMOS ACCESO AL PEDIDO -> 
     if(payment_order.status === "error"){
 
-// OJO -> QUE HACEMOS SI NO HEMOS PODIDO ACCEDER
-// ENVIAMOS A UNA LISTA DE TAREAS DE DB NO ACABADAS Y URGENTES ??? 
+        // OJO -> QUE HACEMOS SI NO HEMOS PODIDO ACCEDER
+        // ENVIAMOS A UNA LISTA DE TAREAS DE DB NO ACABADAS Y URGENTES ??? 
    
    
    

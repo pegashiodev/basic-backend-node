@@ -23,18 +23,21 @@ export default async function refershBridgeHandler(req, res) {
         res.end(JSON.stringify({
             status: 'error',
             code: 405,
-            message: "COOKIE INCORRECTA"
+            message: "COOKIE INCORRECTA",
+            location: systemConfig.PAGES.ACCESS_PLATFORM    
         }));
         return;
+      
     }
-console.log(req.our_cookie)
     // COMPROBAMOS SI FALTA ALGUN TOKEN
     if(!req.has_our_cookie || !req.our_cookie.atk_decoded || !req.our_cookie.rtk_decoded){
-        res.writeHead(405, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.writeHead(406, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
             status: 'error',
             code: 406,
-            message: "FALTAN TOKENS EN LA COOKIE"
+            message: "FALTAN TOKENS EN LA COOKIE",
+            location: systemConfig.PAGES.ACCESS_PLATFORM    
+
         }));
         return
     }
@@ -44,7 +47,7 @@ console.log(req.our_cookie)
     await verifyTokensAndSetCookie(req, "REFRESH-BRIDGE");
     
     // ACTUAMOS EN FUNCION DEL RESULTADO DE LOS TOKENS
-   console.log("Despues de VERIFY") 
+    
     // SI LA SESSION EXPIRO ENVIAMOS AL LOGIN
     if(req.session_expired){
 
@@ -53,14 +56,13 @@ console.log(req.our_cookie)
             status: 'error',
             code: 401,
             message: "SEND-LOGIN",
-            location: systemConfig.PAGES.ACCESS_PLATFORM
+            location: systemConfig.PAGES.SESSION_IS_REQUIRED
         }));
         return
         
     
     // TOKENS RENOVADOS
     }else{
-
 
         let headers = {
             'Content-Type': 'application/json; charset=utf-8' 

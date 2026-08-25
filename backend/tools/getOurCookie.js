@@ -36,11 +36,11 @@ console.log(req.cookie_parsed)
         } else {
             result.response_data = {
                 status: "error",
-                location: systemConfig.PAGES.SESSION_IS_REQUIRED,
-                code: 452,
-                message: "No hay cookie de sesión válida en la petición"
+                code: 405,
+                message: "No hay cookie de sesión válida en la petición",
+                location: systemConfig.PAGES.ACCESS_PLATFORM,
+                task : "SEND_FETCH_ERROR"
             };
-            result.task = "SEND_FETCH_ERROR";
         }
         return result;
     }
@@ -57,7 +57,7 @@ console.log(req.cookie_parsed)
 
         result.status = "error";
         console.warn('⚠️ Token con firma alterada o inválido detectado.');
-        return generateErrorResponse(req, result, 453, "Tokens de sesión inválidos");
+        return generateErrorResponse(req, result, 453, "Tokens de sesión inválidos", systemConfig.PAGES.ACCESS_PLATFORM);
     }
 
     // 4. Vínculo de seguridad: Comprobar que pertenecen al mismo sessionId y usuario
@@ -66,7 +66,7 @@ console.log(req.cookie_parsed)
 
             result.status = "error";
             console.warn('🚨 Discrepancia detectada entre ATK y RTK (posible manipulación de tokens).');
-            return generateErrorResponse(req, result, 453, "Discrepancia en tokens de sesión");
+            return generateErrorResponse(req, result, 453, "Discrepancia en tokens de sesión", systemConfig.PAGES.ACCESS_PLATFORM);
         }
     }
 
@@ -104,7 +104,7 @@ console.log({our_cookie})
     return result;
 }
 
-function generateErrorResponse(req, result, code, message) {
+function generateErrorResponse(req, result, code, message, location=null) {
     if (req.method === "GET") {
         if (!req.urlData) req.urlData = {};
         req.urlData.restricted_endpoint = false;
@@ -116,9 +116,11 @@ function generateErrorResponse(req, result, code, message) {
             status: "error",
             location: systemConfig.PAGES.SESSION_IS_REQUIRED,
             code: code,
-            message: message
+            message: message,
+            location: location,
+            task : "SEND_FETCH_ERROR",
         };
-        result.task = "SEND_FETCH_ERROR";
+        
     }
     return result;
 }

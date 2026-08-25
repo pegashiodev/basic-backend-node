@@ -96,7 +96,7 @@ export default async function postRequestHandler(req, res) {
             res, 
             401, 
             result_getOurCookie.response_data?.message || 'Autenticación requerida',
-            result_getOurCookie.response_data?.code || 452,
+            result_getOurCookie.response_data?.code || 405,
             location
         );
     }
@@ -107,31 +107,31 @@ export default async function postRequestHandler(req, res) {
         await verifyTokensAndSetCookie(req, "POST_REQUEST");
         
         // ACTUAMOS EN FUNCION DEL RESULTADO DE LOS TOKENS
-
-        
        
         // SI LA SESSION EXPIRO ENVIAMOS AL LOGIN
-        // AÑADIMOS LA RUTA DESDE LA QUE LO ENVIAMOS AL LOGIN
-        
         if(req.session_expired){
+            location = `${systemConfig.PAGES.SESSION_IS_REQUIRED}?redirect=${req.urlData.searchParams.redirect}`
             return sendPostError(
                 res, 
+                401, 
+                'Session Expirada: Autenticación requerida',
                 302, 
-                result_getOurCookie.response_data?.message || 'Autenticación requerida',
-                result_getOurCookie.response_data?.code || 302, 
                 location
             );
         
-        // ACCESS-TOKEN EXPIRADO: Enviamos a "  " para que se nos envie el REFRESS-TOKEN
+        // ACCESS-TOKEN EXPIRADO: 
+        // SOLICITAMOS A ESA PETICION POST QUE SE HA HECHO, QUE SE PAUSE Y QUE SE ENVIE EL 
+        // REFRESH-TOKEN ANTES DE CONTINUAR
         }else if(req.get_rtk){
             
             return sendPostError(
                 res, 
-                401, 
+                444, 
                 'SEND-REFRESS-TOKEN',
-                result_getOurCookie.response_data?.code || 401, 
-                location
+                444, 
+                // LE PEDIMOS QUE ENVIE EL REFRESS-TOKEN EN OTRO FETCH A "REFESH-BRIDGE"
             );
+        
         }
 
         req.body.language = req.urlData.language || systemConfig.MAIN_LANGUAGE;
@@ -139,7 +139,7 @@ export default async function postRequestHandler(req, res) {
         return routerPostRequest(req, res);
     
     } else {
-        
-        return sendPostError(res, 401, 'No hay cookie de sesión válida', 452, location);
+        // ENVIAMOS A ACCESO-PLATAFORMA
+        return sendPostError(res, 405, 'No hay cookie de sesión válida', 302, location);
     }
 }
