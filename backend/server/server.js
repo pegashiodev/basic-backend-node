@@ -100,12 +100,15 @@ export default createServer(async (req, res) => {
             
             '/get-main-menu': "get-main-menu.html",
             '/get-main-menu.html': "get-main-menu.html",
+            '/srtipe-webhook': "srtipe-webhook.html", 
+            '/stripe-webhook.html': "srtipe-webhook.html",
 
         };
         const canonicalPath = req.urlData.canonicalPath
         // SOLO REVISAMOS LOS ENDPINTS SIN EXTENSION O SON EXTENSION HTML
         if(req.urlData.ext === "html" || req.urlData.ext === ""){
             if(!sitemapRoutes[canonicalPath]){
+                console.log(`la URL: ${req.urlData.url} No esta en el SiteMap`)
                 res.code = 404;
                 return sendStaticFile(req, res)
             }

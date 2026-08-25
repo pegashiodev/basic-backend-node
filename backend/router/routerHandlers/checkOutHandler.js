@@ -1,183 +1,180 @@
-
-
-/***
- * 
- * ATENDEMOS LA PETICION DE CHECKOUT DESDE EL FRONTED
- * - VALIDAMOS QUE EL CARRO DE COMPRA ES CORRECTO
- * - SOLICITAMOS EL PAGO
- * - ALMACENAMOS LOS DATOS DE LA COMPRA CON ESTADO "PENDING"
- * - ALMACENAMOS PARA ESTADISTICAS DEL SITIO 
- */
-
-import systemConfig from "../../globalData/systemConfig.js";
-import paymentsDataStorage from "../../payments/paymentsDataStorage.js";
-import paymentsMethods from "../../payments/paymentsMethods.js";
-import errorsCodes from "../../tools/errorsCodes.js"
-import siteStats from "../routerTools/siteStats.js";
-import verifyCart from "../../orders/verifyCart.js";
-
-
-
 /**
+ * HANDLER PARA INICIAR EL CHECKOUT CON STRIPE (POST /api/checkout)
  * 
- * @param {object} Objeto Request de NodeJS
- * @param {object} Objeto Response de NodeJS
- * 
+ * @param {import('node:http').IncomingMessage} req - Objeto de petición enriquecido (incluye req.body y req.user si está autenticado)
+ * @param {import('node:http').ServerResponse} res - Objeto de respuesta HTTP nativo
  */
-export default async (req, res)=>{
 
-    console.log("CHECK_OUT_HANDLER --> POST !!")
-    
-    // console.log(req.body.order)
-    let order = req.body.order;
-    let payment_result;
-    let paymentMethod = req.body.order.paymentMethod.toUpperCase()
+import Stripe from 'stripe';
+import crypto from 'node:crypto';
+import systemConfig from '../../globalData/systemConfig.js';
+process.loadEnvFile();
+// Importa los servicios / métodos de tu base de datos MongoDB
+// import { getProductById } from '../../products/productService.js';
+// import { createOrder, updateOrderStripeSession } from '../../orders/orderService.js';
 
-    // VERIFICAMOS EL CARRO DE LA COMPRA ES CORRECTO CON LOS DATOS DE LOS PRODUCTOS  DEL SERVIDOR
-    let cart_verified = verifyCart(order)
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2023-10-16' // Ajusta a la versión de Stripe que utilices
+});
 
-    if(cart_verified.status !== 'ok'){
-        const response_data = {
-            status: cart_verified.status,
-            code: cart_verified.code,
-            message: cart_verified.message,            
+
+// OJO -> REVISAR, YO LAMMO CART Y AQUI SE PONE ITEMS, ...REVISAR TODO
+
+export default async function checkOutHandler(req, res) {
+    try {
+        const {items, shippingAddress, billingAddress,  paymentMethod, promoCode}= req.body.order || {};
+        const user = req.user || null; // Inyectado previamente por middleware de autenticación
+
+        // 1.- Validamos el promoCode si lo tenemos en el body
+
+        // 2. Validación de entrada: verificar que el carrito contenga elementos
+        if (!items || !Array.isArray(items) || items.length === 0) {
+            res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+            return res.end(JSON.stringify({
+                status: 'error',
+                code: 400,
+                message: 'El carrito no contiene productos válidos.'
+            }));
         }
 
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(response_data))
-        return;
-    }
+        // 3. Extracción segura de la identidad del usuario (soporta formato plano y compuesto _id)
+        const userId = user?.userId || (typeof user?._id === 'object' ? user?._id?._id : user?._id) || null;
+        const userEmail = user?.email || (typeof user?._id === 'object' ? user?._id?.email : null) || req.body?.email || null;
 
-    // INICIAMOS EL PROCESO DE PAGO
-    if( paymentMethod === "STRIPE-CARD"){
-       
-        // OBTENEMOS LA SESSION DE STRIPE -> SE COMPLETA EL PAGO DESDE SUSSCESS-CHECKOUT O CANCEL-CHECKOUT
-        try{
-           
-            payment_result = await paymentsMethods(cart_verified.products, "STRIPE-CARD")
-       
-       
-        }catch(e){
-            console.log("ERROR en checkOutHandler -> en el try-catch")
-            console.log(e)
-            // OCURRIO UN PROBLEMA
-            // ENVIAMOS PAGINA DE ERROR DE CONEXION CON PASARELA DE PAGOS
-            const response_data = {
-                status: systemConfig.STATUS.ERROR_FETCH,
-                location: systemConfig.PAGES.CONNECTION_ERROR_PAYMENT_PROVIDER,
-                code: 452,
-                message: "ERROR EN EL CHECKOUT",            
+        // 4. Validar productos y calcular precios directamente desde la Base de Datos
+        const lineItemsForStripe = [];
+        const verifiedOrderItems = [];
+        let totalAmountInCents = 0;
+
+        for (const item of items) {
+            if (!item.productId) {
+                res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+                return res.end(JSON.stringify({
+                    status: 'error',
+                    code: 400,
+                    message: 'Uno de los elementos del carrito carece de ID de producto.'
+                }));
             }
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(response_data))
-            return;
-    
+
+            // Consulta a MongoDB por ID de producto
+            // const dbProduct = await getProductById(item.productId);
+            
+            // Ejemplo de producto obtenido de DB
+            const dbProduct = {
+                productId: item.productId,
+                name: 'Servicio Bot Automatizado',
+                priceInCents: 2500, // 25.00 EUR en céntimos
+                currency: 'eur',
+                active: true
+            };
+
+            if (!dbProduct || !dbProduct.active) {
+                res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+                return res.end(JSON.stringify({
+                    status: 'error',
+                    code: 404,
+                    message: `El producto con ID ${item.productId} no está disponible o no existe.`
+                }));
+            }
+
+            const quantity = Math.max(1, parseInt(item.quantity, 10) || 1);
+            const itemTotalCents = dbProduct.priceInCents * quantity;
+            totalAmountInCents += itemTotalCents;
+
+            // Almacenamos el snapshot del producto para el pedido en DB
+            verifiedOrderItems.push({
+                productId: dbProduct.productId,
+                name: dbProduct.name,
+                unitPriceInCents: dbProduct.priceInCents,
+                quantity: quantity,
+                totalCents: itemTotalCents
+            });
+
+            // Estructura requerida por Stripe Checkout API
+            lineItemsForStripe.push({
+                price_data: {
+                    currency: dbProduct.currency || 'eur',
+                    product_data: {
+                        name: dbProduct.name,
+                    },
+                    unit_amount: dbProduct.priceInCents,
+                },
+                quantity: quantity,
+            });
         }
-   
+
+        // 5. Estructura del Pedido acorde al esquema de MongoDB
+        const orderId = `ord_${crypto.randomUUID()}`;
+        const now = new Date();
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         
-    }else if(paymentMethod === "STRIPE-BIZUM"){
-        console.log("PAGO POR BIZUM");
+        const newOrder = {
+            _id: {
+                orderId: orderId,
+                userId: userId,
+                from: {
+                    month: monthNames[now.getMonth()].toLowerCase(),
+                    year: String(now.getFullYear())
+                }
+            },
+            orderId: orderId,
+            userId: userId,
+            customerEmail: userEmail,
+            items: verifiedOrderItems,
+            totalAmountInCents: totalAmountInCents,
+            currency: 'eur',
+            status: 'PENDING',          // PENDING -> SUCCESS / CANCELED / EXPIRED
+            stripeSessionId: null,
+            paymentDetails: null,
+            createdAt: now,
+            updatedAt: now
+        };
 
-        payment_result = {}
-   
-    // NO ES UN METODO DE PAGO ADMITIDO
-    }else{
-        const response_data = {
-            status: "error",
-            code: 565,
-            message: "ERROR EN EL CHECKOUT",            //errorCodes.c531.message,
-        }
+        // Guardamos el pedido en estado PENDING en MongoDB
+        // await createOrder(newOrder);
 
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(response_data))
-        return;
+        // 6. Determinar host base según entorno (DEV vs PROD)
+        const baseUrl = process.env.MODE === 'DEV' ? systemConfig.HOST_DEV : systemConfig.HOST_PROD;
+        const protocol = process.env.MODE === 'DEV' ? 'http' : 'https';
+
+        // 7. Crear la sesión en Stripe Checkout
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            mode: 'payment',
+            line_items: lineItemsForStripe,
+            customer_email: userEmail || undefined,
+            // En metadata viaja el orderId para recuperarlo en el Webhook de forma segura
+            metadata: {
+                orderId: orderId,
+                userId: String(userId || '')
+            },
+            // Las páginas de éxito/cancelación solo sirven para mostrar la interfaz visual
+            success_url: `${protocol}://${baseUrl}/success-checkout.html?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${protocol}://${baseUrl}/cancel-checkout.html?order_id=${orderId}`,
+        });
+
+        // 8. Asociar el ID de sesión de Stripe a la orden en MongoDB
+        // await updateOrderStripeSession(orderId, session.id);
+
+        // 8. Responder con la URL de pago al cliente
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({
+            status: 'ok',
+            code: 200,
+            message: 'Sesión de checkout creada con éxito.',
+            data: {
+                checkoutUrl: session.url,
+                orderId: orderId
+            }
+        }));
+
+    } catch (error) {
+        console.error('❌ Error en checkOutHandler:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({
+            status: 'error',
+            code: 500,
+            message: 'Error interno del servidor al procesar la sesión de pago.'
+        }));
     }
-
-
-    // SI EL METODO DE PAGO HO HA IDO BIEN RESPONDEMOS CON EL ERROR
-    if(payment_result.status !== "ok"){
-        console.log("ERROR en checkOutHandler -> HACIENDO PAGO EN STRIPE")
-
-        const response_data = {
-            status: systemConfig.STATUS.ERROR_FETCH,
-            location: systemConfig.PAGES.CONNECTION_ERROR_PAYMENT_PROVIDER,
-            code: 566,
-            message: "ERROR EN EL CHECKOUT",            //errorCodes.c531.message,
-        }
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(response_data))
-        return;
-
-    }
-
-
-    // ALMACENAMOS EL PAGO EN LA BASE DE DATOS COMO "PENDING"
-    let data_payment = null;
-
-    if(paymentMethod === "STRIPE-CARD"){
-
-        data_payment = {
-            stripeId: payment_result.id,
-            status: "PENDING",
-            userId: req.user.userId,
-            name: req.user.name,
-            email: req.user.email,
-            order: cart_verified.products,
-            saldoCoins: cart_verified.total_coins,
-            shipping_address: req.body.order.shipping_address
-        }
-
-
-    }else if(paymentMethod === "STRIPE-BIZUM"){
-        console.log("PAGO POR BIZUM");
-
-        data_payment = {
-            bizumId: payment_result.id,
-            status: "PENDING",
-            userId: req.user.userId,
-            name: req.user.name,
-            email: req.user.email,
-            order: cart_verified.products,
-            saldoCoins: cart_verified.total_coins,
-            shipping_address: req.body.order.shipping_address
-        }
-
-
-    }
-
-    // GUARDAMOS EL PAGO A LA ESPERA DE SABER SI ES "SUCCESS2 OR "CANCELED"
-    const result_insert_payment_db = await paymentsDataStorage.insertOne(data_payment)
-        
-    if(result_insert_payment_db.status !== 'ok'){
-        console.log("ERROR en checkOutHandler -> INSERTANFO PAGO EN DB")
-        // ENVIAMOS PAGINA DE ERROR DE CONEXION CON PASARELA DE PAGOS
-    
-        const response_data = {
-            status:"error",
-            location: systemConfig.PAGES.CONNECTION_ERROR_PAYMENT_PROVIDER,
-            code: 567,
-            message: "ERROR EN EL CHECKOUT",            
-        }
-
-// OJO -> hay que notificar de este pago no Guardado en DB
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(response_data))
-        return;
-    }
-    // AÑADIMOS A ESTADISTICAS
-    siteStats(req)
-
-    // TENGO un stripe_session_id donde guardo los datos de la Compra. -> con un status = "PENDING"
-    // si se confirma paso el status = "SUCCESS"
-    // si se cancela paso el status = "CANCEL"
-    const response_data = {
-        status: 'ok',
-        location: payment_result.url,
-        code: 200
-    }
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify(response_data))
-
 }
-
-

@@ -35,7 +35,7 @@
 
         const form = document.querySelector("#form");
         const order = {
-            cart:[
+            items:[
                 {
                 ref: "cl_12890",
                 currency:"eur",
@@ -65,7 +65,8 @@
                 name: "",
                 lastName: "",
             },
-            paymentMethod: "STRIPE-CARD",
+            billingAddress:{},
+            paymentMethod: "STRIPE",
         }
 
         async function sendData() {

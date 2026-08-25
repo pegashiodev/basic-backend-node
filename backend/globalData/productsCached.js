@@ -2,8 +2,13 @@
 
 export default [
     {
-        _id: 'pcm_12890',
-        ref: 'pcm_12890',
+        _id: {
+          _id: 'pcm_12890',
+          type: "BALANCE_RECHARGE",
+          brand: "podcastmatic"   // [PHYSICAL, AUDIO_CONTENT]
+        },
+        type: "BALANCE_RECHARGE",
+        productId: 'pcm_12890',
         brand: 'podcastmatic',
         currency: 'eur',
         plan_name: 'OCASIONAL',
@@ -12,6 +17,7 @@ export default [
         galery: [],
         poster: '',
         unit_amount: 500,
+        priceInCents: 500,
         coins:{
             generator: 100,
             trainning: 100,
@@ -21,12 +27,16 @@ export default [
             video: 0
         },
         stock: 'INFINITE',
-        promo: false,
-        promo_expire: 0
+        active: true,
       }, 
       {
-        _id: 'pcm_13890',
-        ref: 'pcm_13890',
+        _id: {
+          _id: 'pcm_13890',
+          type: "BALANCE_RECHARGE",
+          brand: "podcastmatic"   // [PHYSICAL, AUDIO_CONTENT]
+        },
+        productId: 'pcm_13890',
+        type: "BALANCE_RECHARGE",
         brand: 'podcastmatic',
         currency: 'eur',
         plan_name: '',
@@ -35,6 +45,7 @@ export default [
         galery: [],
         poster: '',
         unit_amount: 1000,
+        priceInCents: 1000,
         coins:{
             generator: 100,
             trainning: 100,
@@ -44,12 +55,17 @@ export default [
             video: 0
         },
         stock: 'INFINITE',
-        promo: false,
-        promo_expire: 0
+        active: true
+        
       },
       {
-        _id: 'pcm_14890',
-        ref: 'pcm_14890',
+        _id: {
+          _id: 'pcm_14890',
+          type: "BALANCE_RECHARGE",
+          brand: "podcastmatic"   // [PHYSICAL, AUDIO_CONTENT]
+        },
+        productId: 'pcm_14890',
+        type: "BALANCE_RECHARGE",
         brand: 'podcastmatic',
         currency: 'eur',
         plan_name: 'PRO',
@@ -58,6 +74,7 @@ export default [
         galery: [],
         poster: '',
         unit_amount: 2000,
+        priceInCents: 2000,
         coins:{
             generator: 100,
             trainning: 100,
@@ -67,9 +84,35 @@ export default [
             video: 0
         },
         stock: 'INFINITE',
-        promo: false,
-        promo_expire: 0
-      }
+        active: true
+      },
+      // Ejemplo 1: Audiolibro
+{
+  "productId": "prod_audio_01",
+  "name": "Audiolibro: El Arte de la Guerra",
+  "type": "AUDIO_CONTENT",
+  "priceInCents": 1500,
+  "active": true
+},
+
+// Ejemplo 2: Recarga de Saldo
+{
+  "productId": "prod_balance_50",
+  "name": "Recarga de 50€ de Saldo",
+  "type": "BALANCE_RECHARGE",
+  "creditAmount": 50,
+  "priceInCents": 5000,
+  "active": true
+},
+
+// Ejemplo 3: Libro Físico
+{
+  "productId": "prod_book_print",
+  "name": "Libro Tapa Dura",
+  "type": "PHYSICAL",
+  "priceInCents": 2900,
+  "active": true
+}
 
 ]
 

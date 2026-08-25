@@ -6,12 +6,12 @@
  */
 
 import getRequestBody from "../serverTools/getRequestBody.js";
-import getUrlData from "../serverTools/getUrlData.js";
 import routerPostRequest from "../../router/routerPostRequest.js";
 import systemConfig from "../../globalData/systemConfig.js";
 import getOurCookie from "../../tools/getOurCookie.js";
 import subdomainPostRequestHandler from "./subdomainPostRequestHandler.js";
 import verifyTokensAndSetCookie from "../../tools/verifyTokensAndSetCookie.js";
+import { getRawAndParsedBody } from "../serverTools/getRawAndParsedBody.js";
 
 // Función auxiliar para responder errores POST en JSON
 const sendPostError = (res, statusCode, message, customCode = null, location = null) => {
@@ -56,13 +56,27 @@ export default async function postRequestHandler(req, res) {
         return sendPostError(res, 415, 'Tipo de contenido (Content-Type) no soportado', 445);
     }
 
-    // 3. Capturar y parsear el Body con límite de tamaño
-    try {
-        const result = await getRequestBody(req, req.urlData.body_type);
-        req.body = result.data || {};
-    } catch (err) {
-        return sendPostError(res, err.code || 400, err.message, err.code);
+    // SI L APETICION ES PARA EL WEBHOOK DE STRIPE EL BODY HA DE OBTENERSE DE OTRA MANERA
+
+    if(req.urlData.endpoint === "stripe-webhook" || req.urlData.endpoint === "stripe-webhook.html"){
+        try{
+            getRawAndParsedBody(req)
+        } catch (err) {
+            return sendPostError(res, err.code || 400, err.message, err.code);
+        }
+    
+    }else{
+
+        // 3. Capturar y parsear el Body con límite de tamaño
+        try {
+            const result = await getRequestBody(req, req.urlData.body_type);
+            req.body = result.data || {};
+        } catch (err) {
+            return sendPostError(res, err.code || 400, err.message, err.code);
+        }
     }
+
+
 
     // 4. Gestión de Subdominios (si aplica)
     if (systemConfig.HAS_SUBDOMAINS) {

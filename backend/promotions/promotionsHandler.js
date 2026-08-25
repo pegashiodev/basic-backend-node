@@ -26,6 +26,7 @@ import systemConfig from "../globalData/systemConfig.js";
 const promotions = [
     {
         _id: 'WELCOME',
+        promotionId: "WELCOME", 
         status: 'ACTIVE',               
         endpoint: "SIGNUP",
         promoCode: 'WELCOME',
@@ -42,6 +43,7 @@ const promotions = [
     },
     {
         _id: 'BIENVENIDA',
+        promotionId: "WELCOME",
         status: 'ACTIVE',
         endpoint: "SIGNUP",
         promoCode: 'BIENVENIDA',

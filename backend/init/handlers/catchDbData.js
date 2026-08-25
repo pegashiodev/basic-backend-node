@@ -1,130 +1,73 @@
 
-/***
- * 
- *  ANTES DE LANZAR EL SERVIDOR HTTP, AQUI SE CACHEAN DATOS DE LAS DIFERENTES BASES DE DATOS 
- *  EN MEMORIA
- * 
- *  - LOS NOMBRE DE LAS BASES DE DATOS A CACHEAR ESTAN EN "systemConfig.js"
- * 
- *  - lAS SESIONES QUE AUN NO HAN EXPIRADO
- *  - LOS USUARIOS DE LA PLATAFORMA POR EMAIL
- *  - LOS PRODUCTOS QUE ESTAN A LA VENTA 
- *  - LAS PROMOCIONES QUE ESTAN VIGENTES
- * 
- * 
- *  PARA UN SAAS CON UNOS POCOS MILES DE USUARIOS NO ES UNA CARGA IMPORTANTE EN RAM,
- *  PERO PODEMOS REVISARLO
- * 
- *   
+
+/**
+ * catchDbData.js
+ * Carga inicial y cacheo de datos críticos en Redis desde MongoDB.
  */
 
+import { getDb } from './database/mongoClient.js'; // Ajusta la ruta a tu cliente Mongo
+import redisClient from './database/redisClient.js'; // Ajusta la ruta a tu cliente Redis
 
-import systemConfig from "../../globalData/systemConfig.js"
-// import usersByEmail from "../../globalData/usersByEmail.js"
-// import sessionsCached from "../../globalData/sessionsCached.js"
-import blackList from "../../globalData/blackList.js"
-import dbsOpened from "../../globalData/dbsOpened.js"
-// import verificationEndpoints from "../../globalData/verificationEndpoints.js"
-import productsCached from "../../globalData/productsCached.js"
-import promotionsCached from "../../globalData/promotionsCached.js"
+export default async function catchDbData() {
+    console.log('🔄 Iniciando precarga de datos en Redis...');
+    const startTime = Date.now();
 
+    try {
+        const pipeline = redisClient.pipeline();
 
-export default async ()=>{
-    console.log('Catch DB Data !!!')
+        // 1. PRODUCTOS (db: "products", col: "clegal") -> Key: "product:<productId>"
+        const productsDb = getDb('products');
+        const products = await productsDb.collection('clegal').find({}).toArray();
 
-    const DBS_TO_CATCH_DATA = systemConfig.DBS_TO_CATCH_DATA;
-    let dbs_len = DBS_TO_CATCH_DATA.length;
-    const now = Date.now()
-
-    try{
-
-        while(dbs_len--){
-    
-            const dbName = DBS_TO_CATCH_DATA[dbs_len]
-            const db = dbsOpened[dbName]
-    
-            if(!db){
-                console.log(`La DB ${dbName} NO ESTA ABIERTA`)
-            
-            }else{
-                
-                let collections, collections_names = [], collections_len = 0
-    
-                try{
-    
-                    collections = await db.collections();
-                    if(collections){
-
-                        collections_len = collections.length;
-                    }
-                    collections_names = []
-                }catch(e){
-                    console.log("Error CAcheando los datos de las DBS -> No conexion ??? ")
-                    return {status: 'error'}
-                    
-                }
-                
-                if(collections_len >0){
-
-                    while(--collections_len >= 0){
-                        collections_names.push(collections[collections_len].s.namespace.collection)
-                    }
-                    let collections_names_len = collections_names.length
-            
-                    if(collections_names_len > 0){
-            
-                        // const myColl = db.collection(collections_names[collections_names_len])
-                        const myColl = db.collection(collections_names[--collections_names_len])
-            
-                        const cursor = await myColl.find()
-        
-                        if ((await myColl.countDocuments({})) > 0) {
-                            console.log(`Cacheados datos DB: ${dbName}`)
-                           
-                            for await (const doc of cursor) {
-
-                                /*
-                                if(dbName === "sessions_2025" || dbName === "sessions_2026"){
-                                // SOLO LAS ACTIVAS Y NO EXPIRADAS
-                                    if(doc.status === "ACTIVE" && doc.expireTime > now){
-        
-                                        sessionsCached[doc.email] = doc
-                                    }
-                                }else if(dbName === "users_data_2025" || dbName === "users_data_2026"){
-                                    usersByEmail[doc.email] = doc
-        
-                                }else if(dbName === "verificationEndpoints_2025" || dbName === "verificationEndpoints_2026"){
-        
-                                    if(doc.status === "ACTIVE" && doc.expireTime > now){
-                                        verificationEndpoints[doc.tokenId] = doc
-                                    }
-                                */
-                                
-                                    if(dbName === "blacklist"){
-        
-                                    if(doc.status === "BLOCKED" ||  doc.status === "PAUSED"){
-                                        blackList[doc._id] = doc
-                                    }
-                                
-                                }else if(dbName === "products"){
-                                    productsCached[doc.ref] = doc
-                               
-                                }else if(dbName === "promotions"){
-                                    
-                                    promotionsCached.push(doc)
-                                }
-                            }
-                        }
-                    }
-                }
-    
+        let productsCached = 0;
+        for (const item of products) {
+            const productId = item.productId || item._id?.productId || (typeof item._id === 'string' ? item._id : null);
+            if (productId) {
+                pipeline.set(`product:${productId}`, JSON.stringify(item));
+                productsCached++;
             }
         }
-    
-        return {status: 'ok'}
-    }catch(e){
-        return {status: 'error'}
+
+        // 2. PROMOCIONES (db: "promotions", col: "codes") -> Key: "promo:<promotionId>"
+        const promotionsDb = getDb('promotions');
+        const promotions = await promotionsDb.collection('codes').find({}).toArray();
+
+        let promotionsCached = 0;
+        for (const item of promotions) {
+            const promoId = item.promotionId || item.code || item._id?.promotionId || (typeof item._id === 'string' ? item._id : null);
+            if (promoId) {
+                pipeline.set(`promo:${promoId}`, JSON.stringify(item));
+                promotionsCached++;
+            }
+        }
+
+        // 3. BLACKLIST IPS (db: "BlacklistIps", col: "ips") -> Key: "blacklist:ip:<ip>"
+        const blacklistDb = getDb('BlacklistIps');
+        const blacklistedIps = await blacklistDb.collection('ips').find({}).toArray();
+
+        let ipsCached = 0;
+        for (const item of blacklistedIps) {
+            const ip = item.ip || item._id?.ip || (typeof item._id === 'string' ? item._id : null);
+            if (ip) {
+                // Se almacena el registro completo o un flag rápido "1"
+                pipeline.set(`blacklist:ip:${ip}`, JSON.stringify(item));
+                ipsCached++;
+            }
+        }
+
+        // Ejecutar todas las inserciones en bloque
+        await pipeline.exec();
+
+        const duration = Date.now() - startTime;
+        console.log(`✅ Cacheo finalizado con éxito en ${duration}ms:`);
+        console.log(`   📦 Productos: ${productsCached}`);
+        console.log(`   🏷️  Promociones: ${promotionsCached}`);
+        console.log(`   🚫 IPs bloqueadas: ${ipsCached}`);
+
+        return true;
+
+    } catch (error) {
+        console.error('❌ Error durante la precarga en catchDbData:', error);
+        throw error;
     }
-
-
 }

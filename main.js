@@ -46,7 +46,7 @@ async function bootstrap() {
         // 4. CACHEO DE DATOS DB (Si está activado)
         if (systemConfig.CATCH_DB_DATA) {
             const resultCatch = await initControler.catchDbData();
-            if (resultCatch && resultCatch.status !== 'ok') {
+            if (resultCatch) {
                 console.warn('⚠️ Advertencia en catchDbData');
             }
         }
