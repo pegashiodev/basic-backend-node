@@ -12,11 +12,6 @@ import { redisClient } from '../../db/openRedis.js';
 import { createOrder, updateOrderStripeSession } from '../../orders/orderService.js';
 
 process.loadEnvFile();
-// Importa los servicios / métodos de tu base de datos MongoDB
-// import { getProductById } from '../../products/productService.js';
-
-
-
 // const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 //     apiVersion: '2026-07-29.dahlia'
 // });
@@ -33,6 +28,8 @@ export default async function checkOutHandler(req, res) {
         const user = req.user || null; // Inyectado previamente por middleware de autenticación
 
         if (!user) {
+            console.log("NO HAY USER EN EL CHECKOUT ??.")
+
             res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
             return res.end(JSON.stringify({
                 status: 'error',
@@ -45,11 +42,12 @@ export default async function checkOutHandler(req, res) {
 
         // 2. Validación de entrada: verificar que el carrito contenga elementos
         if (!items || !Array.isArray(items) || items.length === 0) {
+            console.log("El carrito contiene productos no válidos: FORMATO ??.")
             res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
             return res.end(JSON.stringify({
                 status: 'error',
                 code: 432,
-                message: 'El carrito no contiene productos válidos.'
+                message: 'El carrito contiene productos no válidos: FORMATO ??.'
             }));
         }
 
@@ -65,6 +63,7 @@ export default async function checkOutHandler(req, res) {
         for (const item of items) {
             if (!item.productId) {
                 res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+                console.log("Producto SIN PRODUCT-ID")
                 return res.end(JSON.stringify({
                     status: 'error',
                     code: 430,
@@ -81,11 +80,22 @@ export default async function checkOutHandler(req, res) {
             const currentProduct = JSON.parse(currentProductString)
             
             if (!currentProduct || !currentProduct.active) {
+                console.log("Producto NO DISPONIBLE")
                 res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
                 return res.end(JSON.stringify({
                     status: 'error',
                     code: 431,
                     message: `El producto con ID ${item.productId} no está disponible o no existe.`
+                }));
+            }
+            // COMPROBAMOS EL STOCK
+            if(currentProduct.stock !== "INFINITE" && currentProduct.stock <= 0){
+                console.log("Producto SIN STOCK")
+                res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+                return res.end(JSON.stringify({
+                    status: 'error',
+                    code: 435,
+                    message: `El producto con ID ${item.productId} TIENE STOCK CERO.`
                 }));
             }
 

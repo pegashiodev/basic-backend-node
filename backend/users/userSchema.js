@@ -44,10 +44,14 @@ export default async function userSchema(body) {
         _id: customId,
         userId: userUuid,
         name: (body.name || '').trim(),
+        nick: (body.nick || '').trim(),
+        channelName: (body.channelName || '').trim(),
         email: normalizedEmail,
         password: body.password,        // Llega ya hasheada desde userHandler
+        
         status: 'ACTIVE',
         role: 'USER',                   // [EMPLOYEE_PYME, ADMIN, ADMIN_PYME, AFILIATE]
+
         createdAt: date,
         createdAtTimestamp: date.getTime(),
         userDevices: initialDevices,

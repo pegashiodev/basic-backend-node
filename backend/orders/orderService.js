@@ -5,11 +5,9 @@
  * Capa de servicio para pedidos y despacho de entregas.
  */
 
-import crypto from 'node:crypto';
 // Importa tu cliente de base de datos MongoDB nativo
 // import { getDb } from '../../database/mongoClient.js';
 import { deliveryStrategies } from './orderDeliveryStrategies.js';
-import systemConfig from '../globalData/systemConfig.js';
 import { getDb } from '../db/openDbs.js';
 
 // const [, month, day , year] = new Date().toString().split(' ');
@@ -128,8 +126,31 @@ export async function updateOrderStatusToSuccess(orderId, paymentDetails) {
     }
 }
 
+
 /**
- * 5. PROCESAR LA ENTREGA DEL PEDIDO (Disparado por el Webhook de Stripe)
+ * 5. Actualiza el stripeSessionId en la orden PENDING
+ */
+export async function markOrderAsExpired(orderId) {
+
+    const orderParts = orderId.split("_")
+    const dbName = orderParts[3]
+    const collection = orderParts[2]
+    const db = await getDb(dbName);
+
+    try{
+
+        await db.collection(collection).updateOne(
+            { "_id.orderId": orderId },
+            {$set: { status: 'ESPIRED'}}
+        );
+
+    }catch(e){
+        console.log(`❌ ERROR Actualizando ORDER.STATUS A "EXPIRED"  en DB`)
+    }
+}
+
+/**
+ * 6. PROCESAR LA ENTREGA DEL PEDIDO (Disparado por el Webhook de Stripe)
  */
 export async function processOrderDelivery(orderId) {
    
@@ -143,7 +164,7 @@ export async function processOrderDelivery(orderId) {
 
     // 2. Iterar sobre cada ítem y aplicar la estrategia correspondiente
     for (const item of order.items) {
-        const productType = item.productType || 'AUDIOBOOK'; // AUDIOBOOK | BALANCE_RECHARGE | PHYSICAL
+        const productType = item.type || 'AUDIOBOOK'; // AUDIOBOOK | BALANCE_RECHARGE | PHYSICAL
         const strategy = deliveryStrategies[productType];
 
         if (!strategy) {
@@ -185,25 +206,3 @@ export async function processOrderDelivery(orderId) {
     return deliveryResults;
 }
 
-
-/**
- * 6. Actualiza el stripeSessionId en la orden PENDING
- */
-export async function markOrderAsExpired(orderId) {
-
-    const orderParts = orderId.split("_")
-    const dbName = orderParts[3]
-    const collection = orderParts[2]
-    const db = await getDb(dbName);
-
-    try{
-
-        await db.collection(collection).updateOne(
-            { "_id.orderId": orderId },
-            {$set: { status: 'ESPIRED'}}
-        );
-
-    }catch(e){
-        console.log(`❌ ERROR Actualizando ORDER.STATUS A "EXPIRED"  en DB`)
-    }
-}

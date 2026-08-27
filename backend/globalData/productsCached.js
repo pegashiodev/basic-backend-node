@@ -3,12 +3,12 @@
 export default [
     {
         _id: {
-          _id: 'pcm_12890',
+          _id: 'pcm_recharge_12890',
           type: "BALANCE_RECHARGE",
           brand: "podcastmatic"   
         },
         type: "BALANCE_RECHARGE",
-        productId: 'pcm_12890',
+        productId: 'pcm_recharge_12890',
         brand: 'podcastmatic',
         currency: 'eur',
         plan_name: 'OCASIONAL',
@@ -16,7 +16,6 @@ export default [
         description: 'Descripcion detallada del producto o servicio',
         galery: [],
         poster: '',
-        unit_amount: 500,
         priceInCents: 500,
         coins:{
             generator: 100,
@@ -31,11 +30,11 @@ export default [
       }, 
       {
         _id: {
-          _id: 'pcm_13890',
+          _id: 'pcm_recharge_13890',
           type: "BALANCE_RECHARGE",
           brand: "podcastmatic"   
         },
-        productId: 'pcm_13890',
+        productId: 'pcm_recharge_13890',
         type: "BALANCE_RECHARGE",
         brand: 'podcastmatic',
         currency: 'eur',
@@ -44,7 +43,6 @@ export default [
         description: 'Descripcion detallada del producto o servicio',
         galery: [],
         poster: '',
-        unit_amount: 1000,
         priceInCents: 1000,
         coins:{
             generator: 100,
@@ -58,13 +56,14 @@ export default [
         active: true
         
       },
+      // Ejemplo 1: Recarga de Saldo
       {
         _id: {
-          _id: 'pcm_14890',
+          _id: 'pcm_recharge_14890',
           type: "BALANCE_RECHARGE",
           brand: "podcastmatic"   
         },
-        productId: 'pcm_14890',
+        productId: 'pcm_recharge_14890',
         type: "BALANCE_RECHARGE",
         brand: 'podcastmatic',
         currency: 'eur',
@@ -73,7 +72,6 @@ export default [
         description: 'Descripcion detallada del producto o servicio',
         galery: [],
         poster: '',
-        unit_amount: 2000,
         priceInCents: 2000,
         coins:{
             generator: 100,
@@ -86,33 +84,90 @@ export default [
         stock: 'INFINITE',
         active: true
       },
-      // Ejemplo 1: Audiolibro
-{
-  "productId": "prod_audio_01",
-  "name": "Audiolibro: El Arte de la Guerra",
-  "type": "AUDIO_CONTENT",    // [PHYSICAL, AUDIO_CONTENT]
-  "priceInCents": 1500,
-  "active": true
-},
+      // Ejemplo 2: Audiolibro / Podcast para consumir en streaming
+      {
+        _id: {
+          _id: 'pcm_audio_20790',
+          type: "AUDIO_STREAMING",
+          brand: "podcastmatic"   
+        },
+        productId: 'pcm_audio_20790',
+        type: "AUDIO_STREAMING",
+        format: "STREAMING",   // [STREAMING, ...] SOLO PARA ESCUCHAR EN LINEA
+        brand: 'podcastmatic',
+        currency: 'eur',
+        title: 'Contenido en Audio para Streaming',
+        description: 'Descripcion detallada del producto o servicio',
+        galery: [],
+        poster: '',
+        priceInCents: 2000,
+        audioContentId: "st_2389rrass7",     // id del contenido que se quiere descargar o consumir en la plataforma
+        stock: 'INFINITE',
+        active: true
+      },
+      // Ejemplo 3: Audiolibro / Podcast para consumir descargandolo
+      {
+        _id: {
+          _id: 'pcm_audio_20690',
+          type: "AUDIO_DOWNLOAD",
+          brand: "podcastmatic"   
+        },
+        productId: 'pcm_audio_20690',
+        type: "AUDIO_DOWNLOAD",
+        format: "DOWNLOAD",   
+        brand: 'podcastmatic',
+        currency: 'eur',
+        title: 'Contenido en Audio para Descargar',
+        description: 'Descripcion detallada del producto o servicio',
+        galery: [],
+        poster: '',
+        priceInCents: 2000,
+        audioContentId: "dl_2389apass7",     // id del contenido que se quiere descargar o consumir en la plataforma
+        stock: 'INFINITE',
+        active: true
+      },
+      // Ejemplo 3: Texto digital (PDF) para descargar o enviar por email
+      {
+        _id: {
+          _id: 'pcm_text_20890',
+          type: "TEXT_CONTENT",
+          brand: "podcastmatic"   
+        },
+        productId: 'pcm_text_20890',
+        type: "AUDIO_CONTENT",
+        format: "DOWNLOAD",   // COMO UN PDF PARA PODER DESCARGARLO O ENVIARLO POR EMAIL
+        brand: 'podcastmatic',
+        currency: 'eur',
+        title: 'LIBRO EN PDF  PARA ENVIAR POR EMAIL O DESCARGAR',
+        description: 'Descripcion detallada del producto o servicio',
+        galery: [],
+        poster: '',
+        priceInCents: 2000,
+        textContentId: "dl_238989ass7",     // id del contenido que se quiere descargar o consumir en la plataforma
+        stock: 'INFINITE',
+        active: true
+      }
+,
 
-// Ejemplo 2: Recarga de Saldo
-{
-  "productId": "prod_balance_50",
-  "name": "Recarga de 50€ de Saldo",
-  "type": "BALANCE_RECHARGE",
-  "creditAmount": 50,
-  "priceInCents": 5000,
-  "active": true
-},
-
-// Ejemplo 3: Libro Físico
-{
-  "productId": "prod_book_print",
-  "name": "Libro Tapa Dura",
-  "type": "PHYSICAL",
-  "priceInCents": 2900,
-  "active": true
-}
+      // Ejemplo 3: Libro Físico para envio ordinario
+      {
+        _id: {
+          _id: 'pcm_fhysic_30021',
+          type: "PHYSICAL",
+          brand: "podcastmatic"   
+        },
+        productId: 'pcm_physic_30021',
+        type: "PHYSICAL",
+        brand: 'podcastmatic',
+        currency: 'eur',
+        title: 'TITULO DEL LIBRO FISICO A ENVIAR',
+        description: 'Descripcion detallada del producto o servicio',
+        galery: [],
+        poster: '',
+        priceInCents: 2900,
+        stock: 'INFINITE',
+        active: true
+      }
 
 ]
 

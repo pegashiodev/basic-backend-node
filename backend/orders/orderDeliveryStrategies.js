@@ -11,9 +11,11 @@
 
 export const deliveryStrategies = {
     /**
-     * 1. DESCARGA / ACCESO A AUDIOLIBRO O CONTENIDO DIGITAL
+     * 1. DESCARGA A AUDIOLIBRO O CONTENIDO DIGITAL
      */
-    AUDIOBOOK: async (item, order) => {
+    AUDIO_DOWNLOAD: async (item, order) => {
+        console.log("TRAMITAMOS AUDIO_DOWNLOAD")
+
         // Genera acceso, licencia o enlace temporal firmado para el usuario
         const accessGrant = {
             userId: order.userId,
@@ -27,16 +29,29 @@ export const deliveryStrategies = {
         console.log(`🎧 [AUDIOBOOK] Acceso habilitado para producto ${item.productId} al usuario ${order.userId}`);
         
         return {
-            type: 'AUDIOBOOK',
+            type: 'AUDIO_CONTENT',
             status: 'DELIVERED',
             details: { downloadToken: accessGrant.downloadToken }
         };
     },
 
     /**
-     * 2. RECARGA DE SALDO EN LA PLATAFORMA
+     * 2. ACCESO  A AUDIOLIBRO O CONTENIDO DIGITAL MEDIANTE STREAMING
+     */
+
+    AUDIO_STREAMING: async (item, order) => {
+        console.log("TRAMITAMOS AUDIO_STREAMING")
+
+
+
+    }, 
+
+    /**
+     * 3. RECARGA DE SALDO EN LA PLATAFORMA
      */
     BALANCE_RECHARGE: async (item, order) => {
+        console.log("TRAMITAMOS BALANCE_RECHARGE")
+
         // En item.metadata o el producto se define cuánto saldo en céntimos o créditos aporta
         const balanceToAdd = item.creditAmount || (item.unitPriceInCents / 100);
 
@@ -51,9 +66,21 @@ export const deliveryStrategies = {
     },
 
     /**
-     * 3. PRODUCTO FÍSICO (Requiere preparación y envío)
+     * 4. DESCARGA O ENVIO DE PDF POR EMAIL
+     */
+
+    TEXT_CONTENT: async (item, order) => {
+        console.log("TRAMITAMOS TEXT_CONTENT")
+
+    }, 
+
+
+    /**
+     * 5. PRODUCTO FÍSICO (Requiere preparación y envío)
      */
     PHYSICAL: async (item, order) => {
+        console.log("TRAMITAMOS PHYSICAL")
+
         // Registra la tarea en la tabla/colección de envíos y logística
         const shipmentData = {
             orderId: order.orderId,
