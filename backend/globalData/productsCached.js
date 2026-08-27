@@ -5,7 +5,7 @@ export default [
         _id: {
           _id: 'pcm_12890',
           type: "BALANCE_RECHARGE",
-          brand: "podcastmatic"   // [PHYSICAL, AUDIO_CONTENT]
+          brand: "podcastmatic"   
         },
         type: "BALANCE_RECHARGE",
         productId: 'pcm_12890',
@@ -33,7 +33,7 @@ export default [
         _id: {
           _id: 'pcm_13890',
           type: "BALANCE_RECHARGE",
-          brand: "podcastmatic"   // [PHYSICAL, AUDIO_CONTENT]
+          brand: "podcastmatic"   
         },
         productId: 'pcm_13890',
         type: "BALANCE_RECHARGE",
@@ -62,7 +62,7 @@ export default [
         _id: {
           _id: 'pcm_14890',
           type: "BALANCE_RECHARGE",
-          brand: "podcastmatic"   // [PHYSICAL, AUDIO_CONTENT]
+          brand: "podcastmatic"   
         },
         productId: 'pcm_14890',
         type: "BALANCE_RECHARGE",
@@ -90,7 +90,7 @@ export default [
 {
   "productId": "prod_audio_01",
   "name": "Audiolibro: El Arte de la Guerra",
-  "type": "AUDIO_CONTENT",
+  "type": "AUDIO_CONTENT",    // [PHYSICAL, AUDIO_CONTENT]
   "priceInCents": 1500,
   "active": true
 },

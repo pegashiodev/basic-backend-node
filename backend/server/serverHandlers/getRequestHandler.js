@@ -8,10 +8,7 @@
 import sendStaticFile from './sendStaticFile.js';
 import systemConfig from '../../globalData/systemConfig.js';
 import routerRestrictedEndpoints from '../../router/routerRestrictedEndpoints.js';
-import routerDinamicEndpoints from '../../router/routerDinamicEndpoints.js';
 import subdomainGetRequestHandler from "./subdomainGetRequestHandler.js"
-import mastersEndpoints from '../../globalData/mastersEndpoints.js';
-import routerPayEndpoints from "../../router/routerPayEndpoints.js"
 process.loadEnvFile();
 
 
@@ -22,21 +19,7 @@ process.loadEnvFile();
  * @returns 
  */
 export default  async(req, res)=>{
-    
-    console.log("\n\n NUEVA PETICION GET ************************************")
-
-    // EXTRAEMOS TODA LA DATA DE LA REQUEST
-    ///getUrlData(req);
-    console.log(`URL: ${req.urlData.url}`)
-
-
-    // SE SOLICITA UN "RESTRICTED ENDPOINT" EN UNA URL QUE NO LO PERMITE: EJ:  MI-DOMINIO.COM/BLOG/MIS-BOTS 
-    // RESPONDEMOS UN 404
-    if(req.its_bad_get_request){
-        res.code = 404;
-        return sendStaticFile(req, res)
-
-    }
+   
     
     if(systemConfig.HAS_SUBDOMAINS){
 
@@ -82,30 +65,16 @@ export default  async(req, res)=>{
     req.urlData.master_endpoint = false;
 
    
-    // COMPROBAMOS SI ES UNA RUTA DE PAGOS
-    if(systemConfig.HAS_PAY_ENDPOINTS && systemConfig.PAY_ENDPOINTS.includes(req.urlData.endpoint)){
-        req.urlData.pay_endpoint = true;
-        routerPayEndpoints(req, res)
-        return;
     
     // COMPROBAMOS SI TRABAJAMOS CON RESTRICTED_URLS SI LO ES  
-    }else if(systemConfig.HAS_RESTRICTED_ENDPOINTS){
+    if(systemConfig.HAS_RESTRICTED_ENDPOINTS){
         if(req.urlData.url_to_verify && systemConfig.RESTRICTED_ENDPOINTS.includes(req.urlData.url_to_verify)){
             req.urlData.restricted_endpoint = true
             routerRestrictedEndpoints(req, res);
             return;
         
         }
-    
-    // COMPROBAMOS SI TRABAJAMOS CON MASTERS_ENDPOINTS y SI EXISTE  ESE MASTER  
-    }else if(systemConfig.HAS_MASTERS_ENDPOINTS){
-        if(req.urlData.url_to_verify && mastersEndpoints[req.urlData.url_to_verify]){
-            req.urlData.master_endpoint = true
-            routerGetMasterEndpoints(req, res);
-            return;
-       
-        }
-   
+
     }
     
     // NO HAY HABILITADO NADA DE LO ANTERIOR

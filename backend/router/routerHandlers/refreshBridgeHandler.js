@@ -64,11 +64,17 @@ export default async function refershBridgeHandler(req, res) {
     // TOKENS RENOVADOS
     }else{
 
-        let headers = {
+        const headers = {
             'Content-Type': 'application/json; charset=utf-8' 
         }
+        // const headers = { 'Content-Type': 'application/json; charset=utf-8' };
+        // if (req.cookie && Array.isArray(req.cookie)) {
+        //     headers['Set-Cookie'] = req.cookie;
+        // }
 
         if(req.set_new_cookie){
+            console.log("AÑADIMOS NUEVA COOCKIE !!!!!!!!!!!!!")
+            console.log(req.cookie)
             headers['Set-Cookie'] = req.cookie;
         }
         res.writeHead(200, headers);

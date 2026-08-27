@@ -37,21 +37,62 @@
         const order = {
             items:[
                 {
-                ref: "cl_12890",
-                currency:"eur",
-                name: "Recarga de 500 creditos",
-                descrption: "",
-                unit_amount: 500, 
-                quantity: 1,
+                    _id: {
+                    _id: 'pcm_13890',
+                    type: "BALANCE_RECHARGE",
+                    brand: "podcastmatic"   
+                    },
+                    productId: 'pcm_13890',
+                    type: "BALANCE_RECHARGE",
+                    brand: 'podcastmatic',
+                    currency: 'eur',
+                    plan_name: '',
+                    title: 'Recarga de 1500 Coins',
+                    description: 'Descripcion detallada del producto o servicio',
+                    galery: [],
+                    poster: '',
+                    unit_amount: 1000,
+                    priceInCents: 1000,
+                    coins:{
+                        generator: 100,
+                        trainning: 100,
+                        coaching: 100,
+                        audio: 0,
+                        images: 0,
+                        video: 0
+                    },
+                    stock: 'INFINITE',
+                    active: true
+                    
                 },
                 {
-                ref: "cl_13890",
-                currency:"eur",
-                name: "Recarga de 500 creditos",
-                descrption: "",
-                unit_amount: 1000, 
-                quantity: 1,
+                _id: {
+                _id: 'pcm_14890',
+                type: "BALANCE_RECHARGE",
+                brand: "podcastmatic"   
                 },
+                productId: 'pcm_14890',
+                type: "BALANCE_RECHARGE",
+                brand: 'podcastmatic',
+                currency: 'eur',
+                plan_name: 'PRO',
+                title: 'Recarga de 4000 Coins',
+                description: 'Descripcion detallada del producto o servicio',
+                galery: [],
+                poster: '',
+                unit_amount: 2000,
+                priceInCents: 2000,
+                coins:{
+                    generator: 100,
+                    trainning: 100,
+                    coaching: 100,
+                    audio: 0,
+                    images: 0,
+                    video: 0
+                },
+                stock: 'INFINITE',
+                active: true
+            }
             ],
             shippingAddress:{
                 country: "",
@@ -65,24 +106,99 @@
                 name: "",
                 lastName: "",
             },
-            billingAddress:{},
+            billingAddress:{
+                country: "",
+                cyty: "",
+                cp: "",
+                street: "",
+                number: "",
+                name: "",
+                phone: "",
+                email: "",
+                name: "",
+                lastName: "",
+            },
             paymentMethod: "STRIPE",
         }
 
-        async function sendData() {
+        async function sendOrder() {
             // Associate the FormData object with the form element
             const formData = new FormData(form);
 
-            try {
-
                 // OJO -> IMPORTANTE EN PETICIONES POST QUE PUEDEN REQUERIR INICIAR SESION
                 // ENVIAMOS TAMBIEN LA RUTA EL LA QUE ESTAMOS POR SI NOS REENVIAN AL LOGIN
-                let post_endpoint = `http://localhost:3000/checkout.html/?redirect=${location.pathname}`
-                if(location.search.length > 2){
-                    post_endpoint += `@@&${location.search.slice(1)}`;
+                const checkout_endpoint = `http://localhost:3000/checkout.html`
+                alert("Enviamos Pedido")
+                const result = await sendFetch(checkout_endpoint);
+                const responseCode = result.responseCode
+                const data = result.data
+                // result = {responseCode, data}
+
+
+
+                // const response = await fetch(post_endpoint, {
+                // method: "POST",
+                // credentials: "include",
+                // headers: {"content-type": "application/json"},
+                // body: JSON.stringify({order:order}),
+
+                // });
+                // const data = await response.json()
+                // console.log(response.status)
+                // console.log(typeof(response.status))
+
+                console.log(data)
+                console.log({responseCode})
+
+                if(responseCode >= 200 && responseCode < 300){
+                    alert("CArrito Correcto")
+                    window.location.replace("/mis-bots");
+               
+                }else if(responseCode >= 400 && responseCode < 500){
+                    
+                    if(data.code === 444){
+                        alert("Solicitan RTK")
+
+                        const rtk_endpoint = `http://localhost:3000/refresh-bridge.html`
+                        const result_rtk = await sendRtkToken(rtk_endpoint)
+                        const {resRtkCode, rtkData} = result_rtk;
+                        if(resRtkCode >= 200 && resRtkCode <300){
+                            alert("ATK REnovado")
+                            
+                            // Todo OK, Volvemos a iniciar el proceso de envio del Pedido
+                            sendOrder();
+                        }else{
+                            alert("ERROR en renovacion de  TOKENS")
+                            // reenviamos al Session Is Required porque ya estaba logueado, Tenia ATK
+                            window.location.replace(rtkData.location);
+                        }
+
+
+                    }else{
+
+                        alert("Error CON LOS DATOS ENVIADOS en el Checkout")
+                        if(data.location){
+                            window.location.replace(data.location);
+                        }else{
+                            window.location.replace('/');
+                        }
+                    }
+                }else if(responseCode >= 500 && responseCode < 600){
+                    alert("Error en el Checkout en el Servidor")
+                    if(data.location){
+                        window.location.replace(data.location);
+                    }else{
+                        window.location.replace('/');
+                    }
                 }
                 
-                const response = await fetch(post_endpoint, {
+
+        }
+
+        async function sendFetch(url){
+
+            try{
+                const response = await fetch(url, {
                 method: "POST",
                 credentials: "include",
                 headers: {"content-type": "application/json"},
@@ -90,26 +206,41 @@
 
                 });
                 const data = await response.json()
+                console.log(response.status)
+                console.log(data)
 
-                if(response.status >= 200 && response.status < 300){
-                    if(data.location){
-                        document.location.href =  data.location
-                    }else{
-                        document.location.href =  "/"
-                    }
-                }else if(response.status >= 400 && response.status < 400){
-                    alert("Error CON LOS DATOS ENVIADOS en el Checkout")
-                    console.log(data)
-                }else if(response.status >= 500 && response.status < 599){
-                    alert("Error en el Checkout en el Servidor")
-                    console.log(data)
-                }
-                
-                
+                return {responseCode: response.status, data:data}
 
-            } catch (e) {
+            }catch(e){
                 console.error(e);
             }
+        }
+
+        async function sendRtkToken(url){
+
+             
+            try{
+                const result = await fetch(url,
+                {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {  "Content-Type": "application/json",
+                                "Cookie": document.cookie
+                            },
+                    body:  JSON.stringify({})
+                
+                });
+                const payload = await result.json()
+                console.log(payload)
+                return {resRtkCode: result.status, rtkData: payload}
+
+            // ERROR EN LA PETICION FETCH -> ENVIAMOS AL LOGIN PARA RESETEAR TODO
+            }catch(e){
+                alert (`ERROR: EN LA PETICION FETCH`)
+                window.location.replace("/session-is-required.html");
+                            
+            }
+
         }
 
         // Take over form submission
@@ -117,7 +248,7 @@
         event.preventDefault();
         console.log("Pulsado submit!!!")
         // console.log(FormData)
-        sendData();
+        sendOrder();
         });
 
     </script>

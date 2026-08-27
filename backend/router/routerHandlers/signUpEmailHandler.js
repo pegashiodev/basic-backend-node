@@ -127,7 +127,7 @@ console.log({validationCode})
         // COMPROBAMOS EL CODIGO DE LA PROMO SI EXISTE Y EL SISTEMA LOS ADMITE
         if(promoCode && promoCode.trim().length > 2){
 
-            if(promoCode && !systemConfig.HAS_PROMO_CODES){
+            if(promoCode && !systemConfig.HAS_PROMO_CODES_SIGNUP){
                 res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
                 return res.end(JSON.stringify({
                     status: 'error',

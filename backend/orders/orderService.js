@@ -9,17 +9,22 @@ import crypto from 'node:crypto';
 // Importa tu cliente de base de datos MongoDB nativo
 // import { getDb } from '../../database/mongoClient.js';
 import { deliveryStrategies } from './orderDeliveryStrategies.js';
+import systemConfig from '../globalData/systemConfig.js';
+import { getDb } from '../db/openDbs.js';
 
-const ORDERS_COLLECTION = 'orders';
+const [, month, day , year] = new Date().toString().split(' ');
 
 /**
  * 1. Crea el pedido en estado inicial PENDING
  */
 export async function createOrder(orderData) {
-    // const db = getDb();
-    // return await db.collection(ORDERS_COLLECTION).insertOne(orderData);
+
+    const dbName = systemConfig.DBS.ORDERS + year;
+    const dbOrders = await getDb(dbName);
+    await dbOrders.collection(month.toLowerCase()).insertOne(orderData);
     console.log(`📝 Pedido ${orderData.orderId} registrado en estado PENDING`);
-    return orderData;
+    // return orderData;
+    return;
 }
 
 /**

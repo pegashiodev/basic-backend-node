@@ -8,15 +8,21 @@
 import Stripe from 'stripe';
 import crypto from 'node:crypto';
 import systemConfig from '../../globalData/systemConfig.js';
+import { redisClient } from '../../db/openRedis.js';
+import { createOrder } from '../../orders/orderService.js';
+
 process.loadEnvFile();
 // Importa los servicios / métodos de tu base de datos MongoDB
 // import { getProductById } from '../../products/productService.js';
 // import { createOrder, updateOrderStripeSession } from '../../orders/orderService.js';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2023-10-16' // Ajusta a la versión de Stripe que utilices
-});
 
+
+// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+//     apiVersion: '2026-07-29.dahlia'
+// });
+
+const stripe = new Stripe(process.env.STRIPE_PRIVATE_KEY_TEST)
 
 // OJO -> REVISAR, YO LAMMO CART Y AQUI SE PONE ITEMS, ...REVISAR TODO
 
@@ -32,7 +38,7 @@ export default async function checkOutHandler(req, res) {
             res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
             return res.end(JSON.stringify({
                 status: 'error',
-                code: 400,
+                code: 432,
                 message: 'El carrito no contiene productos válidos.'
             }));
         }
@@ -51,53 +57,52 @@ export default async function checkOutHandler(req, res) {
                 res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
                 return res.end(JSON.stringify({
                     status: 'error',
-                    code: 400,
+                    code: 430,
                     message: 'Uno de los elementos del carrito carece de ID de producto.'
                 }));
             }
 
             // Consulta a MongoDB por ID de producto
-            // const dbProduct = await getProductById(item.productId);
+            // const currentProduct = await getProductById(item.productId);
             
-            // Ejemplo de producto obtenido de DB
-            const dbProduct = {
-                productId: item.productId,
-                name: 'Servicio Bot Automatizado',
-                priceInCents: 2500, // 25.00 EUR en céntimos
-                currency: 'eur',
-                active: true
-            };
-
-            if (!dbProduct || !dbProduct.active) {
+            // UTILIZAMOS REDIS PARA ACCEDER A LOS PRODUCTOS
+            console.log(item)
+            const currentProductString = await redisClient.get(`product:${item.productId}`);
+            const currentProduct = JSON.parse(currentProductString)
+            
+            if (!currentProduct || !currentProduct.active) {
                 res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
                 return res.end(JSON.stringify({
                     status: 'error',
-                    code: 404,
+                    code: 431,
                     message: `El producto con ID ${item.productId} no está disponible o no existe.`
                 }));
             }
 
             const quantity = Math.max(1, parseInt(item.quantity, 10) || 1);
-            const itemTotalCents = dbProduct.priceInCents * quantity;
+            const itemTotalCents = currentProduct.priceInCents * quantity;
             totalAmountInCents += itemTotalCents;
 
             // Almacenamos el snapshot del producto para el pedido en DB
-            verifiedOrderItems.push({
-                productId: dbProduct.productId,
-                name: dbProduct.name,
-                unitPriceInCents: dbProduct.priceInCents,
-                quantity: quantity,
-                totalCents: itemTotalCents
-            });
+            // verifiedOrderItems.push({
+            //     productId: currentProduct.productId,
+            //     name: currentProduct.title,
+            //     unitPriceInCents: currentProduct.priceInCents,
+            //     quantity: quantity,
+            //     totalCents: itemTotalCents,
+            // });
+
+            //Almacenamos el item completo para luego manipularlo en afterPaymentOrder 
+            verifiedOrderItems.push(currentProduct);
 
             // Estructura requerida por Stripe Checkout API
             lineItemsForStripe.push({
                 price_data: {
-                    currency: dbProduct.currency || 'eur',
+                    currency: currentProduct.currency || 'eur',
                     product_data: {
-                        name: dbProduct.name,
+                        name: currentProduct.title,
                     },
-                    unit_amount: dbProduct.priceInCents,
+                    unit_amount: currentProduct.priceInCents,
                 },
                 quantity: quantity,
             });
@@ -106,16 +111,13 @@ export default async function checkOutHandler(req, res) {
         // 5. Estructura del Pedido acorde al esquema de MongoDB
         const orderId = `ord_${crypto.randomUUID()}`;
         const now = new Date();
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         
         const newOrder = {
             _id: {
                 orderId: orderId,
                 userId: userId,
-                from: {
-                    month: monthNames[now.getMonth()].toLowerCase(),
-                    year: String(now.getFullYear())
-                }
+                email: userEmail
+                
             },
             orderId: orderId,
             userId: userId,
@@ -131,8 +133,8 @@ export default async function checkOutHandler(req, res) {
         };
 
         // Guardamos el pedido en estado PENDING en MongoDB
-        // await createOrder(newOrder);
-
+        await createOrder(newOrder);
+        
         // 6. Determinar host base según entorno (DEV vs PROD)
         const baseUrl = process.env.MODE === 'DEV' ? systemConfig.HOST_DEV : systemConfig.HOST_PROD;
         const protocol = process.env.MODE === 'DEV' ? 'http' : 'https';
@@ -173,7 +175,7 @@ export default async function checkOutHandler(req, res) {
         res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
         return res.end(JSON.stringify({
             status: 'error',
-            code: 500,
+            code: 530,
             message: 'Error interno del servidor al procesar la sesión de pago.'
         }));
     }

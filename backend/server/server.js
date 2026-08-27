@@ -26,11 +26,26 @@ export default createServer(async (req, res) => {
         // 2. EXTRACCIÓN Y NORMALIZACIÓN DE LA URL
         // -------------------------------------------------------------
         getUrlData(req);
-        console.log(req.urlData)
+        // console.log(req.urlData)
+        console.log(`\n\n NUEVA PETICION ${req.method} ************************************`)
+        console.log(`URL: ${req.urlData.url}`)
         
+        
+        // EN getUrlData se marca en el objeto Request si la peticion es incorrecta
         if(req.its_bad_get_request){
-            res.code = 404;
-            return sendStaticFile(req, res)
+            if(req.method === "GET"){
+                console.log("ITS BAD REQUEST")
+                res.code = 404;
+                return sendStaticFile(req, res)
+            }else{
+                res.writeHead(411, { 'Content-Type': 'application/json; charset=utf-8' });
+                return res.end(JSON.stringify({
+                    status: 'error',
+                    code: 411,
+                    message: "ITS BAD REQUEST ",
+                    location
+                }));
+            }
         }
 
         // COMPROBAMOS SI LA RUTA COMPLETA ESTA EN NUESTRO SITEMAP
@@ -102,6 +117,9 @@ export default createServer(async (req, res) => {
             '/get-main-menu.html': "get-main-menu.html",
             '/srtipe-webhook': "srtipe-webhook.html", 
             '/stripe-webhook.html': "srtipe-webhook.html",
+
+            '/checkout': 'checkout.html',
+            '/checkout.html': 'checkout.html'
 
         };
         const canonicalPath = req.urlData.canonicalPath

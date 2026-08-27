@@ -105,7 +105,10 @@ export default async function postRequestHandler(req, res) {
 
     // 6. Endpoints protegidos: Validación de Cookie y Sesión
     const result_getOurCookie = await getOurCookie(req);
+    console.log({result_getOurCookie})
     if (result_getOurCookie.status !== 'ok') {
+
+        
         return sendPostError(
             res, 
             401, 

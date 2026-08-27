@@ -8,12 +8,14 @@ import Stripe from 'stripe';
 // import { getOrderById, updateOrderStatusToSuccess, processOrderDelivery } from '../../orders/orderService.js';
 process.loadEnvFile();
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2023-10-16'
-});
+// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+//     apiVersion: '2026-07-29.dahlia'
+// });
+
+const stripe = new Stripe(process.env.STRIPE_PRIVATE_KEY_TEST)
 
 
-const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
+const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET_3;
 
 export default async function stripeWebhookHandler(req, res) {
     const signature = req.headers['stripe-signature'];
@@ -40,7 +42,7 @@ export default async function stripeWebhookHandler(req, res) {
             case 'checkout.session.completed': {
                 const session = event.data.object;
                 const orderId = session.metadata?.orderId;
-
+console.log("Disparaao Triger !!!!")
                 if (!orderId) {
                     console.error('❌ Webhook recibido sin orderId en metadata:', session.id);
                     break;

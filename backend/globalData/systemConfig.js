@@ -33,10 +33,10 @@ export default  {
     HAS_USERS: true,        
     HAS_SUBDOMAINS: true, 
     HAS_RESTRICTED_ENDPOINTS: true,
-    HAS_VERIFICATION_ENDPOINTS: true,
-    HAS_DINAMIC_ENDPOINTS: true,
-    HAS_PAY_ENDPOINTS: true,
-    HAS_MASTERS_ENDPOINTS: true,
+    // HAS_VERIFICATION_ENDPOINTS: true,
+    // HAS_DINAMIC_ENDPOINTS: true,
+    // HAS_PAY_ENDPOINTS: true,
+    // HAS_MASTERS_ENDPOINTS: true,
 
     /**  PARA HABILITAR EL DOBLE FACTOR DE AUTENTICACION */
     HAS_FA2: true,
@@ -45,7 +45,9 @@ export default  {
     /** HABILITAR DOBRE AUTENTICACION EN EL LOGIN */
     
     /** HABILITA LOS CODIGOS PROMOCIONALES EN EL SITIO */
-    HAS_PROMO_CODES: true,      
+    HAS_PROMO_CODES_SIGNUP: true,   
+    HAS_PROMO_CODES_CHECKOUT: true,      
+
     
     /** HABILITAR PROXY INTERNO PARA ATAQUES DDOS */
     HAS_OWN_PROXY_DDOS: true,
@@ -173,7 +175,7 @@ export default  {
     // ENDPOINTS PARA REALIZAR PAGOS EN LA PLATAFORMA [stripe, ...]
     // NECESITAMOS TRATARLOS PORQUE SE HACEN MAS TAREAS QUE ENVIAR UNA PAGINA ESTATICA
     // SON PETICONES GET
-    PAY_ENDPOINTS: ["success-checkout", "success-checkout.html", "cancel-checkout", "cancel-checkout.html"],
+    //PAY_ENDPOINTS: ["success-checkout", "success-checkout.html", "cancel-checkout", "cancel-checkout.html"],
 
     /**
      * PANEL DE ACCESO REMOTO A LA PLATAFORMA 

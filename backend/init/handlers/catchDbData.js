@@ -5,19 +5,21 @@
  * Carga inicial y cacheo de datos críticos en Redis desde MongoDB.
  */
 
-import { getDb } from './database/mongoClient.js'; // Ajusta la ruta a tu cliente Mongo
-import redisClient from './database/redisClient.js'; // Ajusta la ruta a tu cliente Redis
+import { getDb } from '../../db/openDbs.js'; // Ajusta la ruta a tu cliente Mongo
+import {redisClient} from '../../db/openRedis.js'; // Ajusta la ruta a tu cliente Redis
 
 export default async function catchDbData() {
     console.log('🔄 Iniciando precarga de datos en Redis...');
     const startTime = Date.now();
 
     try {
-        const pipeline = redisClient.pipeline();
+        // const pipeline = redisClient.pipeline();
+        const pipeline = await redisClient.multi();
+
 
         // 1. PRODUCTOS (db: "products", col: "clegal") -> Key: "product:<productId>"
-        const productsDb = getDb('products');
-        const products = await productsDb.collection('clegal').find({}).toArray();
+        const productsDb = await getDb('products');
+        const products = await productsDb.collection('pcm').find({}).toArray();
 
         let productsCached = 0;
         for (const item of products) {
@@ -29,7 +31,7 @@ export default async function catchDbData() {
         }
 
         // 2. PROMOCIONES (db: "promotions", col: "codes") -> Key: "promo:<promotionId>"
-        const promotionsDb = getDb('promotions');
+        const promotionsDb = await getDb('promotions');
         const promotions = await promotionsDb.collection('codes').find({}).toArray();
 
         let promotionsCached = 0;
@@ -42,7 +44,7 @@ export default async function catchDbData() {
         }
 
         // 3. BLACKLIST IPS (db: "BlacklistIps", col: "ips") -> Key: "blacklist:ip:<ip>"
-        const blacklistDb = getDb('BlacklistIps');
+        const blacklistDb = await getDb('BlacklistIps');
         const blacklistedIps = await blacklistDb.collection('ips').find({}).toArray();
 
         let ipsCached = 0;
