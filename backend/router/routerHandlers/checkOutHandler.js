@@ -10,6 +10,7 @@ import crypto from 'node:crypto';
 import systemConfig from '../../globalData/systemConfig.js';
 import { redisClient } from '../../db/openRedis.js';
 import { createOrder, updateOrderStripeSession } from '../../orders/orderService.js';
+import { validatePromotion, updateAfiliatePromotion } from '../../promotions/promotionsHandler.js';
 
 process.loadEnvFile();
 // const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -38,7 +39,18 @@ export default async function checkOutHandler(req, res) {
             }));
         }
         // 1.- Validamos el promoCode si lo tenemos en el body
-
+        if(systemConfig.HAS_PROMO_CODES_CHECKOUT && promoCode){
+            console.log("VAlidadmos el promoCode")
+            const result_promoCode = await validatePromotion(req, "CHECKOUT")
+            if(result_promoCode.status !== "ok"){
+                res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+                return res.end(JSON.stringify({
+                    status: result_promoCode.status,
+                    code: result_promoCode.code,
+                    message: result_promoCode.message
+                }));
+            }
+        }
 
         // 2. Validación de entrada: verificar que el carrito contenga elementos
         if (!items || !Array.isArray(items) || items.length === 0) {
@@ -59,6 +71,7 @@ export default async function checkOutHandler(req, res) {
         const lineItemsForStripe = [];
         const verifiedOrderItems = [];
         let totalAmountInCents = 0;
+        let totalAmountInCentsBeforeDiscount = 0;
 
         for (const item of items) {
             if (!item.productId) {
@@ -100,8 +113,20 @@ export default async function checkOutHandler(req, res) {
             }
 
             const quantity = Math.max(1, parseInt(item.quantity, 10) || 1);
+
+            // AÑADIMOS EL TOTAL DE LA COMPRA para luego pagar al afiliado
+            totalAmountInCentsBeforeDiscount = currentProduct.priceInCents * quantity;
+            
+            // Si hay req.promotion es que el promoCode es valido y aplicamos el descuento
+            if(req.promotion){
+                currentProduct.priceInCents = currentProduct.priceInCents - (currentProduct.priceInCents * req.promotion.discountPercent / 100 )
+            }
+            
             const itemTotalCents = currentProduct.priceInCents * quantity;
+            // PRECIO PAGADO POR EL USUARIO CON EL DESCUENTO DEL AFILIADO
             totalAmountInCents += itemTotalCents;
+            promotion.amountBeforeDisconunt = totalAmountInCentsBeforeDiscount
+
 
             //Almacenamos el item completo para luego manipularlo en processOrderDelivery
             verifiedOrderItems.push(currentProduct);
@@ -125,6 +150,12 @@ export default async function checkOutHandler(req, res) {
             orderId: orderId,
             verifiedOrderItems: verifiedOrderItems,
             totalAmountInCents: totalAmountInCents
+        }
+        // Si habia promocion añadimos mas informacion al pedido: code, percio base, descuento aplicado, ...
+        if(req.promotion){
+            req.order.promoCode = promoCode;
+            req.order.pricewithOutDiscount = totalAmountInCentsBeforeDiscount;
+            req.order.discountPercent = promotion.discountPercent;
         }
         
         // 5.- Guardamos el pedido en estado PENDING en MongoDB
@@ -170,7 +201,12 @@ export default async function checkOutHandler(req, res) {
             }));
         }
 
-        // 9. Responder con la URL de pago al cliente
+        // 9. Si hemos aplicado el promoCode lo hemos de guardar en la Base de Datos para pagar posteriormente al afiliado
+        if(req.promotion){
+            await updateAfiliatePromotion(req.promotion, user)
+        }
+
+        // 10. Responder con la URL de pago al cliente
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         return res.end(JSON.stringify({
             status: 'ok',

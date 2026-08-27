@@ -6,7 +6,7 @@
 
 import { randomUUID } from 'node:crypto';
 import systemConfig from '../globalData/systemConfig.js';
-import { updatePromotion } from '../promotions/promotionsHandler.js';
+import { updateAfiliatePromotion } from '../promotions/promotionsHandler.js';
 
 export default async function userSchema(body) {
 
@@ -68,7 +68,7 @@ export default async function userSchema(body) {
     };
 
     if(systemConfig.HAS_PROMO_CODES && body.promotion){
-        await updatePromotion(body.promotion, user)
+        await updateAfiliatePromotion(body.promotion, user)
        
     }
 

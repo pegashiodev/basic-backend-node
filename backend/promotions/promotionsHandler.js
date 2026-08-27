@@ -25,19 +25,19 @@ import systemConfig from "../globalData/systemConfig.js";
 
 const promotions = [
     {
-        _id: 'WELCOME',
-        promotionId: "WELCOME", 
+        _id: 'MIDU',
+        promotionId: "MIDU", 
         status: 'ACTIVE',               
-        endpoint: "SIGNUP",
+        endpoint: "CHECKOUT",
         promoCode: 'WELCOME',
         expiresAt: new Date('2027-12-31T23:59:59').getTime(),
         owner: {
-        name: 'system',
-        email: 'system@gmail.com',
-        userId: '12312nmnmkj123jk'
+            name: 'mididev',
+            email: 'system@gmail.com',
+            userId: '12312nmnmkj123jk'
         },
         type: "DISCOUNT",        
-        discount_percent: 20,
+        discountPercent: 20,
         units: 120,
         
     },
@@ -110,7 +110,10 @@ console.log(dbPromotions)
     // AÑADIMOS LOS DATOS DE LA PROMOCION AL BODY
     req.body.promotion = promotion;
     // ACTUALIZAMOS LAS UNNIDADES DE LA PROOCION
-    const update_promotion_result = await promotionsCollection.updateOne({_id:promoCode}, {$inc:{units: -1}});
+    if(promotion.units !== "INFINITE" && promotion.units > 0){
+
+       await promotionsCollection.updateOne({_id:promoCode}, {$inc:{units: -1}});
+    }
    
     return {status: "ok", code: 200, message: "Valid Promotional Code "}
 
@@ -158,7 +161,7 @@ export const addPromotion = (promotion)=>{
  * @param {*} promo 
  */
 
-export const updatePromotion = async (promotion, user)=>{
+export const updateAfiliatePromotion = async (promotion, user)=>{
 
     // ACTUALIZAMOS EL LISTADO DE USUARIOS DEL AFILIADO
     let dbAfiliates;
@@ -181,6 +184,8 @@ export const updatePromotion = async (promotion, user)=>{
             day: user._id.from.day,
             
         },
+        type: promotion.type,
+        amountBeforeDisconunt: promotion.amountBeforeDisconunt || 0,
         from: promotion.endpoint,
         promoCode: promotion.promoCode,
         userId: user._id._id
