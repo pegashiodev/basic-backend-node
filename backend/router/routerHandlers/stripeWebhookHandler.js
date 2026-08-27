@@ -5,7 +5,7 @@
  */
 
 import Stripe from 'stripe';
-// import { getOrderById, updateOrderStatusToSuccess, processOrderDelivery } from '../../orders/orderService.js';
+import { updateOrderStatusToSuccess, processOrderDelivery, markOrderAsExpired } from '../../orders/orderService.js';
 process.loadEnvFile();
 
 // const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -15,7 +15,7 @@ process.loadEnvFile();
 const stripe = new Stripe(process.env.STRIPE_PRIVATE_KEY_TEST)
 
 
-const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET_3;
+const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 
 export default async function stripeWebhookHandler(req, res) {
     const signature = req.headers['stripe-signature'];
@@ -35,9 +35,14 @@ export default async function stripeWebhookHandler(req, res) {
         res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
         return res.end(JSON.stringify({ status: 'error', message: `Webhook Error: ${err.message}` }));
     }
-
+    
+    // Stripe exige un 200 rápido para confirmar la recepción
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ received: true }));
+    
     // Manejamos los eventos relevantes
     try {
+
         switch (event.type) {
             case 'checkout.session.completed': {
                 const session = event.data.object;
@@ -48,28 +53,30 @@ console.log("Disparaao Triger !!!!")
                     break;
                 }
 
-                // 1. Buscar pedido en Base de Datos
-                // const order = await getOrderById(orderId);
-                // if (!order) {
-                //     console.error(`❌ Pedido ${orderId} no encontrado en DB`);
-                //     break;
-                // }
+                /*
+                //1. Buscar pedido en Base de Datos
+                const order = await getOrderById(orderId);
+                if (!order) {
+                    console.error(`❌ Pedido ${orderId} no encontrado en DB`);
+                    break;
+                }
 
-                // 2. Control de Idempotencia (evita procesar dos veces el mismo evento)
-                // if (order.status === 'SUCCESS') {
-                //     console.log(`ℹ️ Pedido ${orderId} ya procesado previamente.`);
-                //     break;
-                // }
+                2. Control de Idempotencia (evita procesar dos veces el mismo evento)
+                if (order.status === 'SUCCESS') {
+                    console.log(`ℹ️ Pedido ${orderId} ya procesado previamente.`);
+                    break;
+                }
+                */
 
-                // 3. Actualizar estado a SUCCESS en DB
-                // await updateOrderStatusToSuccess(orderId, {
-                //     paymentIntentId: session.payment_intent,
-                //     paymentStatus: session.payment_status,
-                //     paidAt: new Date()
-                // });
+                //3. Actualizar estado a SUCCESS en DB
+                await updateOrderStatusToSuccess(orderId, {
+                    paymentIntentId: session.payment_intent,
+                    paymentStatus: session.payment_status,
+                    paidAt: new Date()
+                });
 
                 // 4. Tramitar el pedido (crear bots, dar permisos al usuario, enviar email/SMS)
-                // await processOrderDelivery(orderId);
+                await processOrderDelivery(orderId);
                 console.log(`✅ Pedido ${orderId} cobrado y tramitado con éxito.`);
                 break;
             }
@@ -78,7 +85,7 @@ console.log("Disparaao Triger !!!!")
                 const session = event.data.object;
                 const orderId = session.metadata?.orderId;
                 if (orderId) {
-                    // await markOrderAsExpired(orderId);
+                    await markOrderAsExpired(orderId);
                     console.log(`⏱️ Sesión expirada para el pedido ${orderId}`);
                 }
                 break;
@@ -88,11 +95,9 @@ console.log("Disparaao Triger !!!!")
                 // Ignorar otros tipos de eventos que no necesitemos
                 break;
         }
+        return;
 
-        // Stripe exige un 200 rápido para confirmar la recepción
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        return res.end(JSON.stringify({ received: true }));
-
+        
     } catch (error) {
         console.error('❌ Error ejecutando lógica del webhook:', error);
         res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });

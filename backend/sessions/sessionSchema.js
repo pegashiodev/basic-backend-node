@@ -24,6 +24,7 @@ export function createSessionObject({ userId, email, role = 'user', ip = 'unknow
         // Datos inmutables de identificación
         _id: {
             _id: sessionId,
+            sessionId: sessionId,
             userId,
             email: email.trim().toLowerCase()
         },

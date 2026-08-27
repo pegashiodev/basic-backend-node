@@ -18,6 +18,7 @@ export default async function userSchema(body) {
     // 1. _id compuesto inmutable (clave primaria de Mongo y puntero de Redis)
     const customId = {
         _id: userUuid,
+        userId: userUuid,
         email: normalizedEmail,
         from: {
             year: year,

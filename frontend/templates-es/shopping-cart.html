@@ -152,7 +152,9 @@
 
                 if(responseCode >= 200 && responseCode < 300){
                     alert("CArrito Correcto")
-                    window.location.replace("/mis-bots");
+                    console.log(data)
+                    // window.location.replace(`${data.checkoutUrl}?orderId=${data.orderId}`);
+                    // window.location.replace(`${data.checkoutUrl}`);
                
                 }else if(responseCode >= 400 && responseCode < 500){
                     

@@ -9,12 +9,11 @@ import Stripe from 'stripe';
 import crypto from 'node:crypto';
 import systemConfig from '../../globalData/systemConfig.js';
 import { redisClient } from '../../db/openRedis.js';
-import { createOrder } from '../../orders/orderService.js';
+import { createOrder, updateOrderStripeSession } from '../../orders/orderService.js';
 
 process.loadEnvFile();
 // Importa los servicios / métodos de tu base de datos MongoDB
 // import { getProductById } from '../../products/productService.js';
-// import { createOrder, updateOrderStripeSession } from '../../orders/orderService.js';
 
 
 
@@ -27,11 +26,22 @@ const stripe = new Stripe(process.env.STRIPE_PRIVATE_KEY_TEST)
 // OJO -> REVISAR, YO LAMMO CART Y AQUI SE PONE ITEMS, ...REVISAR TODO
 
 export default async function checkOutHandler(req, res) {
+    const [, month, day , year] = new Date().toString().split(' ');
+
     try {
         const {items, shippingAddress, billingAddress,  paymentMethod, promoCode}= req.body.order || {};
         const user = req.user || null; // Inyectado previamente por middleware de autenticación
 
+        if (!user) {
+            res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+            return res.end(JSON.stringify({
+                status: 'error',
+                code: 434,
+                message: 'NO hay User en el Checkout '
+            }));
+        }
         // 1.- Validamos el promoCode si lo tenemos en el body
+
 
         // 2. Validación de entrada: verificar que el carrito contenga elementos
         if (!items || !Array.isArray(items) || items.length === 0) {
@@ -83,16 +93,7 @@ export default async function checkOutHandler(req, res) {
             const itemTotalCents = currentProduct.priceInCents * quantity;
             totalAmountInCents += itemTotalCents;
 
-            // Almacenamos el snapshot del producto para el pedido en DB
-            // verifiedOrderItems.push({
-            //     productId: currentProduct.productId,
-            //     name: currentProduct.title,
-            //     unitPriceInCents: currentProduct.priceInCents,
-            //     quantity: quantity,
-            //     totalCents: itemTotalCents,
-            // });
-
-            //Almacenamos el item completo para luego manipularlo en afterPaymentOrder 
+            //Almacenamos el item completo para luego manipularlo en processOrderDelivery
             verifiedOrderItems.push(currentProduct);
 
             // Estructura requerida por Stripe Checkout API
@@ -108,32 +109,25 @@ export default async function checkOutHandler(req, res) {
             });
         }
 
-        // 5. Estructura del Pedido acorde al esquema de MongoDB
-        const orderId = `ord_${crypto.randomUUID()}`;
-        const now = new Date();
+        const orderId = `ord_${crypto.randomUUID()}_${month.toLowerCase()}_${year}`;
         
-        const newOrder = {
-            _id: {
-                orderId: orderId,
-                userId: userId,
-                email: userEmail
-                
-            },
+        req.order = {
             orderId: orderId,
-            userId: userId,
-            customerEmail: userEmail,
-            items: verifiedOrderItems,
-            totalAmountInCents: totalAmountInCents,
-            currency: 'eur',
-            status: 'PENDING',          // PENDING -> SUCCESS / CANCELED / EXPIRED
-            stripeSessionId: null,
-            paymentDetails: null,
-            createdAt: now,
-            updatedAt: now
-        };
+            verifiedOrderItems: verifiedOrderItems,
+            totalAmountInCents: totalAmountInCents
+        }
+        
+        // 5.- Guardamos el pedido en estado PENDING en MongoDB
+        const result_createOrder = await createOrder(req.user, req.order);
+        if(result_createOrder.status !== 'ok'){
+            res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+                return res.end(JSON.stringify({
+                    status: 'error',
+                    code: 531,
+                    message: `NO SE HA podido crear el pedido en la DB: -> cancelamos Checkout`
+            }));
+        }
 
-        // Guardamos el pedido en estado PENDING en MongoDB
-        await createOrder(newOrder);
         
         // 6. Determinar host base según entorno (DEV vs PROD)
         const baseUrl = process.env.MODE === 'DEV' ? systemConfig.HOST_DEV : systemConfig.HOST_PROD;
@@ -141,7 +135,7 @@ export default async function checkOutHandler(req, res) {
 
         // 7. Crear la sesión en Stripe Checkout
         const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
+            payment_method_types: ['card', 'bizum'],
             mode: 'payment',
             line_items: lineItemsForStripe,
             customer_email: userEmail || undefined,
@@ -155,10 +149,18 @@ export default async function checkOutHandler(req, res) {
             cancel_url: `${protocol}://${baseUrl}/cancel-checkout.html?order_id=${orderId}`,
         });
 
-        // 8. Asociar el ID de sesión de Stripe a la orden en MongoDB
-        // await updateOrderStripeSession(orderId, session.id);
+        //8. Asociar el ID de sesión de Stripe a la orden en MongoDB
+        const result_updateOrder = await updateOrderStripeSession(orderId, session.id);
+        if(result_updateOrder.status !== 'ok'){
+            res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+                return res.end(JSON.stringify({
+                    status: 'error',
+                    code: 532,
+                    message: `NO SE HA podido actualizar el Order con stripeSessionId> cancelamos Checkout`
+            }));
+        }
 
-        // 8. Responder con la URL de pago al cliente
+        // 9. Responder con la URL de pago al cliente
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         return res.end(JSON.stringify({
             status: 'ok',
