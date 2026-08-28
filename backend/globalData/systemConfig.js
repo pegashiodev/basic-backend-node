@@ -157,9 +157,9 @@ export default  {
     */ 
 
     //ENDPOINTS A LOS QUE SE PUEDE ACCEDER MEDIANTE METODO POST SIN COOKIE 
-    VALID_POST_ENDPOINTS_WITHOUT_COOKIE: ["signup-email", "signup-email.html", "login-email", "login-email.html", "get-main-menu", "get-main-menu.html", "forgot-password", "forgot-password.html", "renove-password", "renove-password.html", "refresh-bridge", "refresh-bridge.html", "srtipe-webhook", "stripe-webhook.html"],
+    VALID_POST_ENDPOINTS_WITHOUT_COOKIE: ["signup-email", "signup-email.html", "login-email", "login-email.html", "get-main-menu", "get-main-menu.html", "forgot-password", "forgot-password.html", "renove-password", "renove-password.html", "refresh-bridge", "refresh-bridge.html", "stripe-webhook", "stripe-webhook.html"],
     // ENDPOINTS A LOS QUE SE PUEDE ACCEDER MEDIANTE METODO POST SIN SESION
-    VALID_POST_ENDPOINTS_WITHOUT_SESSION: ["get-main-menu", "get-html-items", "refresh-bridge", "refresh-bridge.html", "srtipe-webhook", "stripe-webhook.html"],
+    VALID_POST_ENDPOINTS_WITHOUT_SESSION: ["get-main-menu", "get-html-items", "refresh-bridge", "refresh-bridge.html", "stripe-webhook", "stripe-webhook.html"],
    
     // ESTE EL EL CORRECTO
     RESTRICTED_ENDPOINTS: ["upload-files", "upload-files.html","remote-control-access-bi89530", "remote-control-panel", 'mis-bots', 'mis-bots.html', 'user', 'user.html', 'my-bots', 'my-bots.html'],
@@ -232,6 +232,13 @@ export default  {
         USERS_DATA: 'users_data',                          //  -> COLLECTION = MES DE ALTA DEL USUARIO
         AFILIATES: 'afiliates',                             // -> COLLECTION = codes
 
+    },
+
+    COLLECTIONS: {
+        PROMOTIONS: "pcm",
+        PRODUCTS: "pcm",
+        AFILIATES: "codes",
+        BLACKLIST: "ips",
     },
     /** TIEMPO DE EXPIRACION DE LA COOKIE */
     COOKIE_AGE: ACCESS_TOKEN_MAX_AGE_SECONDS,  

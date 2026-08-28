@@ -60,7 +60,7 @@ export default async function postRequestHandler(req, res) {
 
     if(req.urlData.endpoint === "stripe-webhook" || req.urlData.endpoint === "stripe-webhook.html"){
         try{
-            getRawAndParsedBody(req)
+            await getRawAndParsedBody(req)
         } catch (err) {
             return sendPostError(res, err.code || 400, err.message, err.code);
         }
@@ -98,8 +98,12 @@ export default async function postRequestHandler(req, res) {
     const isPublicWithoutSession = systemConfig.VALID_POST_ENDPOINTS_WITHOUT_SESSION?.includes(req.urlData.endpoint);
 
     if (isPublicWithoutCookie || isPublicWithoutSession) {
-        req.body.language = req.urlData.language || systemConfig.MAIN_LANGUAGE;
-        req.body.ip = req.ip;
+
+        // PARA ESTAS RUTAS EL BODY NO ESTA PARSEADO
+        if(req.urlData.endpoint !== "stripe-webhook" && req.urlData.endpoint !== "stripe-webhook.html"){
+            req.body.language = req.urlData.language || systemConfig.MAIN_LANGUAGE;
+            req.body.ip = req.ip;
+        }
         return routerPostRequest(req, res);
     }
 

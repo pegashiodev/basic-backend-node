@@ -9,6 +9,7 @@ import { hashPassword } from '../router/routerTools/passwordEncript.js';
 import dbCrudHandler from '../db/dbCrudHandler.js';
 import { setUserPointer, getUserPointer, deleteUserPointer } from '../db/userIndexService.js';
 import systemConfig from '../globalData/systemConfig.js';
+import { getDb } from '../db/openDbs.js';
 
 export const addUser = async (body) => {
     try {
@@ -83,6 +84,31 @@ export const getUserByEmail = async (email) => {
     }
 };
 
+/**
+ * ACTUALIZA LOS COINS DE UN USUARIO
+ */
+
+export const incrementUserCoins = async (userId, coins)=>{
+    const userIdParts = userId.split('_')
+console.log({userIdParts})
+    const dbName = systemConfig.DBS.USERS_DATA
+    const collection = userIdParts[2].toLowerCase();
+    const dbUsers = await getDb(dbName);
+
+    const incObject = {$inc: 
+        {   "coins.generator": coins.generator || 0,
+            "coins.training": coins.training || 0,
+            "coins.coaching": coins.coaching || 0,
+            "coins.audio": coins.audio || 0,
+            "coins.images": coins.images || 0,
+            "coins.video": coins.video || 0
+        }}
+
+    const resultIncrementCoins = await dbUsers.collection(collection).updateOne({"_id.userId": userId}, incObject)
+    console.log(resultIncrementCoins)
+
+
+}
 
 /**
  *  ACTUALIZA ALGUN CAMPO DEL USER EN MONGODB Y EN REDIS
@@ -115,5 +141,6 @@ export const updateUser = async (data, user)=>{
 export default {
     addUser,
     getUserByEmail, 
-    updateUser
+    updateUser,
+    incrementUserCoins
 };

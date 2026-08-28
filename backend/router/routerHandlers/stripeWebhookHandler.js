@@ -18,6 +18,9 @@ const stripe = new Stripe(process.env.STRIPE_PRIVATE_KEY_TEST)
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 
 export default async function stripeWebhookHandler(req, res) {
+
+console.log("STRIPE WEBHOOK HANDLER")
+// console.log(req.body)
     const signature = req.headers['stripe-signature'];
 
     if (!signature) {
@@ -35,14 +38,17 @@ export default async function stripeWebhookHandler(req, res) {
         res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
         return res.end(JSON.stringify({ status: 'error', message: `Webhook Error: ${err.message}` }));
     }
-    
-    // Stripe exige un 200 rápido para confirmar la recepción
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({ received: true }));
-    
-    // Manejamos los eventos relevantes
-    try {
 
+    console.log("HEMOS - PASADO !!!!!")
+console.log(event.type)
+    
+
+    try {
+        // Stripe exige un 200 rápido para confirmar la recepción
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ received: true }));
+        
+        // Manejamos los eventos relevantes
         switch (event.type) {
             case 'checkout.session.completed': {
                 const session = event.data.object;
@@ -67,14 +73,13 @@ console.log("Disparaao Triger !!!!")
                     break;
                 }
                 */
-
                 //3. Actualizar estado a SUCCESS en DB
                 await updateOrderStatusToSuccess(orderId, {
                     paymentIntentId: session.payment_intent,
                     paymentStatus: session.payment_status,
                     paidAt: new Date()
                 });
-
+console.log("Actualizado a successs !!!!")
                 // 4. Tramitar el pedido (crear bots, dar permisos al usuario, enviar email/SMS)
                 await processOrderDelivery(orderId);
                 console.log(`✅ Pedido ${orderId} cobrado y tramitado con éxito.`);

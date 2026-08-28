@@ -15,20 +15,23 @@ import systemConfig from '../globalData/systemConfig.js';
  */
 export async function createSession(req, from) {
     const user = req.user
-    const [, month, , year] = new Date().toString().split(' ');
+    // const [, month, , year] = new Date().toString().split(' ');
     
-    const session = createSessionObject(user);
-    const { _id, userId } = session._id
-    req.currentSessionId = _id;
+    const session = createSessionObject(req, user);
+    const { sessionId, userId } = session._id
+    req.currentSessionId = sessionId;
+    const sessionIdParts = sessionId.split("_")
+    const month = sessionIdParts[2]
+    const year = sessionIdParts[3]
 
     // 1. Guardar en Redis con expiración automática (TTL)
-    const redisKey = `session:${_id}`;
+    const redisKey = `session:${sessionId}`;
     await redisClient.set(redisKey, JSON.stringify(session), {
         EX: systemConfig.TOKENS_AGE.SESSION_TTL_SECONDS
     });
 
     // Opcional: Índice secundario en Redis para rastrear sesiones activas por usuario
-    await redisClient.sAdd(`user:sessions:${userId}`, _id);
+    await redisClient.sAdd(`user:sessions:${userId}`, sessionId);
 
     // 2. Persistir en MongoDB (colección centralizada de sesiones)
     try {
@@ -49,22 +52,24 @@ export async function createSession(req, from) {
  * ACTUALIZAR SESIÓN DEL USUARIO
  */
 export const updateSession = async (data) => {
-    const [, month, , year] = new Date().toString().split(' ');
+
+    //const [, month, , year] = new Date().toString().split(' ');
+    const sessionIdParts = data.sessionId.split("_")
+    const month = sessionIdParts[2]
+    const year = sessionIdParts[3]
+    
     const params = {
         dbName: systemConfig.DBS.SESSIONS + year,
         collection: month,
-        await: data.await
     };
 
     if (data.task === 'SESSION_ENDED') {
-        const filter = { _id: data.new_value._id };
-        const update_data = { $set: data.new_value };
 
-        if (data.await) {
-            await dbCrudHandler.updateOne(filter, update_data, params);
-        } else {
-            dbCrudHandler.updateOne(filter, update_data, params);
-        }
+        const filter = { "_id.sessionId": data.sessionId };
+        const update_data = { $set: {status: data.newStatus}};
+
+        await dbCrudHandler.updateOne(filter, update_data, params);
+        
 
         // Eliminar sesión de Redis por sessionId
         if (data.sessionId && redisClient && redisClient.isOpen) {
@@ -72,20 +77,18 @@ export const updateSession = async (data) => {
         }
 
     } else if (data.task === 'UPDATE_SESSION_STATUS') {
-        const filter = { sessionId: data.sessionId };
-        const update_data = { $set: { "status": data.new_value } };
 
-        if (data.await) {
-            await dbCrudHandler.updateOne(filter, update_data, params);
-        } else {
-            dbCrudHandler.updateOne(filter, update_data, params);
-        }
+        const filter = {"_id.sessionId": data.sessionId };
+        const update_data = { $set: { "status": data.newStatus } };
+
+        await dbCrudHandler.updateOne(filter, update_data, params);
+        
 
         // Actualizar estado en Redis
         if (data.sessionId && redisClient && redisClient.isOpen) {
             const currentSession = await getSession(data.sessionId);
             if (currentSession) {
-                currentSession.status = data.new_value;
+                currentSession.status = data.newStatus;
                 const ttl = await redisClient.ttl(`session:${data.sessionId}`);
                 if (ttl > 0) {
                     await redisClient.set(`session:${data.sessionId}`, JSON.stringify(currentSession), { EX: ttl });
@@ -101,7 +104,12 @@ export const updateSession = async (data) => {
  * @returns {Promise<Object|null>}
  */
 export async function getSession(sessionId) {
-    const [, month, , year] = new Date().toString().split(' ');
+    
+    // const [, month, , year] = new Date().toString().split(' ');
+    const sessionIdParts = sessionId.split("_")
+    const month = sessionIdParts[2]
+    const year = sessionIdParts[3]
+    
     const now = Date.now()
     if (!sessionId) return null;
 
@@ -117,7 +125,7 @@ export async function getSession(sessionId) {
     try {
         const db = await getDb(systemConfig.DBS.SESSIONS + year);
         const sessionsCollection = db.collection(month.toLowerCase());
-        const session = await sessionsCollection.findOne({ '_id._id': sessionId, isValid: true });
+        const session = await sessionsCollection.findOne({ '_id.sessionId': sessionId, isValid: true });
 
         if(session && now > session.expiresAt){
             // SESION EXPIRADA -> ha de volver a loguearse

@@ -9,6 +9,8 @@
 // import { generateAudiobookAccessToken } from '../../audiobooks/audiobookService.js';
 // import { createShipmentRecord } from '../../shipping/shippingService.js';
 
+import { incrementUserCoins } from "../users/userHandler.js";
+
 export const deliveryStrategies = {
     /**
      * 1. DESCARGA A AUDIOLIBRO O CONTENIDO DIGITAL
@@ -50,19 +52,30 @@ export const deliveryStrategies = {
      * 3. RECARGA DE SALDO EN LA PLATAFORMA
      */
     BALANCE_RECHARGE: async (item, order) => {
+
         console.log("TRAMITAMOS BALANCE_RECHARGE")
+        // INCREMENTAMOS LOS COINS EN LA CUENTA DEL USUARIO
+        // ALMACENAMOS ESTA ACCION EN USER_ACCOUNTING
 
-        // En item.metadata o el producto se define cuánto saldo en céntimos o créditos aporta
-        const balanceToAdd = item.creditAmount || (item.unitPriceInCents / 100);
+        // 1.- Obtenemos el user y los coins a actualizar
+        const userId = order._id.userId;
+        const coins = item.coins
+        
+        // 2.- Incrementamos los coins en la cuenta del usuario 
+        await incrementUserCoins(userId, coins);
 
-        // await incrementUserBalance(order.userId, balanceToAdd);
-        console.log(`💰 [BALANCE] Se han añadido ${balanceToAdd}€ al saldo del usuario ${order.userId}`);
+        console.log(`💰 [BALANCE] Se han añadido COINS  al saldo del usuario ${userId}`);
+
+        // 3.- Añadimos Pago a la Contabilidad del usuario
+       
+
 
         return {
             type: 'BALANCE_RECHARGE',
             status: 'DELIVERED',
-            details: { addedAmount: balanceToAdd }
+            //details: { addedAmount: balanceToAdd }
         };
+        
     },
 
     /**

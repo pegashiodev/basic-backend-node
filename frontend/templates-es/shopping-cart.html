@@ -36,55 +36,30 @@
         const form = document.querySelector("#form");
         const order = {
             items:[
-                {
-                    _id: {
-                    _id: 'pcm_13890',
-                    type: "BALANCE_RECHARGE",
-                    brand: "podcastmatic"   
-                    },
-                    productId: 'pcm_13890',
-                    type: "BALANCE_RECHARGE",
-                    brand: 'podcastmatic',
-                    currency: 'eur',
-                    plan_name: '',
-                    title: 'Recarga de 1500 Coins',
-                    description: 'Descripcion detallada del producto o servicio',
-                    galery: [],
-                    poster: '',
-                    unit_amount: 1000,
-                    priceInCents: 1000,
-                    coins:{
-                        generator: 100,
-                        trainning: 100,
-                        coaching: 100,
-                        audio: 0,
-                        images: 0,
-                        video: 0
-                    },
-                    stock: 'INFINITE',
-                    active: true
-                    
-                },
+                // SOLO ENVIAMOS 
+                // {   productId,
+                //     priceInCents,
+
+                // }
                 {
                 _id: {
-                _id: 'pcm_14890',
+                productId: 'pcm_recharge_13890',
                 type: "BALANCE_RECHARGE",
                 brand: "podcastmatic"   
                 },
-                productId: 'pcm_14890',
+                productId: 'pcm_recharge_13890',
                 type: "BALANCE_RECHARGE",
                 brand: 'podcastmatic',
                 currency: 'eur',
-                plan_name: 'PRO',
-                title: 'Recarga de 4000 Coins',
+                plan_name: '',
+                title: 'Recarga de 1500 Coins',
                 description: 'Descripcion detallada del producto o servicio',
                 galery: [],
                 poster: '',
-                unit_amount: 2000,
-                priceInCents: 2000,
+                priceInCents: 1000,
                 coins:{
                     generator: 100,
-                    trainning: 100,
+                    training: 100,
                     coaching: 100,
                     audio: 0,
                     images: 0,
@@ -92,7 +67,8 @@
                 },
                 stock: 'INFINITE',
                 active: true
-            }
+                
+                }
             ],
             shippingAddress:{
                 country: "",
@@ -131,29 +107,16 @@
                 alert("Enviamos Pedido")
                 const result = await sendFetch(checkout_endpoint);
                 const responseCode = result.responseCode
-                const data = result.data
-                // result = {responseCode, data}
+                const checkoutData = result.data.checkoutData
 
-
-
-                // const response = await fetch(post_endpoint, {
-                // method: "POST",
-                // credentials: "include",
-                // headers: {"content-type": "application/json"},
-                // body: JSON.stringify({order:order}),
-
-                // });
-                // const data = await response.json()
-                // console.log(response.status)
-                // console.log(typeof(response.status))
-
-                console.log(data)
+                console.log(checkoutData)
                 console.log({responseCode})
 
                 if(responseCode >= 200 && responseCode < 300){
+                    console.log(checkoutData)
                     alert("CArrito Correcto")
-                    console.log(data)
-                    // window.location.replace(`${data.checkoutUrl}?orderId=${data.orderId}`);
+                   
+                    window.location.replace(checkoutData.checkoutUrl);
                     // window.location.replace(`${data.checkoutUrl}`);
                
                 }else if(responseCode >= 400 && responseCode < 500){
@@ -174,7 +137,6 @@
                             // reenviamos al Session Is Required porque ya estaba logueado, Tenia ATK
                             window.location.replace(rtkData.location);
                         }
-
 
                     }else{
 

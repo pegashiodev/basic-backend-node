@@ -14,28 +14,34 @@ import systemConfig from '../globalData/systemConfig.js';
  * @param {Object} [params.extraData={}]
  * @returns {Object} Estructura normalizada de sesión
  */
-export function createSessionObject({ userId, email, role = 'user', ip = 'unknown', userAgent = 'unknown', extraData = {} }) {
+export function createSessionObject(req, user) {
 
+    const { userId, email, role = 'USER', extraData = {} } = user
+    const {ip, userAgent} = req
 // console.log({ userId, email, role, ip, userAgent, extraData })
+    const [, month, day , year] = new Date().toString().split(' ');
     const now = Date.now();
-    const sessionId = uuidv4();
-
+    const customSessionId = `ses_${uuidv4()}_${month.toLowerCase()}_${year}`;
+    const normalizedEmail = email.trim().toLowerCase();
     return {
         // Datos inmutables de identificación
         _id: {
-            _id: sessionId,
-            sessionId: sessionId,
+            //_id: sessionId,
+            sessionId: customSessionId,
             userId,
-            email: email.trim().toLowerCase()
+            email: normalizedEmail
         },
         // Estado y metadatos mutables de la sesión
+        userId: userId,
+        sessionId: customSessionId,
+        email: normalizedEmail,
         role,
         status: "ACTIVE",   // [ENDED, PAUSED, BLOCKED]
         createdAt: now,
         expiresAt: now + (systemConfig.TOKENS_AGE.SESSION_TTL_SECONDS * 1000),
         lastActiveAt: now,
-        ip,
-        userAgent,
+        ip: ip,
+        userAgent: userAgent,
         isValid: true,
         extraData: {}
     };

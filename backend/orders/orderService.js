@@ -9,6 +9,7 @@
 // import { getDb } from '../../database/mongoClient.js';
 import { deliveryStrategies } from './orderDeliveryStrategies.js';
 import { getDb } from '../db/openDbs.js';
+import systemConfig from '../globalData/systemConfig.js';
 
 // const [, month, day , year] = new Date().toString().split(' ');
 
@@ -20,8 +21,8 @@ export async function createOrder(user, order) {
     const now = new Date();
     const newOrder = {
         _id: {
-            _id: order.orderId,
             orderId: order.orderId,
+            stripeSessionId: order.stripeSessionId,
             userId: user.userId,
             email: user.email
             
@@ -33,14 +34,14 @@ export async function createOrder(user, order) {
         totalAmountInCents: order.totalAmountInCents,
         currency: 'eur',
         status: 'PENDING',          // PENDING -> SUCCESS / CANCELED / EXPIRED
-        stripeSessionId: null,
+        stripeSessionId:order.stripeSessionId,
         paymentDetails: null,
         createdAt: now,
         updatedAt: now
     };
 
     const orderParts = order.orderId.split("_")
-    const dbName = orderParts[3]
+    const dbName = systemConfig.DBS.ORDERS +  orderParts[3]
     const collection = orderParts[2]
     const dbOrders = await getDb(dbName);
 
@@ -64,11 +65,11 @@ export async function createOrder(user, order) {
 export async function getOrderById(orderId) {
     
     const orderParts = orderId.split("_")
-    const dbName = orderParts[3]
+    const dbName = systemConfig.DBS.ORDERS + orderParts[3]
     const collection = orderParts[2]
     const dbOrders = await getDb(dbName);
 
-    return await db.collection(collection).findOne({ "_id.orderId": orderId });
+    return await dbOrders.collection(collection).findOne({ "_id.orderId": orderId });
 }
 
 /**
@@ -77,13 +78,13 @@ export async function getOrderById(orderId) {
 export async function updateOrderStripeSession(orderId, stripeSessionId) {
 
     const orderParts = orderId.split("_")
-    const dbName = orderParts[3]
+    const dbName = systemConfig.DBS.ORDERS + orderParts[3]
     const collection = orderParts[2]
-    const db = await getDb(dbName);
+    const dbOrders = await getDb(dbName);
 
     try{
 
-        await db.collection(collection).updateOne(
+        await dbOrders.collection(collection).updateOne(
             { "_id.orderId": orderId },
             { $set: { stripeSessionId: stripeSessionId, updatedAt: new Date() } }
         );
@@ -101,7 +102,7 @@ export async function updateOrderStripeSession(orderId, stripeSessionId) {
 export async function updateOrderStatusToSuccess(orderId, paymentDetails) {
 
     const orderParts = orderId.split("_")
-    const dbName = orderParts[3]
+    const dbName = systemConfig.DBS.ORDERS + orderParts[3]
     const collection = orderParts[2]
 
     const db = await getDb(dbName);
@@ -133,7 +134,7 @@ export async function updateOrderStatusToSuccess(orderId, paymentDetails) {
 export async function markOrderAsExpired(orderId) {
 
     const orderParts = orderId.split("_")
-    const dbName = orderParts[3]
+    const dbName = systemConfig.DBS.ORDERS + orderParts[3]
     const collection = orderParts[2]
     const db = await getDb(dbName);
 
@@ -203,6 +204,6 @@ export async function processOrderDelivery(orderId) {
     // );
 
     console.log(`🚀 Despacho finalizado para el pedido ${orderId}`);
-    return deliveryResults;
+    console.log({deliveryResults});
 }
 

@@ -23,6 +23,8 @@ import getMainMenu from "../api/getMainMenu.js";
 import getHtmlItems from "../api/getHtmlItems.js";
 import verifyFromRemotePanel from "../remotePanel/verifyFromRemotePanel.js";
 import refreshBridgeHandler from "./routerHandlers/refreshBridgeHandler.js";
+
+import stripeWebhookHandler from "./routerHandlers/stripeWebhookHandler.js";
 process.loadEnvFile();
 
 
@@ -66,6 +68,10 @@ export default function (req, res){
         "checkout.html":        {handler: checkOutHandler, access: systemConfig.HAS_USERS},
         "finalizar-pedido":     {handler: checkOutHandler, access: systemConfig.HAS_USERS},
         "finalizar-pedido":     {handler: checkOutHandler, access: systemConfig.HAS_USERS},
+
+        "stripe-webhook":       {handler: stripeWebhookHandler, access: systemConfig.HAS_USERS},
+        "stripe-webhook.html":  {handler: stripeWebhookHandler, access: systemConfig.HAS_USERS},
+
         
 
         "get-html-items":       {handler: getHtmlItems, access: true},

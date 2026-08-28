@@ -99,11 +99,10 @@ console.log(result_getOurCookie)
             await updateSession({
                 task: 'SESSION_ENDED',
                 sessionId: sessionId,
-                email: req.user.email,
-                new_value: session,
-                await: false
+                newStatus: "ENDED"
             });
 
+            // CREAMOS NUEVA SESSION
             const result_session = await createSession(req, from);
             if (result_session.status !== 'ok') {
                 res.code = 302;

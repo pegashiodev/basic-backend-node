@@ -74,8 +74,6 @@ export default function(req, res){
         let data = {
             task: 'SESSION_ENDED',
             email: req.our_cookie.atk_decoded.email,
-            new_value: session,
-            await: false
         }
         updateSession(data)
     }

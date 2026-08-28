@@ -83,10 +83,7 @@ export default async function checkOutHandler(req, res) {
                     message: 'Uno de los elementos del carrito carece de ID de producto.'
                 }));
             }
-
-            // Consulta a MongoDB por ID de producto
-            // const currentProduct = await getProductById(item.productId);
-            
+       
             // UTILIZAMOS REDIS PARA ACCEDER A LOS PRODUCTOS
             console.log(item)
             const currentProductString = await redisClient.get(`product:${item.productId}`);
@@ -99,6 +96,16 @@ export default async function checkOutHandler(req, res) {
                     status: 'error',
                     code: 431,
                     message: `El producto con ID ${item.productId} no está disponible o no existe.`
+                }));
+            }
+            // COMPROBAMOS QUE EL PRECIO ES EL QUE TENEMOS EN EL SERVER
+            if(item.priceInCents !== currentProduct.priceInCents){
+                console.log("NO COINCIDE EL PRECIO DEL PRODUCTO CON EL DEL SERVER")
+                res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+                return res.end(JSON.stringify({
+                    status: 'error',
+                    code: 436,
+                    message: `El precio de  ${item.productId} no es correcto.`
                 }));
             }
             // COMPROBAMOS EL STOCK
@@ -125,8 +132,9 @@ export default async function checkOutHandler(req, res) {
             const itemTotalCents = currentProduct.priceInCents * quantity;
             // PRECIO PAGADO POR EL USUARIO CON EL DESCUENTO DEL AFILIADO
             totalAmountInCents += itemTotalCents;
-            promotion.amountBeforeDisconunt = totalAmountInCentsBeforeDiscount
-
+            if(req.promotion){
+                req.promotion.amountBeforeDisconunt = totalAmountInCentsBeforeDiscount
+            }
 
             //Almacenamos el item completo para luego manipularlo en processOrderDelivery
             verifiedOrderItems.push(currentProduct);
@@ -158,23 +166,12 @@ export default async function checkOutHandler(req, res) {
             req.order.discountPercent = promotion.discountPercent;
         }
         
-        // 5.- Guardamos el pedido en estado PENDING en MongoDB
-        const result_createOrder = await createOrder(req.user, req.order);
-        if(result_createOrder.status !== 'ok'){
-            res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-                return res.end(JSON.stringify({
-                    status: 'error',
-                    code: 531,
-                    message: `NO SE HA podido crear el pedido en la DB: -> cancelamos Checkout`
-            }));
-        }
-
         
-        // 6. Determinar host base según entorno (DEV vs PROD)
+        // 5. Determinar host base según entorno (DEV vs PROD)
         const baseUrl = process.env.MODE === 'DEV' ? systemConfig.HOST_DEV : systemConfig.HOST_PROD;
         const protocol = process.env.MODE === 'DEV' ? 'http' : 'https';
 
-        // 7. Crear la sesión en Stripe Checkout
+        // 6. Crear la sesión en Stripe Checkout
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card', 'bizum'],
             mode: 'payment',
@@ -190,29 +187,41 @@ export default async function checkOutHandler(req, res) {
             cancel_url: `${protocol}://${baseUrl}/cancel-checkout.html?order_id=${orderId}`,
         });
 
-        //8. Asociar el ID de sesión de Stripe a la orden en MongoDB
-        const result_updateOrder = await updateOrderStripeSession(orderId, session.id);
-        if(result_updateOrder.status !== 'ok'){
+        if(!session || !session.id){
             res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
                 return res.end(JSON.stringify({
                     status: 'error',
-                    code: 532,
-                    message: `NO SE HA podido actualizar el Order con stripeSessionId> cancelamos Checkout`
+                    code: 567,
+                    message: `ERROR de conexion con el PAY PROVIDER`
             }));
         }
 
-        // 9. Si hemos aplicado el promoCode lo hemos de guardar en la Base de Datos para pagar posteriormente al afiliado
+        // AÑADIMOS EL session.id de Stripe al pedido
+        req.order.stripeSessionId = session.id
+
+        //7.- Guardamos el pedido en estado PENDING en MongoDB
+        const result_createOrder = await createOrder(req.user, req.order);
+        if(result_createOrder.status !== 'ok'){
+            res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+                return res.end(JSON.stringify({
+                    status: 'error',
+                    code: 531,
+                    message: `NO SE HA podido crear el pedido en la DB: -> cancelamos Checkout`
+            }));
+        }
+
+        // 8. Si hemos aplicado el promoCode lo hemos de guardar en la Base de Datos para pagar posteriormente al afiliado
         if(req.promotion){
             await updateAfiliatePromotion(req.promotion, user)
         }
 
-        // 10. Responder con la URL de pago al cliente
+        // 9. Responder con la URL de pago al cliente
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         return res.end(JSON.stringify({
             status: 'ok',
             code: 200,
             message: 'Sesión de checkout creada con éxito.',
-            data: {
+            checkoutData: {
                 checkoutUrl: session.url,
                 orderId: orderId
             }

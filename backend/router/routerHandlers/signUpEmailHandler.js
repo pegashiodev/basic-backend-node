@@ -151,6 +151,7 @@ console.log({validationCode})
 
 
         // Crear usuario mediante userHandler (Mongo + Redis Pointer)
+        req.body.ip = req.ip;
         const userResult = await userHandler.addUser(req.body);
         if (userResult.status !== 'ok') {
             res.writeHead(userResult.code || 500, { 'Content-Type': 'application/json; charset=utf-8' });

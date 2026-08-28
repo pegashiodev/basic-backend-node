@@ -4,54 +4,50 @@ export default [
 
     // EJEMPLOS
 
-    // {
-    //     _id: "code" 
-    //     status: "ACTIVE",
-    //     promo_code: "MIDUDEV",                           // codigo 
-    //     expireTime: Date.now() + 1000*60*60*48,          // 2 dias
-    //     owner:{                                          // propietario del codigo 
-    //          name: "system",
-    //          email: "system@gmail.com",
-    //          userId: "12312nmnmkj123jk",
-    //       }, 
-    //     saldoCoins: 1500,                               // saldo a sumar
-    //     discount: 20,                                   // descuento en porcentaje
-    //     units: 1000,                                    // unidades disponibles
-    // },
+    // PROMOCION EN EL CHECKOUT: DESCUENTO EN LINEA
+    {
+        _id: 'MIDU',
+        promotionId: "MIDU", 
+        status: 'ACTIVE',               
+        endpoint: "CHECKOUT",
+        promoCode: 'MIDU',
+        expiresAt: new Date('2027-12-31T23:59:59').getTime(),
+        owner: {
+            name: 'mididev',
+            email: 'midudev@gmail.com',
+            userId: '12312nmnmkj123jk'
+        },
+        type: "DISCOUNT",        
+        discountPercent: 20,
+        units: 120,
+        
+    },
 
-    // {
-    //     _id:"BIENVENIDA",
-    //     status: "ACTIVE",
-    //     promo_code: "BIENVENIDA",                          // codigo 
-    //     expireTime: 1757001639943,                  //HASTA 30 AGOSTO 2025,         // 2 dias
-    //     owner:{                                     // propietario del codigo 
-    //         name: "system",
-    //         email: "system@gmail.com",
-    //         userId: "12312nmnmkj123jk",
-    //     },                                
-    //     saldoCoins: 1200,                               // saldo a sumar
-    //     discount: 20,                                   // descuento en porcentaje
-    //     units: 150,                                    // unidades disponibles
-    //     ended: false,                                  // Se colocara a true cuando pase el cron si units = 0
-    //     used: false
-    // },
-
-    // {
-    //     _id:"WELCOME",
-    //     status: "ACTIVE",
-    //     promo_code: "WELCOME", 
-    //     expireTime: 1757001639943,
-    //     owner:{
-    //         name: "system",
-    //         email: "system@gmail.com",
-    //         userId: "12312nmnmkj123jk",
-    //     },                                
-    //     saldoCoins: 1200,
-    //     discount: 20,
-    //     units: 3,
-    //     ended: false,
-    //     used: false
-    // }
+    // PROMOCION EN EL SIGNUP: COINS DE BIENVENIDA
+    {
+        _id: 'BIENVENIDA',
+        promotionId: "BIENVENIDA",
+        status: 'ACTIVE',
+        endpoint: "SIGNUP",
+        promoCode: 'BIENVENIDA',
+        expiresAt: new Date('2027-12-31T23:59:59').getTime(),
+        owner: {
+          name: 'system',
+          email: 'system@gmail.com',
+          userId: '12312nmnmkj123jk'
+        },
+        type: "COINS",        
+        coins:{
+            generator: 500,
+            trainnig: 200,
+            coaching: 200,
+            audio: 50,
+            images: 50,
+            video: 10
+        },
+        units: 120,
+       
+      },
 
     
 ]

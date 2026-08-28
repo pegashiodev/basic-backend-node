@@ -29,11 +29,11 @@ const promotions = [
         promotionId: "MIDU", 
         status: 'ACTIVE',               
         endpoint: "CHECKOUT",
-        promoCode: 'WELCOME',
+        promoCode: 'MIDU',
         expiresAt: new Date('2027-12-31T23:59:59').getTime(),
         owner: {
             name: 'mididev',
-            email: 'system@gmail.com',
+            email: 'midudev@gmail.com',
             userId: '12312nmnmkj123jk'
         },
         type: "DISCOUNT",        
@@ -43,7 +43,7 @@ const promotions = [
     },
     {
         _id: 'BIENVENIDA',
-        promotionId: "WELCOME",
+        promotionId: "BIENVENIDA",
         status: 'ACTIVE',
         endpoint: "SIGNUP",
         promoCode: 'BIENVENIDA',
@@ -221,6 +221,6 @@ export const deletePromotion = (promotion)=>{
 export default  {
     applyPromotion,
     addPromotion,
-    updatePromotion,
+    updateAfiliatePromotion,
     deletePromotion,
 }

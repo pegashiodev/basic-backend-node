@@ -115,7 +115,7 @@ export default createServer(async (req, res) => {
             
             '/get-main-menu': "get-main-menu.html",
             '/get-main-menu.html': "get-main-menu.html",
-            '/srtipe-webhook': "srtipe-webhook.html", 
+            '/stripe-webhook': "stripe-webhook.html", 
             '/stripe-webhook.html': "srtipe-webhook.html",
 
             '/checkout': 'checkout.html',

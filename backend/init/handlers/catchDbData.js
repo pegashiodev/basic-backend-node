@@ -7,6 +7,7 @@
 
 import { getDb } from '../../db/openDbs.js'; // Ajusta la ruta a tu cliente Mongo
 import {redisClient} from '../../db/openRedis.js'; // Ajusta la ruta a tu cliente Redis
+import systemConfig from '../../globalData/systemConfig.js';
 
 export default async function catchDbData() {
     console.log('🔄 Iniciando precarga de datos en Redis...');
@@ -18,8 +19,8 @@ export default async function catchDbData() {
 
 
         // 1. PRODUCTOS (db: "products", col: "clegal") -> Key: "product:<productId>"
-        const productsDb = await getDb('products');
-        const products = await productsDb.collection('pcm').find({}).toArray();
+        const productsDb = await getDb(systemConfig.DBS.PRODUCTS);
+        const products = await productsDb.collection(systemConfig.COLLECTIONS.PRODUCTS).find({}).toArray();
 
         let productsCached = 0;
         for (const item of products) {
@@ -31,8 +32,8 @@ export default async function catchDbData() {
         }
 
         // 2. PROMOCIONES (db: "promotions", col: "codes") -> Key: "promo:<promotionId>"
-        const promotionsDb = await getDb('promotions');
-        const promotions = await promotionsDb.collection('codes').find({}).toArray();
+        const promotionsDb = await getDb(systemConfig.DBS.PROMOTIONS);
+        const promotions = await promotionsDb.collection(systemConfig.COLLECTIONS.PROMOTIONS).find({}).toArray();
 
         let promotionsCached = 0;
         for (const item of promotions) {
@@ -44,8 +45,8 @@ export default async function catchDbData() {
         }
 
         // 3. BLACKLIST IPS (db: "BlacklistIps", col: "ips") -> Key: "blacklist:ip:<ip>"
-        const blacklistDb = await getDb('BlacklistIps');
-        const blacklistedIps = await blacklistDb.collection('ips').find({}).toArray();
+        const blacklistDb = await getDb(systemConfig.DBS.BLACKLIST);
+        const blacklistedIps = await blacklistDb.collection(systemConfig.COLLECTIONS.BLACKLIST).find({}).toArray();
 
         let ipsCached = 0;
         for (const item of blacklistedIps) {

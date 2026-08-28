@@ -1,10 +1,10 @@
 
 
 export default [
-    {
+      {
         _id: {
-          _id: 'pcm_recharge_12890',
           type: "BALANCE_RECHARGE",
+          productId: 'pcm_recharge_12890',
           brand: "podcastmatic"   
         },
         type: "BALANCE_RECHARGE",
@@ -19,7 +19,7 @@ export default [
         priceInCents: 500,
         coins:{
             generator: 100,
-            trainning: 100,
+            training: 100,
             coaching: 100,
             audio: 0,
             images: 0,
@@ -30,7 +30,7 @@ export default [
       }, 
       {
         _id: {
-          _id: 'pcm_recharge_13890',
+          productId: 'pcm_recharge_13890',
           type: "BALANCE_RECHARGE",
           brand: "podcastmatic"   
         },
@@ -46,7 +46,7 @@ export default [
         priceInCents: 1000,
         coins:{
             generator: 100,
-            trainning: 100,
+            training: 100,
             coaching: 100,
             audio: 0,
             images: 0,
@@ -59,7 +59,7 @@ export default [
       // Ejemplo 1: Recarga de Saldo
       {
         _id: {
-          _id: 'pcm_recharge_14890',
+          productId: 'pcm_recharge_14890',
           type: "BALANCE_RECHARGE",
           brand: "podcastmatic"   
         },
@@ -75,7 +75,7 @@ export default [
         priceInCents: 2000,
         coins:{
             generator: 100,
-            trainning: 100,
+            training: 100,
             coaching: 100,
             audio: 0,
             images: 0,
@@ -85,15 +85,16 @@ export default [
         active: true
       },
       // Ejemplo 2: Audiolibro / Podcast para consumir en streaming
+      // INCLUYE EL id del contenido que se quiere descargar o consumir en la plataforma
       {
         _id: {
-          _id: 'pcm_audio_20790',
+          productId: 'pcm_audio_20790',
           type: "AUDIO_STREAMING",
           brand: "podcastmatic"   
         },
         productId: 'pcm_audio_20790',
         type: "AUDIO_STREAMING",
-        format: "STREAMING",   // [STREAMING, ...] SOLO PARA ESCUCHAR EN LINEA
+        format: "STREAMING",   
         brand: 'podcastmatic',
         currency: 'eur',
         title: 'Contenido en Audio para Streaming',
@@ -101,14 +102,15 @@ export default [
         galery: [],
         poster: '',
         priceInCents: 2000,
-        audioContentId: "st_2389rrass7",     // id del contenido que se quiere descargar o consumir en la plataforma
+        audioContentId: "st_2389rrass7",     
         stock: 'INFINITE',
         active: true
       },
       // Ejemplo 3: Audiolibro / Podcast para consumir descargandolo
+      // INCLUYE EL id del contenido que se quiere descargar o consumir en la plataforma
       {
         _id: {
-          _id: 'pcm_audio_20690',
+          productId: 'pcm_audio_20690',
           type: "AUDIO_DOWNLOAD",
           brand: "podcastmatic"   
         },
@@ -122,20 +124,22 @@ export default [
         galery: [],
         poster: '',
         priceInCents: 2000,
-        audioContentId: "dl_2389apass7",     // id del contenido que se quiere descargar o consumir en la plataforma
+        audioContentId: "dl_2389apass7",    
         stock: 'INFINITE',
         active: true
       },
       // Ejemplo 3: Texto digital (PDF) para descargar o enviar por email
+      // COMO UN PDF PARA PODER DESCARGARLO O ENVIARLO POR EMAIL
+      // INCLUYE EL id del contenido que se quiere descargar o consumir en la plataforma
       {
         _id: {
-          _id: 'pcm_text_20890',
+          productId: 'pcm_text_20890',
           type: "TEXT_CONTENT",
           brand: "podcastmatic"   
         },
         productId: 'pcm_text_20890',
         type: "AUDIO_CONTENT",
-        format: "DOWNLOAD",   // COMO UN PDF PARA PODER DESCARGARLO O ENVIARLO POR EMAIL
+        format: "DOWNLOAD",   
         brand: 'podcastmatic',
         currency: 'eur',
         title: 'LIBRO EN PDF  PARA ENVIAR POR EMAIL O DESCARGAR',
@@ -143,7 +147,7 @@ export default [
         galery: [],
         poster: '',
         priceInCents: 2000,
-        textContentId: "dl_238989ass7",     // id del contenido que se quiere descargar o consumir en la plataforma
+        textContentId: "dl_238989ass7",     
         stock: 'INFINITE',
         active: true
       }
@@ -152,7 +156,7 @@ export default [
       // Ejemplo 3: Libro Físico para envio ordinario
       {
         _id: {
-          _id: 'pcm_fhysic_30021',
+          productId: 'pcm_fhysic_30021',
           type: "PHYSICAL",
           brand: "podcastmatic"   
         },
