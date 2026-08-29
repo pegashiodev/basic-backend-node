@@ -13,8 +13,9 @@ export default async function userSchema(body) {
     const [, month, day , year] = new Date().toString().split(' ');
     const userUuid = randomUUID();
     const id2 = randomUUID();
+    const normalizedMonth = month.toLowerCase();
     const normalizedEmail = body.email.toLowerCase().trim();
-    const customUserId = `us_${userUuid}_${month.toLowerCase()}_${year}`
+    const customUserId = `us_${userUuid}_${normalizedMonth}}_${year}`
 
     // 1. _id compuesto inmutable (clave primaria de Mongo y puntero de Redis)
     const customId = {
@@ -23,7 +24,7 @@ export default async function userSchema(body) {
         email: normalizedEmail,
         from: {
             year: year,
-            month: month.toLowerCase(),
+            month: normalizedMonth,
             day: day
         },
         id2: id2
@@ -60,7 +61,7 @@ export default async function userSchema(body) {
         isPromoAfiliate: body.promotion ? true : false,
         afiliateData: body.promotion?.owner || null,
         coins:{
-            create: body.promotion.coins.create || 500,             // CREAR CONTENIDO: ENTRVISTA, AUDIO, IMAGENES, ....
+            create: body.promotion?.coins?.create || 500,             // CREAR CONTENIDO: ENTRVISTA, AUDIO, IMAGENES, ....
             training: body.promotion?.coins?.training || 250,       // ENTRENAR CREAR AUDIOS, ...
             coaching: body.promotion?.coins?.coaching || 100,       // CONSULTAR DUDAS CREATIVAS ....
             generator: body.promotion?.coins?.generator || 0,
@@ -78,7 +79,7 @@ export default async function userSchema(body) {
        
     }
 
-    return { user, month, year };
+    return { user, normalizedMonth};
     
 
 

@@ -69,6 +69,7 @@ export const deliveryStrategies = {
         // 3.- Añadimos Pago a la Contabilidad del usuario
        
 
+        // 4.- ENVIAMOS UN EMAIL DE CONFIRMACION DEL PEDIDO REALIZADO -> TE ENVIAMOS FACTURA PRONTO ??
 
         return {
             type: 'BALANCE_RECHARGE',

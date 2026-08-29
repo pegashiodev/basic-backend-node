@@ -34,6 +34,7 @@ export async function createOrder(user, order) {
         totalAmountInCents: order.totalAmountInCents,
         currency: 'eur',
         status: 'PENDING',          // PENDING -> SUCCESS / CANCELED / EXPIRED
+        billed: false,
         stripeSessionId:order.stripeSessionId,
         paymentDetails: null,
         createdAt: now,
@@ -142,7 +143,7 @@ export async function markOrderAsExpired(orderId) {
 
         await db.collection(collection).updateOne(
             { "_id.orderId": orderId },
-            {$set: { status: 'ESPIRED'}}
+            {$set: { status: 'EXPIRED'}}
         );
 
     }catch(e){

@@ -36,10 +36,12 @@
         const form = document.querySelector("#form");
         const order = {
             items:[
-                // SOLO ENVIAMOS 
+                // SOLO ENVIAMOS una beve descripcion del pedido original
                 // {   productId,
                 //     priceInCents,
-
+                //     title, 
+                //     description,
+                //     quantity: 1
                 // }
                 {
                 _id: {
@@ -58,6 +60,7 @@
                 poster: '',
                 priceInCents: 1000,
                 coins:{
+                    create: 100,
                     generator: 100,
                     training: 100,
                     coaching: 100,
@@ -94,68 +97,68 @@
                 name: "",
                 lastName: "",
             },
-            paymentMethod: "STRIPE",
         }
 
         async function sendOrder() {
             // Associate the FormData object with the form element
             const formData = new FormData(form);
 
-                // OJO -> IMPORTANTE EN PETICIONES POST QUE PUEDEN REQUERIR INICIAR SESION
-                // ENVIAMOS TAMBIEN LA RUTA EL LA QUE ESTAMOS POR SI NOS REENVIAN AL LOGIN
-                const checkout_endpoint = `http://localhost:3000/checkout.html`
-                alert("Enviamos Pedido")
-                const result = await sendFetch(checkout_endpoint);
-                const responseCode = result.responseCode
-                const checkoutData = result.data.checkoutData
+            // OJO -> IMPORTANTE EN PETICIONES POST QUE PUEDEN REQUERIR INICIAR SESION
+            // ENVIAMOS TAMBIEN LA RUTA EL LA QUE ESTAMOS POR SI NOS REENVIAN AL LOGIN
+            const checkout_endpoint = `http://localhost:3000/checkout.html`
+            alert("Enviamos Pedido")
+            const result = await sendFetch(checkout_endpoint);
+            const responseCode = result.responseCode
+            const data = result.data;
+            const checkoutData = result.data.checkoutData
 
+            console.log(checkoutData)
+            console.log({responseCode})
+
+            if(responseCode >= 200 && responseCode < 300){
                 console.log(checkoutData)
-                console.log({responseCode})
+                alert("CArrito Correcto")
+                
+                window.location.replace(checkoutData.checkoutUrl);
+                // window.location.replace(`${data.checkoutUrl}`);
+            
+            }else if(responseCode >= 400 && responseCode < 500){
+                
+                if(data.code === 444){
+                    alert("Solicitan RTK")
 
-                if(responseCode >= 200 && responseCode < 300){
-                    console.log(checkoutData)
-                    alert("CArrito Correcto")
-                   
-                    window.location.replace(checkoutData.checkoutUrl);
-                    // window.location.replace(`${data.checkoutUrl}`);
-               
-                }else if(responseCode >= 400 && responseCode < 500){
-                    
-                    if(data.code === 444){
-                        alert("Solicitan RTK")
-
-                        const rtk_endpoint = `http://localhost:3000/refresh-bridge.html`
-                        const result_rtk = await sendRtkToken(rtk_endpoint)
-                        const {resRtkCode, rtkData} = result_rtk;
-                        if(resRtkCode >= 200 && resRtkCode <300){
-                            alert("ATK REnovado")
-                            
-                            // Todo OK, Volvemos a iniciar el proceso de envio del Pedido
-                            sendOrder();
-                        }else{
-                            alert("ERROR en renovacion de  TOKENS")
-                            // reenviamos al Session Is Required porque ya estaba logueado, Tenia ATK
-                            window.location.replace(rtkData.location);
-                        }
-
+                    const rtk_endpoint = `http://localhost:3000/refresh-bridge.html`
+                    const result_rtk = await sendRtkToken(rtk_endpoint)
+                    const {resRtkCode, rtkData} = result_rtk;
+                    if(resRtkCode >= 200 && resRtkCode <300){
+                        alert("ATK REnovado")
+                        
+                        // Todo OK, Volvemos a iniciar el proceso de envio del Pedido
+                        sendOrder();
                     }else{
-
-                        alert("Error CON LOS DATOS ENVIADOS en el Checkout")
-                        if(data.location){
-                            window.location.replace(data.location);
-                        }else{
-                            window.location.replace('/');
-                        }
+                        alert("ERROR en renovacion de  TOKENS")
+                        // reenviamos al Session Is Required porque ya estaba logueado, Tenia ATK
+                        window.location.replace(rtkData.location);
                     }
-                }else if(responseCode >= 500 && responseCode < 600){
-                    alert("Error en el Checkout en el Servidor")
+
+                }else{
+                    console.log(data)
+                    alert("Error CON LOS DATOS ENVIADOS en el Checkout")
                     if(data.location){
                         window.location.replace(data.location);
                     }else{
                         window.location.replace('/');
                     }
                 }
-                
+            }else if(responseCode >= 500 && responseCode < 600){
+                alert("Error en el Checkout en el Servidor")
+                if(data.location){
+                    window.location.replace(data.location);
+                }else{
+                    window.location.replace('/');
+                }
+            }
+            
 
         }
 
@@ -182,7 +185,7 @@
 
         async function sendRtkToken(url){
 
-             
+                    
             try{
                 const result = await fetch(url,
                 {
@@ -209,10 +212,8 @@
 
         // Take over form submission
         form.addEventListener("submit", (event) => {
-        event.preventDefault();
-        console.log("Pulsado submit!!!")
-        // console.log(FormData)
-        sendOrder();
+            event.preventDefault();
+            sendOrder();
         });
 
     </script>

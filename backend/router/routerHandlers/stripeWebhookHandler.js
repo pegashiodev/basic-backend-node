@@ -59,33 +59,21 @@ console.log("Disparaao Triger !!!!")
                     break;
                 }
 
-                /*
-                //1. Buscar pedido en Base de Datos
-                const order = await getOrderById(orderId);
-                if (!order) {
-                    console.error(`❌ Pedido ${orderId} no encontrado en DB`);
-                    break;
-                }
-
-                2. Control de Idempotencia (evita procesar dos veces el mismo evento)
-                if (order.status === 'SUCCESS') {
-                    console.log(`ℹ️ Pedido ${orderId} ya procesado previamente.`);
-                    break;
-                }
-                */
-                //3. Actualizar estado a SUCCESS en DB
+                
+                //1. Actualizar estado a SUCCESS en DB
                 await updateOrderStatusToSuccess(orderId, {
                     paymentIntentId: session.payment_intent,
                     paymentStatus: session.payment_status,
                     paidAt: new Date()
                 });
 console.log("Actualizado a successs !!!!")
-                // 4. Tramitar el pedido (crear bots, dar permisos al usuario, enviar email/SMS)
+                // 2. Tramitar el pedido (crear bots, dar permisos al usuario, enviar email/SMS)
                 await processOrderDelivery(orderId);
                 console.log(`✅ Pedido ${orderId} cobrado y tramitado con éxito.`);
                 break;
             }
 
+            // SESSION Expirada sin hacer el pago -> Marcamos Pedido como EXPIRED
             case 'checkout.session.expired': {
                 const session = event.data.object;
                 const orderId = session.metadata?.orderId;

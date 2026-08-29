@@ -120,13 +120,34 @@ export default async function checkOutHandler(req, res) {
             }
 
             const quantity = Math.max(1, parseInt(item.quantity, 10) || 1);
+            
+            /*
+            function calcularPrecioParaStripe(precioOriginalEuros, porcentajeDescuento) {
+                // 1. Convertir a centavos
+                const precioEnCentavos = precioOriginalEuros * 100; 
+                
+                // 2. Calcular el descuento
+                const descuento = precioEnCentavos * (porcentajeDescuento / 100);
+                
+                // 3. Restar y aplicar Math.round() al resultado final en centavos
+                const precioFinalEnCentavos = Math.round(precioEnCentavos - descuento);
+                
+                return precioFinalEnCentavos;
+            }
+              
+            // Ejemplo: Producto de 19.99€ con 15% de descuento
+            // 19.99 - 15% = 16.9915€
+            console.log(calcularPrecioParaStripe(19.99, 15)); // Resultado: 1699 (16.99€ exactamente)
+
+            */
+    
 
             // AÑADIMOS EL TOTAL DE LA COMPRA para luego pagar al afiliado
             totalAmountInCentsBeforeDiscount = currentProduct.priceInCents * quantity;
             
             // Si hay req.promotion es que el promoCode es valido y aplicamos el descuento
             if(req.promotion){
-                currentProduct.priceInCents = currentProduct.priceInCents - (currentProduct.priceInCents * req.promotion.discountPercent / 100 )
+                currentProduct.priceInCents = Math.round(currentProduct.priceInCents - (currentProduct.priceInCents * (req.promotion.discountPercent / 100)))
             }
             
             const itemTotalCents = currentProduct.priceInCents * quantity;

@@ -20,21 +20,18 @@ export const addUser = async (body) => {
         const bodyWithHashedPass = { ...body, email: normalizedEmail, password: hashedPassword };
 
         // 2. Construir el documento con su esquema y _id compuesto
-        const { user, month, year } = await userSchema(bodyWithHashedPass);
+        const { user, normalizedMonth} = await userSchema(bodyWithHashedPass);
 
-        if(!user || ! month){
+        if(!user || ! normalizedMonth){
             return { status: 'error', code: 500, message: 'Error Creando esquema del usuario' };
         }
 
         // 3. Guardar en MongoDB en la colección del mes de alta
-        const params = {
-            dbName: systemConfig.DBS.USERS_DATA,
-            collection: month.toLowerCase(),
-            await: true
-        };
+        const dbUsers = await getDb(systemConfig.DBS.USERS_DATA);
+        const collection = normalizedMonth
 
-        const dbResult = await dbCrudHandler.insertOne(user, params);
-        if (dbResult.status !== 'ok') {
+        const dbResult = await dbUsers.collection(collection).insertOne(user)
+        if(!dbResult.acknowledged || !dbResult.insertedId){
             return { status: 'error', code: 500, message: 'Error guardando usuario en Base de Datos' };
         }
 
@@ -57,7 +54,6 @@ export const addUser = async (body) => {
  * Obtener usuario completo desde MongoDB usando el puntero de Redis
  */
 export const getUserByEmail = async (email) => {
-    try {
         const normalizedEmail = email.toLowerCase().trim();
 
         // 1. Obtener puntero desde Redis
@@ -67,21 +63,19 @@ export const getUserByEmail = async (email) => {
         }
 
         // 2. Buscar documento exacto en su colección mensual de MongoDB
-        const params = {
-            dbName: systemConfig.DBS.USERS_DATA,
-            collection: pointer.from.month,
-            await: true
-        };
-        const options = {}
 
-        const result = await dbCrudHandler.findOne({ "_id.email": normalizedEmail }, params, options);
-        // return result && result.data ? result.data : null;
-        return result;
-
-    } catch (error) {
-        console.error('❌ Error en userHandler.getUserByEmail:', error);
-        return null;
-    }
+        const dbUsers = await getDb(systemConfig.DBS.USERS_DATA);
+        const collection = pointer.from.month;
+        let dbResult = null;
+       
+        try{
+            dbResult = await dbUsers.collection(collection).findOne({ "_id.email": normalizedEmail })
+            return dbResult;
+        }catch(e){
+            console.error('❌ Error en userHandler.getUserByEmail:', error);
+            return null;
+        }
+        
 };
 
 /**
@@ -90,13 +84,14 @@ export const getUserByEmail = async (email) => {
 
 export const incrementUserCoins = async (userId, coins)=>{
     const userIdParts = userId.split('_')
-console.log({userIdParts})
     const dbName = systemConfig.DBS.USERS_DATA
     const collection = userIdParts[2].toLowerCase();
     const dbUsers = await getDb(dbName);
 
     const incObject = {$inc: 
-        {   "coins.generator": coins.generator || 0,
+        {  
+            "coins.create": coins.create || 0,
+            "coins.generator": coins.generator || 0,
             "coins.training": coins.training || 0,
             "coins.coaching": coins.coaching || 0,
             "coins.audio": coins.audio || 0,
@@ -107,7 +102,6 @@ console.log({userIdParts})
     const resultIncrementCoins = await dbUsers.collection(collection).updateOne({"_id.userId": userId}, incObject)
     console.log(resultIncrementCoins)
 
-
 }
 
 /**
@@ -115,24 +109,30 @@ console.log({userIdParts})
  */
 export const updateUser = async (data, user)=>{
 
+    const dbName = systemConfig.DBS.USERS_DATA;
+    const collection = user._id.from.month.toLowerCase();
+
 
     if(data.task === "UPDATE_USER_PASSWORD"){
 
         // 3. Guardar en MongoDB en la colección del mes de alta
-        const params = {
-            dbName: systemConfig.DBS.USERS_DATA,
-            collection: user._id.from.month.toLowerCase(),
-        };
+        
         const filter = {
             "_id.email": user._id.email
         }
         const updateData =  { "$set": { password: data.password } }
+        const dbUsers = await getDb(dbName)
         const dbResult = await dbCrudHandler.updateOne(filter, updateData, params);
-        
-        if (dbResult.status !== 'ok') {
+
+        if(dbResult.acknowledged && dbResult.matchedCount === 1 && dbResult.modifiedCount === 1 ){
+
+            return { status: 'ok', message: "PASWORD ACTUALIZADO CON EXITO"} 
+        }else{
+
             return { status: 'error', code: 500, message: 'Error guardando usuario en Base de Datos' };
         }
-        return { status: 'ok', message: "PASWORD ACTUALIZADO CON EXITO"} 
+
+        
     }
 
 

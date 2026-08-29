@@ -162,20 +162,12 @@ export default  {
     VALID_POST_ENDPOINTS_WITHOUT_SESSION: ["get-main-menu", "get-html-items", "refresh-bridge", "refresh-bridge.html", "stripe-webhook", "stripe-webhook.html"],
    
     // ESTE EL EL CORRECTO
-    RESTRICTED_ENDPOINTS: ["upload-files", "upload-files.html","remote-control-access-bi89530", "remote-control-panel", 'mis-bots', 'mis-bots.html', 'user', 'user.html', 'my-bots', 'my-bots.html'],
+    RESTRICTED_ENDPOINTS: ["upload-files", "upload-files.html","remote-control-access-bi89530", "remote-control-panel", 'mis-bots', 'mis-bots.html', 'users', 'users.html', 'my-bots', 'my-bots.html', "dashboard", "dashboard.html"],
 
-    //OJO ELIMINAMOS "remote-control-pannel"  PARA CREAR Y PROBAR EL SERVICIO
-    //RESTRICTED_ENDPOINTS: ["upload-files", "upload-files.html","remote-control-access-bi89530", 'mis-bots', 'mis-bots.html', 'user', 'user.html', 'my-bots', 'my-bots.html'],
-
-    
     // !!! VERIFICAMOS CON URL_TO_VERIFY [ PRIMERA SECCION DE LA URL]
     // SE CREAN PARA ATENDER UN SERVICIO TEMPORAL -> 
     DINAMIC_ENDPOINTS: ['temporal', 'dinamic'],
 
-    // ENDPOINTS PARA REALIZAR PAGOS EN LA PLATAFORMA [stripe, ...]
-    // NECESITAMOS TRATARLOS PORQUE SE HACEN MAS TAREAS QUE ENVIAR UNA PAGINA ESTATICA
-    // SON PETICONES GET
-    //PAY_ENDPOINTS: ["success-checkout", "success-checkout.html", "cancel-checkout", "cancel-checkout.html"],
 
     /**
      * PANEL DE ACCESO REMOTO A LA PLATAFORMA 
