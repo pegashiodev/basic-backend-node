@@ -1,6 +1,6 @@
 .env
 request.http
-addProductstoDb.js
+addProductsToDb.js
 tips.js
 dbs_doc.md
 ses-smtp-test_credentials.csv
