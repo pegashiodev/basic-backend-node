@@ -31,7 +31,7 @@ const promotions = [
         endpoint: "CHECKOUT",
         promoCode: 'MIDU',
         expiresAt: new Date('2027-12-31T23:59:59').getTime(),
-        owner: {
+        affiliate: {
             name: 'mididev',
             email: 'midudev@gmail.com',
             userId: '12312nmnmkj123jk'
@@ -48,7 +48,7 @@ const promotions = [
         endpoint: "SIGNUP",
         promoCode: 'BIENVENIDA',
         expiresAt: new Date('2027-12-31T23:59:59').getTime(),
-        owner: {
+        affiliate: {
           name: 'system',
           email: 'system@gmail.com',
           userId: '12312nmnmkj123jk'
@@ -161,49 +161,6 @@ export const addPromotion = (promotion)=>{
  * @param {*} promo 
  */
 
-export const updateAfiliatePromotion = async (promotion, user)=>{
-
-    // ACTUALIZAMOS EL LISTADO DE USUARIOS DEL AFILIADO
-    let dbAfiliates;
-
-    // OBTENEMOS LA BASE DE DATOS PARA ACTUALIZAR EL CONTENIDO DE LA PROMOCION
-    try{
-        dbAfiliates = await getDb(systemConfig.DBS.AFILIATES)
-    }catch(e){
-        console.log("ERROR al Obtener getDb() desde promotionsHandler.js")
-        throw new Error(`Error en "promotionsHandler.updatePromotion"  al Obtener la base de datos`);
-        // return {status: "error", code: 565, message: "ERROR AL ACCEDER A LA BASE DE DATOS DE LAS PROMOCIONES"}
-    }
-    const afiliatesCollection = dbAfiliates.collection("codes");
-    const afiliate_data = {
-        email: user.email,
-        createdAtTimestamp: user.createdAtTimestamp,
-        createdAt:{
-            year: user._id.from.year,
-            month: user._id.from.month,
-            day: user._id.from.day,
-            
-        },
-        type: promotion.type,
-        amountBeforeDisconunt: promotion.amountBeforeDisconunt || 0,
-        from: promotion.endpoint,
-        promoCode: promotion.promoCode,
-        userId: user._id._id
-    }
-    const customAfiliateId = {
-        _id: promotion.owner.userId,
-        email: promotion.owner.email,
-        promoCode: promotion.promoCode
-    }
-
-    // ACTUALIZAMOS LA PROMOCION EN DB
-    try{
-        await afiliatesCollection.updateOne({_id:customAfiliateId}, {$push: {afiliates: afiliate_data}}, {upsert:true});
-    }catch(e){
-        throw new Error(`Error en "promotionsHandler.updatePromotion"  al Actualizar los datos en la Promocion`);
-    }
-   
-}
 
 
 /**
@@ -221,6 +178,5 @@ export const deletePromotion = (promotion)=>{
 export default  {
     applyPromotion,
     addPromotion,
-    updateAfiliatePromotion,
     deletePromotion,
 }

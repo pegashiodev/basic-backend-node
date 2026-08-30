@@ -46,8 +46,8 @@ export default  {
     
     /** HABILITA LOS CODIGOS PROMOCIONALES EN EL SITIO */
     HAS_PROMO_CODES_SIGNUP: true,   
-    HAS_PROMO_CODES_CHECKOUT: true,      
-
+    HAS_PROMO_CODES_CHECKOUT: true,    
+    VALID_PROMO_CODES: ["BIENVENIDA", "MIDU"],  
     
     /** HABILITAR PROXY INTERNO PARA ATAQUES DDOS */
     HAS_OWN_PROXY_DDOS: true,
@@ -262,7 +262,7 @@ export default  {
     /** 
     *   NOMBRES DE LAS BASES DE DATOS QUE HAY QUE ABRIR ANTES DE LANZAR EL SERVIDOR HTTP  
     */
-    DBS_TO_OPEN: [ "promotions", "products", "orders_2026", "payments_2026", "bills_2026", "users_accounting_2026", 'blacklist', 'users_data', 'users_activity_2026', 'sessions_2026', "site_stats_2026"],
+    DBS_TO_OPEN: [ "promotions", "products", "orders_2026", "users_activity_2026", "users_accounting_2026","bills_2026", 'blacklist', 'users_data', 'sessions_2026', "site_stats_2026"],
 
     /** 
     *   BASES DE DATOS DE LAS QUE HAY QUE CACHEAR CIERTOS DATOS ENTES DE LANZAR EL SERVIDOR HTTP 

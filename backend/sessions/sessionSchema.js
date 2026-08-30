@@ -2,6 +2,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import systemConfig from '../globalData/systemConfig.js';
+import {ObjectId} from "mongodb"
 
 /**
  * Genera el esquema de una nueva sesión
@@ -18,15 +19,16 @@ export function createSessionObject(req, user) {
 
     const { userId, email, role = 'USER', extraData = {} } = user
     const {ip, userAgent} = req
-// console.log({ userId, email, role, ip, userAgent, extraData })
     const [, month, day , year] = new Date().toString().split(' ');
     const now = Date.now();
-    const customSessionId = `ses_${uuidv4()}_${month.toLowerCase()}_${year}`;
+    const sessionId = new ObjectId().toHexString();
     const normalizedEmail = email.trim().toLowerCase();
+    const normalizedMonth = month.toLowerCase();
+    const customSessionId = `ses_${sessionId}_${normalizedMonth}_${year}`;
+    
     return {
         // Datos inmutables de identificación
         _id: {
-            //_id: sessionId,
             sessionId: customSessionId,
             userId,
             email: normalizedEmail

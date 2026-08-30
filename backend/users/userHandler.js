@@ -122,15 +122,25 @@ export const updateUser = async (data, user)=>{
         }
         const updateData =  { "$set": { password: data.password } }
         const dbUsers = await getDb(dbName)
-        const dbResult = await dbCrudHandler.updateOne(filter, updateData, params);
 
-        if(dbResult.acknowledged && dbResult.matchedCount === 1 && dbResult.modifiedCount === 1 ){
+        const resultUpdate = dbUsers.collection(collection).updateOne(filter, updateData)
 
-            return { status: 'ok', message: "PASWORD ACTUALIZADO CON EXITO"} 
+        if(resultUpdate.acknowledged && resultUpdate.matchedCount === 1 && resultUpdate.modifiedCount === 1){
+            return { status: 'ok', message: "PASWORD ACTUALIZADO CON EXITO"}
         }else{
-
             return { status: 'error', code: 500, message: 'Error guardando usuario en Base de Datos' };
         }
+
+        // const dbResult = await dbCrudHandler.updateOne(filter, updateData, params);
+
+
+        // if(dbResult.acknowledged && dbResult.matchedCount === 1 && dbResult.modifiedCount === 1 ){
+
+        //     return { status: 'ok', message: "PASWORD ACTUALIZADO CON EXITO"} 
+        // }else{
+
+        //     return { status: 'error', code: 500, message: 'Error guardando usuario en Base de Datos' };
+        // }
 
         
     }

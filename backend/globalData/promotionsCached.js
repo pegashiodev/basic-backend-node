@@ -12,13 +12,13 @@ export default [
         endpoint: "CHECKOUT",
         promoCode: 'MIDU',
         expiresAt: new Date('2027-12-31T23:59:59').getTime(),
-        owner: {
+        affiliate: {
             name: 'mididev',
             email: 'midudev@gmail.com',
             userId: '12312nmnmkj123jk'
         },
         type: "DISCOUNT",        
-        discountPercent: 20,
+        discountPercent: 25,
         units: 120,
         
     },
@@ -31,13 +31,14 @@ export default [
         endpoint: "SIGNUP",
         promoCode: 'BIENVENIDA',
         expiresAt: new Date('2027-12-31T23:59:59').getTime(),
-        owner: {
+        affiliate: {
           name: 'system',
           email: 'system@gmail.com',
           userId: '12312nmnmkj123jk'
         },
         type: "COINS",        
         coins:{
+            create: 500,
             generator: 500,
             trainnig: 200,
             coaching: 200,

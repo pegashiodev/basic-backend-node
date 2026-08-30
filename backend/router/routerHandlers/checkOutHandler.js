@@ -6,7 +6,7 @@
  */
 
 import Stripe from 'stripe';
-import crypto from 'node:crypto';
+import {ObjectId} from "mongodb"
 import systemConfig from '../../globalData/systemConfig.js';
 import { redisClient } from '../../db/openRedis.js';
 import { createOrder, updateOrderStripeSession } from '../../orders/orderService.js';
@@ -173,18 +173,25 @@ export default async function checkOutHandler(req, res) {
             });
         }
 
-        const orderId = `ord_${crypto.randomUUID()}_${month.toLowerCase()}_${year}`;
+        const orderId = new ObjectId().toHexString();
+        const customOrderId = `ord_${orderId}_${month.toLowerCase()}_${year}`;
         
         req.order = {
-            orderId: orderId,
+            orderId: customOrderId,
             verifiedOrderItems: verifiedOrderItems,
             totalAmountInCents: totalAmountInCents
         }
         // Si habia promocion añadimos mas informacion al pedido: code, percio base, descuento aplicado, ...
         if(req.promotion){
-            req.order.promoCode = promoCode;
-            req.order.pricewithOutDiscount = totalAmountInCentsBeforeDiscount;
-            req.order.discountPercent = promotion.discountPercent;
+            req.order.promotion = {
+                affiliate: req.promotion.affiliate,
+                endpoint: req.promotion.endpoint,
+                type: req.promotion.type,
+                promoCode: promoCode,
+                amountBeforeDiscount: totalAmountInCentsBeforeDiscount,
+                discountPercent: req.promotion.discountPercent
+            }
+            
         }
         
         
@@ -200,12 +207,12 @@ export default async function checkOutHandler(req, res) {
             customer_email: userEmail || undefined,
             // En metadata viaja el orderId para recuperarlo en el Webhook de forma segura
             metadata: {
-                orderId: orderId,
+                orderId: customOrderId,
                 userId: String(userId || '')
             },
             // Las páginas de éxito/cancelación solo sirven para mostrar la interfaz visual
             success_url: `${protocol}://${baseUrl}/success-checkout.html?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${protocol}://${baseUrl}/cancel-checkout.html?order_id=${orderId}`,
+            cancel_url: `${protocol}://${baseUrl}/cancel-checkout.html?order_id=${customOrderId}`,
         });
 
         if(!session || !session.id){
@@ -244,7 +251,7 @@ export default async function checkOutHandler(req, res) {
             message: 'Sesión de checkout creada con éxito.',
             checkoutData: {
                 checkoutUrl: session.url,
-                orderId: orderId
+                orderId: customOrderId
             }
         }));
 

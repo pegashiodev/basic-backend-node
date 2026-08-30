@@ -3,19 +3,19 @@
 /**
  * ESQUEMA / MODELO DE USUARIO
  */
-
-import { randomUUID } from 'node:crypto';
+import {ObjectId} from "mongodb"
+import { randomBytes } from 'node:crypto';
 import systemConfig from '../globalData/systemConfig.js';
-import { updateAfiliatePromotion } from '../promotions/promotionsHandler.js';
+import { updateAffiliatePromotion } from '../affiliates/affiliateService.js';
 
 export default async function userSchema(body) {
 
     const [, month, day , year] = new Date().toString().split(' ');
-    const userUuid = randomUUID();
-    const id2 = randomUUID();
+    const userId = new ObjectId().toHexString();
+    const id2 = randomBytes(16).toString('hex');
     const normalizedMonth = month.toLowerCase();
     const normalizedEmail = body.email.toLowerCase().trim();
-    const customUserId = `us_${userUuid}_${normalizedMonth}}_${year}`
+    const customUserId = `us_${userId}_${normalizedMonth}}_${year}`
 
     // 1. _id compuesto inmutable (clave primaria de Mongo y puntero de Redis)
     const customId = {
@@ -45,6 +45,7 @@ export default async function userSchema(body) {
     const user = {
         _id: customId,
         userId: customUserId,
+        id2: id2,
         name: (body.name || '').trim(),
         nick: (body.nick || '').trim(),
         channelName: (body.channelName || '').trim(),
@@ -74,8 +75,8 @@ export default async function userSchema(body) {
         saldoMoney: body.saldoMoney || 0,
     };
 
-    if(systemConfig.HAS_PROMO_CODES && body.promotion){
-        await updateAfiliatePromotion(body.promotion, user)
+    if(systemConfig.HAS_PROMO_CODES_SIGNUP && body.promotion){
+        await updateAffiliatePromotion(body.promotion, user)
        
     }
 

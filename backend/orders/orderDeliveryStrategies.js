@@ -66,11 +66,6 @@ export const deliveryStrategies = {
 
         console.log(`💰 [BALANCE] Se han añadido COINS  al saldo del usuario ${userId}`);
 
-        // 3.- Añadimos Pago a la Contabilidad del usuario
-       
-
-        // 4.- ENVIAMOS UN EMAIL DE CONFIRMACION DEL PEDIDO REALIZADO -> TE ENVIAMOS FACTURA PRONTO ??
-
         return {
             type: 'BALANCE_RECHARGE',
             status: 'DELIVERED',

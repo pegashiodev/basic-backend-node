@@ -61,15 +61,15 @@ console.log("Disparaao Triger !!!!")
 
                 
                 //1. Actualizar estado a SUCCESS en DB
-                await updateOrderStatusToSuccess(orderId, {
+                const order = await updateOrderStatusToSuccess(orderId, {
                     paymentIntentId: session.payment_intent,
                     paymentStatus: session.payment_status,
                     paidAt: new Date()
                 });
 console.log("Actualizado a successs !!!!")
                 // 2. Tramitar el pedido (crear bots, dar permisos al usuario, enviar email/SMS)
-                await processOrderDelivery(orderId);
-                console.log(`✅ Pedido ${orderId} cobrado y tramitado con éxito.`);
+                await processOrderDelivery(order);
+                console.log(`✅ Pedido ${order.orderId} cobrado y tramitado con éxito.`);
                 break;
             }
 

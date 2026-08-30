@@ -3,7 +3,7 @@
 # DB USERS_DATA
     DATOS DE LOS USUARIOS
 
-    - DB Name = users_data_ + [year]
+    - DB Name = users_data
     - Collection = week_day + day  [Ej: mon23] -> Datos que se extraen del user -> user.since -> mes y dia de creaición del usuario
     - Doc = user
 

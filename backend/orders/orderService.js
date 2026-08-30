@@ -110,7 +110,7 @@ export async function updateOrderStatusToSuccess(orderId, paymentDetails) {
     const date = new Date()
     try{
 
-        await db.collection(collection).findOneAndUpdate(
+        const order = await db.collection(collection).findOneAndUpdate(
             { "_id.orderId": orderId, status: { $ne: 'SUCCESS' } },
             { 
                 $set: { 
@@ -122,6 +122,14 @@ export async function updateOrderStatusToSuccess(orderId, paymentDetails) {
             },
             { returnDocument: 'after' }
         );
+        // TENEMOS EL PEDIDO ANTERIOR A LA ACTUALIZACION
+        // ASI QUE AÑADIMOS LOS CAMBIOS PARA RETORNARLO
+        order.status = "SUCCESS"
+        order.paymentDetails = paymentDetails,
+        order.paidAt = date,
+        order.updatedAt= date
+        return order;
+        
 
     }catch(e){
         console.log(`❌ ERROR Actualizando STATUS DE ORDER A SUCCESS`)
@@ -154,13 +162,13 @@ export async function markOrderAsExpired(orderId) {
 /**
  * 6. PROCESAR LA ENTREGA DEL PEDIDO (Disparado por el Webhook de Stripe)
  */
-export async function processOrderDelivery(orderId) {
+export async function processOrderDelivery(order) {
    
     // 1. Obtener la orden confirmada
-    const order = await getOrderById(orderId);
-    if (!order) {
-        throw new Error(`No se encontró el pedido ${orderId} para entrega.`);
-    }
+    // const order = await getOrderById(orderId);
+    // if (!order) {
+    //     throw new Error(`No se encontró el pedido ${orderId} para entrega.`);
+    // }
 
     const deliveryResults = [];
 
@@ -191,10 +199,22 @@ export async function processOrderDelivery(orderId) {
         }
     }
 
-    // 3. Guardar el log de entrega en el pedido
+    // 3.- Añadimos Pago a la Contabilidad del usuario y Actividad de usuarios
+    const paymentData = {}
+    //await addPaymentToUserAccounting()
+    //await addItemToUserActivity()
+
+    if(order.promotion){
+        // almacenar en Afiliates este evento para compensar al Afiliado
+    }
+
+    // 4.- ENVIAMOS UN EMAIL DE CONFIRMACION DEL PEDIDO REALIZADO -> TE ENVIAMOS FACTURA PRONTO ??
+    //await senEmail
+
+    // 5. Guardar el log de entrega en el pedido
     // const db = getDb();
     // await db.collection(ORDERS_COLLECTION).updateOne(
-    //     { orderId: orderId },
+    //     { "_id.orderId": orderId },
     //     { 
     //         $set: { 
     //             deliveryResults: deliveryResults,
