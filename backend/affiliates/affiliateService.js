@@ -1,8 +1,9 @@
 
 
 import { getDb } from "../db/openDbs.js";
+import systemConfig from "../globalData/systemConfig.js";
 
-export const updateAfiliatePromotion = async (promotion, user)=>{
+export const updateAffiliatePromotion = async (promotion, user)=>{
 
     // ACTUALIZAMOS EL LISTADO DE USUARIOS DEL AFILIADO
     let dbAffiliates;
@@ -15,10 +16,10 @@ export const updateAfiliatePromotion = async (promotion, user)=>{
         dbAffiliates = await getDb(systemConfig.DBS.AFILIATES)
     }catch(e){
         console.log("ERROR al Obtener getDb() desde promotionsHandler.js")
-        throw new Error(`Error en "promotionsHandler.updatePromotion"  al Obtener la base de datos`);
+        throw new Error(`Error en "affiliateService.updateAffiliatePromotion"  al Obtener la base de datos`);
         // return {status: "error", code: 565, message: "ERROR AL ACCEDER A LA BASE DE DATOS DE LAS PROMOCIONES"}
     }
-    const affiliatesCollection = dbAffiliates.collection("codes");
+    const affiliatesCollection = dbAffiliates.collection(systemConfig.COLLECTIONS.PROMOTIONS);
     const affiliate_data = {
         email: user.email,
         userId: user._id.userId,
@@ -50,5 +51,5 @@ export const updateAfiliatePromotion = async (promotion, user)=>{
 
 
 export default  {
-    updateAfiliatePromotion,
+    updateAffiliatePromotion,
 }

@@ -10,9 +10,9 @@
 import { deliveryStrategies } from './orderDeliveryStrategies.js';
 import { getDb } from '../db/openDbs.js';
 import systemConfig from '../globalData/systemConfig.js';
-import {updateAfiliatePromotion} from '../affiliates/affiliateService.js';
-import { getUserByEmail } from '../users/userHandler.js';
-import { addItemToUserActivity, addPaymentToUserAccounting } from '../users/userHandler.js';
+import {updateAffiliatePromotion} from '../affiliates/affiliateService.js';
+import { addPaymentToUserPayments, getUserByEmail, addItemToUserActivity } from '../users/userHandler.js';
+import sendEmail from '../notifications/sendEmail.js';
 
 // const [, month, day , year] = new Date().toString().split(' ');
 
@@ -42,7 +42,8 @@ export async function createOrder(user, order) {
         stripeSessionId:order.stripeSessionId,
         paymentDetails: null,
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
+        promotion: order.promotion || false,
     };
 
     const orderParts = order.orderId.split("_")
@@ -209,7 +210,7 @@ console.log({deliveryResults})
 
         // ARCHIVAMOS EL PAGO EN USERS-ACCOUNTING
         const paymentData = {}
-        await addPaymentToUserAccounting(order)
+        await addPaymentToUserPayments(order)
     
         // Bloque independiente para user-activity
         try{
@@ -220,20 +221,25 @@ console.log({deliveryResults})
     
         // Bloque independiente para el envio de notificacion final al usuario por email
         try{
-            await senEmail(order._id.email, "SUCCESS_PAYMENT", order.language, {})
+            await sendEmail(
+                {   email: order._id.email, 
+                    type: "SUCCESS_PAYMENT", 
+                    language: order.language, 
+                    customData:{},
+                })
         }catch(e){
             console.error(`❌ Error en orderService.js, enviando Email Final al usuario: ->`, e)
         }
-    
+        
         // Bloque independiente para actualizar la lista de usuarios del Afiliado
         if(order.promotion){
             // Obtengo el user con el email que esta en el order
             try {
-                const user = getUserByEmail(order._id.email)
+                const user = await getUserByEmail(order._id.email)
                 if(!user){
                     throw new Error(" ERROr en orderService.processOrderDelivery. No hemos podido acceder al usuario para gestionar la promocion del pedido: -> ENVIAR A ADMIN LA TAREA PENDIENTE");
                 }
-                await updateAfiliatePromotion(order.promotion, user)
+                await updateAffiliatePromotion(order.promotion, user)
             } catch (e) {
                 console.error(`❌ Error en orderService.processOrderDelivery, Actualizando el Listado de usuarios del Afiliado: ->`, e)
             }

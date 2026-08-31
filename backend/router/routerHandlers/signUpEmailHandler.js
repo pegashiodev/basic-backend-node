@@ -77,7 +77,7 @@ console.log({ email, password, name, code, userAgent, deviceId, language, promoC
                     message: 'No se pudo enviar el correo de verificación.'
                 }));
             }
-console.log({validationCode})
+            
             res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
             return res.end(JSON.stringify({
                 status: 'ok',

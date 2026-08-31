@@ -82,14 +82,17 @@ export async function getDb(dbName) {
     // 1. Si ya se abrió al inicio, la devuelve de inmediato
     if (dbsInstances.has(dbName)) {
         return dbsInstances.get(dbName);
+   
+    }else{
+
+        // 1. Esperamos a que el cliente esté conectado (reutiliza la misma conexión siempre)
+        const mongoClient = await getClient();
+        
+        const dbInstance = mongoClient.db(dbName);
+        dbsInstances.set(dbName, dbInstance);
+        return dbInstance;
     }
 
-    // 1. Esperamos a que el cliente esté conectado (reutiliza la misma conexión siempre)
-    const mongoClient = await getClient();
-    
-    const dbInstance = mongoClient.db(dbName);
-    dbsInstances.set(dbName, dbInstance);
-    return dbInstance;
 
 }
 

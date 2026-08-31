@@ -110,17 +110,19 @@ export const incrementUserCoins = async (userId, coins)=>{
  * AÑADE PAGO REALIZADO POR EL USUARIO EN LA PLATAFORMA A SU CONTABILIDAD
  */
 
-export const addPaymentToUserAccounting = async (order)=>{
+export const addPaymentToUserPayments = async (order)=>{
     // Obtenemos el usuario que realizo el pedido
-    const user = getUserByEmail(order._id.email)
+    const user = await getUserByEmail(order._id.email)
     if(!user){
         throw new Error("Error en addPaymentToUserAccounting: No hemos obtenido usuario a partir de Order");
         
     }
-    const orderIdParts = order._id.orderId
+console.log({user})
+    const orderIdParts = order._id.orderId.split("_")
     const yearDb = orderIdParts[3];
-    const dbName = systemConfig.DBS.USERS_ACCOUNTING + yearDb
-    const collection = systemConfig.COLLECTIONS.USERS_ACCOUNTING
+    const normalizedMonth = orderIdParts[2].toLowerCase();
+    const dbName = systemConfig.DBS.USERS_PAYMENTS + yearDb
+    const collection = normalizedMonth;
     const timeStampOrder = Date.now(order.createdAt)
    
     const accountingDb = await getDb(dbName);
@@ -135,12 +137,30 @@ export const addPaymentToUserAccounting = async (order)=>{
     // order.createAt es un new Date(), con la fecha de creacion del pedido
     const [, month, day , year] = order.createdAt.toString().split(' ');
     const normalizedMonthId = month.toLowerCase();
+
+    // Obtenemos los coins totales de la recarga de coins que ha comprado en la plataforma
+    let totalCoins = []
+    if(order.items){
+        let len = order.items.length;
+        while(len){
+            len--
+            if(order.items[len].coins){
+                totalCoins.push(order.items[len].coins)
+            }
+        }
+    }
     const payment = {
         _id:{
             paymentId: `saaspay_${new ObjectId().toHexString()}_${timeStampOrder}`,
             userId: user._id.userId,
             email: user._id.email
         },
+        date:{
+            day: day,
+            month: normalizedMonth,
+            year: year
+        },
+        coins: totalCoins,
         dataPayment: {
             type: "SAAS_PAYMENT",
             orderId: order.orderId,
@@ -166,13 +186,14 @@ export const addPaymentToUserAccounting = async (order)=>{
 export const addItemToUserActivity = async(order, type)=>{
 
     // Obtenemos el usuario que realizo el pedido
-    const user = getUserByEmail(order._id.email)
+    const user = await getUserByEmail(order._id.email)
     if(!user){
         throw new Error("Error en addPaymentToUserAccounting: No hemos obtenido usuario a partir de Order");
         
     }
-    const orderIdParts = order._id.orderId
+    const orderIdParts = order._id.orderId.split("_")
     const yearDb = orderIdParts[3];
+    const normalizedMonth = orderIdParts[2].toLowerCase();
     const dbName = systemConfig.DBS.USERS_ACTIVITY + yearDb
     const collection = systemConfig.COLLECTIONS.USERS_ACTIVITY
     const activityDb = await getDb(dbName);
@@ -181,24 +202,40 @@ export const addItemToUserActivity = async(order, type)=>{
     const filter = {
         _id:{
             userId: user._id.userId,
-            email: user._id.email
+            email: user._id.email,
         }
     }
     // order.createAt es un new Date(), con la fecha de creacion del pedido
-    //const [, month, day , year] = order.createdAt.toString().split(' ');
+    const [, month, day , year] = order.createdAt.toString().split(' ');
     const timeStampOrder = Date.now(order.createdAt)
     //const normalizedMonthId = month.toLowerCase();
 
     let payment, item;
     // SE INSERTA UN PAGO EN LA PLATAFORMA PARA COMPRAR COINS, U OTRO SERVICIO
     if(type === "SAAS_PAYMENT"){
-
+        // Obtenemos los coins totales de la recarga de coins que ha comprado en la plataforma
+        let totalCoins = []
+        if(order.items){
+            let len = order.items.length;
+            while(len){
+                len--
+                if(order.items[len].coins){
+                    totalCoins.push(order.items[len].coins)
+                }
+            }
+        }
         payment = {
             _id:{
                 paymentId: `saaspay_${new ObjectId().toHexString()}_${timeStampOrder}`,
                 userId: user._id.userId,
                 email: user._id.email
             },
+            date:{
+                day: day,
+                month: normalizedMonth,
+                year: year
+            },
+            coins: totalCoins, 
             dataPayment: {
                 type: "SAAS_PAYMENT",
                 orderId: order.orderId,
@@ -220,6 +257,11 @@ export const addItemToUserActivity = async(order, type)=>{
                 userId: user._id.userId,
                 email: user._id.email
             },
+            date:{
+                day: day,
+                month: normalizedMonth,
+                year: year
+            },
             dataPayment: {
                 type: type,
             }
@@ -235,6 +277,11 @@ export const addItemToUserActivity = async(order, type)=>{
                 paymentId: `micropay_${new ObjectId().toHexString()}_${timeStamp}`,
                 userId: user._id.userId,
                 email: user._id.email
+            },
+            date:{
+                day: day,
+                month: normalizedMonth,
+                year: year
             },
             dataPayment: {
                 type: type,
@@ -299,5 +346,5 @@ export default {
     getUserByEmail, 
     updateUser,
     incrementUserCoins,
-    addPaymentToUserAccounting
-};
+    addPaymentToUserPayments
+}

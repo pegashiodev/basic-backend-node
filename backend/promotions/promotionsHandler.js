@@ -85,9 +85,8 @@ export const  validatePromotion = async (req, from)=>{
         console.log("ERROR al Obtener getDb()")
         return {status: "error", code: 565, message: "ERROR AL ACCEDER A LA BASE DE DATOS DE LAS PROMOCIONES"}
     }
-console.log(dbPromotions)
     // BUSCAMOS LA PROMO
-    const promotionsCollection = dbPromotions.collection("codes");
+    const promotionsCollection = dbPromotions.collection(systemConfig.COLLECTIONS.PROMOTIONS);
     const promotion = await promotionsCollection.findOne({_id:promoCode});
 
     if(!promotion){

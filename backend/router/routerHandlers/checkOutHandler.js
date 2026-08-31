@@ -10,7 +10,7 @@ import {ObjectId} from "mongodb"
 import systemConfig from '../../globalData/systemConfig.js';
 import { redisClient } from '../../db/openRedis.js';
 import { createOrder, updateOrderStripeSession } from '../../orders/orderService.js';
-import { validatePromotion, updateAfiliatePromotion } from '../../promotions/promotionsHandler.js';
+import { validatePromotion } from '../../promotions/promotionsHandler.js';
 
 process.loadEnvFile();
 // const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -41,6 +41,7 @@ export default async function checkOutHandler(req, res) {
         // 1.- Validamos el promoCode si lo tenemos en el body
         if(systemConfig.HAS_PROMO_CODES_CHECKOUT && promoCode){
             console.log("VAlidadmos el promoCode")
+            req.body.promoCode = promoCode
             const result_promoCode = await validatePromotion(req, "CHECKOUT")
             if(result_promoCode.status !== "ok"){
                 res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -85,7 +86,6 @@ export default async function checkOutHandler(req, res) {
             }
        
             // UTILIZAMOS REDIS PARA ACCEDER A LOS PRODUCTOS
-console.log(item)
             const currentProductString = await redisClient.get(`product:${item.productId}`);
             const currentProduct = JSON.parse(currentProductString)
             
@@ -140,22 +140,19 @@ console.log(item)
             console.log(calcularPrecioParaStripe(19.99, 15)); // Resultado: 1699 (16.99€ exactamente)
 
             */
-    
 
             // AÑADIMOS EL TOTAL DE LA COMPRA para luego pagar al afiliado
-            totalAmountInCentsBeforeDiscount = currentProduct.priceInCents * quantity;
+            totalAmountInCentsBeforeDiscount += currentProduct.priceInCents * quantity;
             
             // Si hay req.promotion es que el promoCode es valido y aplicamos el descuento
-            if(req.promotion){
-                currentProduct.priceInCents = Math.round(currentProduct.priceInCents - (currentProduct.priceInCents * (req.promotion.discountPercent / 100)))
+            if(req.body.promotion){
+                currentProduct.priceInCents = Math.round(currentProduct.priceInCents - (currentProduct.priceInCents * (req.body.promotion.discountPercent / 100)))
             }
             
             const itemTotalCents = currentProduct.priceInCents * quantity;
             // PRECIO PAGADO POR EL USUARIO CON EL DESCUENTO DEL AFILIADO
             totalAmountInCents += itemTotalCents;
-            if(req.promotion){
-                req.promotion.amountBeforeDisconunt = totalAmountInCentsBeforeDiscount
-            }
+           
 
             //Almacenamos el item completo para luego manipularlo en processOrderDelivery
             verifiedOrderItems.push(currentProduct);
@@ -172,6 +169,11 @@ console.log(item)
                 quantity: quantity,
             });
         }
+    
+        // Si hay promotio, almacenamos el coste del servicio antes del descuento para liquidar posteriormente al afiliado
+        if(req.body.promotion){
+            req.body.promotion.amountBeforeDisconunt = totalAmountInCentsBeforeDiscount
+        }
 
         const orderId = new ObjectId().toHexString();
         const customOrderId = `ord_${orderId}_${month.toLowerCase()}_${year}`;
@@ -183,18 +185,17 @@ console.log(item)
             totalAmountInCents: totalAmountInCents
         }
         // Si habia promocion añadimos mas informacion al pedido: code, percio base, descuento aplicado, ...
-        if(req.promotion){
+        if(req.body.promotion){
             req.order.promotion = {
-                affiliate: req.promotion.affiliate,
-                endpoint: req.promotion.endpoint,
-                type: req.promotion.type,
+                affiliate: req.body.promotion.affiliate,
+                endpoint: req.body.promotion.endpoint,
+                type: req.body.promotion.type,
                 promoCode: promoCode,
                 amountBeforeDiscount: totalAmountInCentsBeforeDiscount,
-                discountPercent: req.promotion.discountPercent
+                discountPercent: req.body.promotion.discountPercent
             }
             
         }
-        
         
         // 5. Determinar host base según entorno (DEV vs PROD)
         const baseUrl = process.env.MODE === 'DEV' ? systemConfig.HOST_DEV : systemConfig.HOST_PROD;
@@ -237,11 +238,6 @@ console.log(item)
                     code: 531,
                     message: `NO SE HA podido crear el pedido en la DB: -> cancelamos Checkout`
             }));
-        }
-
-        // 8. Si hemos aplicado el promoCode lo hemos de guardar en la Base de Datos para pagar posteriormente al afiliado
-        if(req.promotion){
-            await updateAfiliatePromotion(req.promotion, user)
         }
 
         // 9. Responder con la URL de pago al cliente

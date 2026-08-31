@@ -6,6 +6,8 @@
 
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import systemConfig from '../globalData/systemConfig.js';
+import generateValidationToken from "./notificationsTools/generateValidationToken.js"
+import generateVerificationEndpoint from "./notificationsTools/generateVerificationEndpoint.js"
 process.loadEnvFile();
 
 // Inicialización del cliente SES con variables de entorno
@@ -138,9 +140,9 @@ export default async function sendEmail({ email, type = 'VERIFICATION_CODE', lan
     let code = "";
 
     if(type === "VERIFICATION_CODE"){
-        code = await generateValidationToken(normalizedEmail);
+        code = await generateValidationToken(email);
     }else if(type === "VERIFICATION_ENDPOINT"){
-        code = await generateVerificationEndpoint(normalizedEmail);
+        code = await generateVerificationEndpoint(email);
     }
 console.log({code})
 

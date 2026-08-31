@@ -15,7 +15,7 @@ export default async function userSchema(body) {
     const id2 = randomBytes(16).toString('hex');
     const normalizedMonth = month.toLowerCase();
     const normalizedEmail = body.email.toLowerCase().trim();
-    const customUserId = `us_${userId}_${normalizedMonth}}_${year}`
+    const customUserId = `us_${userId}_${normalizedMonth}_${year}`
 
     // 1. _id compuesto inmutable (clave primaria de Mongo y puntero de Redis)
     const customId = {
@@ -60,11 +60,11 @@ export default async function userSchema(body) {
         createdAtTimestamp: date.getTime(),
         userDevices: initialDevices,
         isPromoAfiliate: body.promotion ? true : false,
-        afiliateData: body.promotion?.owner || null,
+        afiliateData: body.promotion?.affiliate || null,
         coins:{
-            create: body.promotion?.coins?.create || 500,             // CREAR CONTENIDO: ENTRVISTA, AUDIO, IMAGENES, ....
-            training: body.promotion?.coins?.training || 250,       // ENTRENAR CREAR AUDIOS, ...
-            coaching: body.promotion?.coins?.coaching || 100,       // CONSULTAR DUDAS CREATIVAS ....
+            create: body.promotion?.coins?.create || 0,             // CREAR CONTENIDO: ENTRVISTA, AUDIO, IMAGENES, ....
+            training: body.promotion?.coins?.training || 0,       // ENTRENAR CREAR AUDIOS, ...
+            coaching: body.promotion?.coins?.coaching || 0,       // CONSULTAR DUDAS CREATIVAS ....
             generator: body.promotion?.coins?.generator || 0,
             audio: body.promotion?.coins?.audio || 0,
             images: body.promotion?.coins?.images || 0,

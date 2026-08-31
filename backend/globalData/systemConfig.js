@@ -220,9 +220,9 @@ export default  {
         SESSIONS: 'sessions_',                              // + AÑO EN EL QUE SE CREA LA SESSION ACTUAL -> COLLECTION = MES ... IDEM
         SITE_STATS: "site_stats_",                          // + año. Collection = mes
         USERS_ACTIVITY: 'users_activity_',                  // + año -> coll = name user
-        USERS_ACCOUNTING: 'users_accounting_',              // + AÑO  -> coll = MONTH
+        USERS_PAYMENTS: 'users_payments_',                  // + AÑO  -> coll = MONTH
         USERS_DATA: 'users_data',                          //  -> COLLECTION = MES DE ALTA DEL USUARIO
-        AFILIATES: 'afiliates',                             // -> COLLECTION = codes
+        AFILIATES: 'affiliates',                             // -> COLLECTION = codes
 
     },
 
@@ -232,7 +232,6 @@ export default  {
         PRODUCTS: "pcm",
         AFILIATES: "codes",
         BLACKLIST: "ips",
-        USERS_ACCOUNTING: "payments",
         USERS_ACTIVITY: "payments"
     },
     /** TIEMPO DE EXPIRACION DE LA COOKIE */
@@ -265,7 +264,7 @@ export default  {
     /** 
     *   NOMBRES DE LAS BASES DE DATOS QUE HAY QUE ABRIR ANTES DE LANZAR EL SERVIDOR HTTP  
     */
-    DBS_TO_OPEN: [ "promotions", "products", "orders_2026", "users_activity_2026", "users_accounting_2026","billing_2026", 'blacklist', 'users_data', 'sessions_2026', "site_stats_2026"],
+    DBS_TO_OPEN: [ "promotions", "products", "orders_2026", "users_activity_2026", "users_payments_2026","billing_2026", 'blacklist', 'users_data', 'sessions_2026', "site_stats_2026", "affiliates"],
 
     /** 
     *   BASES DE DATOS DE LAS QUE HAY QUE CACHEAR CIERTOS DATOS ENTES DE LANZAR EL SERVIDOR HTTP 
