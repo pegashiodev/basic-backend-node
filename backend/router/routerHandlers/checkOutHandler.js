@@ -85,7 +85,7 @@ export default async function checkOutHandler(req, res) {
             }
        
             // UTILIZAMOS REDIS PARA ACCEDER A LOS PRODUCTOS
-            console.log(item)
+console.log(item)
             const currentProductString = await redisClient.get(`product:${item.productId}`);
             const currentProduct = JSON.parse(currentProductString)
             
@@ -177,6 +177,7 @@ export default async function checkOutHandler(req, res) {
         const customOrderId = `ord_${orderId}_${month.toLowerCase()}_${year}`;
         
         req.order = {
+            language: req.urlData.language,
             orderId: customOrderId,
             verifiedOrderItems: verifiedOrderItems,
             totalAmountInCents: totalAmountInCents

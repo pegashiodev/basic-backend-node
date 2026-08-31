@@ -43,7 +43,7 @@ export const updateAfiliatePromotion = async (promotion, user)=>{
     try{
         await affiliatesCollection.updateOne({_id:customAffiliateId}, {$push: {afiliates: affiliate_data}}, {upsert:true});
     }catch(e){
-        throw new Error(`Error en "promotionsHandler.updatePromotion"  al Actualizar los datos en la Promocion`);
+        throw new Error(`Error en "affiliateService.updateAffiliatePromotion"  al Actualizar los datos en la Promocion: ENVIAR A ADMIN ESTA TAREA`);
     }
    
 }

@@ -226,11 +226,14 @@ export default  {
 
     },
 
+    // PARA QUELLAS BASES DE DATOS QUE SOLO TIENE UNA UNICA COLLECTION
     COLLECTIONS: {
         PROMOTIONS: "pcm",
         PRODUCTS: "pcm",
         AFILIATES: "codes",
         BLACKLIST: "ips",
+        USERS_ACCOUNTING: "payments",
+        USERS_ACTIVITY: "payments"
     },
     /** TIEMPO DE EXPIRACION DE LA COOKIE */
     COOKIE_AGE: ACCESS_TOKEN_MAX_AGE_SECONDS,  
@@ -262,7 +265,7 @@ export default  {
     /** 
     *   NOMBRES DE LAS BASES DE DATOS QUE HAY QUE ABRIR ANTES DE LANZAR EL SERVIDOR HTTP  
     */
-    DBS_TO_OPEN: [ "promotions", "products", "orders_2026", "users_activity_2026", "users_accounting_2026","bills_2026", 'blacklist', 'users_data', 'sessions_2026', "site_stats_2026"],
+    DBS_TO_OPEN: [ "promotions", "products", "orders_2026", "users_activity_2026", "users_accounting_2026","billing_2026", 'blacklist', 'users_data', 'sessions_2026', "site_stats_2026"],
 
     /** 
     *   BASES DE DATOS DE LAS QUE HAY QUE CACHEAR CIERTOS DATOS ENTES DE LANZAR EL SERVIDOR HTTP 

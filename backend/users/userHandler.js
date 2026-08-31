@@ -10,6 +10,7 @@ import dbCrudHandler from '../db/dbCrudHandler.js';
 import { setUserPointer, getUserPointer, deleteUserPointer } from '../db/userIndexService.js';
 import systemConfig from '../globalData/systemConfig.js';
 import { getDb } from '../db/openDbs.js';
+import { ObjectId } from 'mongodb';
 
 export const addUser = async (body) => {
     try {
@@ -99,10 +100,155 @@ export const incrementUserCoins = async (userId, coins)=>{
             "coins.video": coins.video || 0
         }}
 
-    const resultIncrementCoins = await dbUsers.collection(collection).updateOne({"_id.userId": userId}, incObject)
-    console.log(resultIncrementCoins)
+    // El error se controla en un try-cath anterior
+    await dbUsers.collection(collection).updateOne({"_id.userId": userId}, incObject)
+        
+}
+
+
+/**
+ * AÑADE PAGO REALIZADO POR EL USUARIO EN LA PLATAFORMA A SU CONTABILIDAD
+ */
+
+export const addPaymentToUserAccounting = async (order)=>{
+    // Obtenemos el usuario que realizo el pedido
+    const user = getUserByEmail(order._id.email)
+    if(!user){
+        throw new Error("Error en addPaymentToUserAccounting: No hemos obtenido usuario a partir de Order");
+        
+    }
+    const orderIdParts = order._id.orderId
+    const yearDb = orderIdParts[3];
+    const dbName = systemConfig.DBS.USERS_ACCOUNTING + yearDb
+    const collection = systemConfig.COLLECTIONS.USERS_ACCOUNTING
+    const timeStampOrder = Date.now(order.createdAt)
+   
+    const accountingDb = await getDb(dbName);
+
+    // Vamos a usar un UpdateOne: preparamos filtro de busqueda y datos a insertar
+    const filter = {
+        _id:{
+            userId: user._id.userId,
+            email: user._id.email
+        }
+    }
+    // order.createAt es un new Date(), con la fecha de creacion del pedido
+    const [, month, day , year] = order.createdAt.toString().split(' ');
+    const normalizedMonthId = month.toLowerCase();
+    const payment = {
+        _id:{
+            paymentId: `saaspay_${new ObjectId().toHexString()}_${timeStampOrder}`,
+            userId: user._id.userId,
+            email: user._id.email
+        },
+        dataPayment: {
+            type: "SAAS_PAYMENT",
+            orderId: order.orderId,
+            createdAt: order.createdAt,
+            totalAmountInCents: order.totalAmountInCents,
+            currency: 'eur',
+            stripeSessionId:order.stripeSessionId,
+        }
+
+    }
+    const item = {$push:{payments:payment}}
+
+    // USAMOS UPDATE PORQUE LO QUE HACEMOS ES AÑADIR ITEMS A UN UNICO DOCUMENTO DEL USUARIO POR MES Y AÑO
+    await accountingDb.collection(collection).updateOne(filter, item, {upsert:true});
 
 }
+
+/**
+ * AÑADE PAGO REALIZADO POR EL USUARIO EN LA PLATAFORMA A SU ACTIVIDAD
+ * @param {*} order 
+ */
+
+export const addItemToUserActivity = async(order, type)=>{
+
+    // Obtenemos el usuario que realizo el pedido
+    const user = getUserByEmail(order._id.email)
+    if(!user){
+        throw new Error("Error en addPaymentToUserAccounting: No hemos obtenido usuario a partir de Order");
+        
+    }
+    const orderIdParts = order._id.orderId
+    const yearDb = orderIdParts[3];
+    const dbName = systemConfig.DBS.USERS_ACTIVITY + yearDb
+    const collection = systemConfig.COLLECTIONS.USERS_ACTIVITY
+    const activityDb = await getDb(dbName);
+
+    // Vamos a usar un UpdateOne: preparamos filtro de busqueda y datos a insertar
+    const filter = {
+        _id:{
+            userId: user._id.userId,
+            email: user._id.email
+        }
+    }
+    // order.createAt es un new Date(), con la fecha de creacion del pedido
+    //const [, month, day , year] = order.createdAt.toString().split(' ');
+    const timeStampOrder = Date.now(order.createdAt)
+    //const normalizedMonthId = month.toLowerCase();
+
+    let payment, item;
+    // SE INSERTA UN PAGO EN LA PLATAFORMA PARA COMPRAR COINS, U OTRO SERVICIO
+    if(type === "SAAS_PAYMENT"){
+
+        payment = {
+            _id:{
+                paymentId: `saaspay_${new ObjectId().toHexString()}_${timeStampOrder}`,
+                userId: user._id.userId,
+                email: user._id.email
+            },
+            dataPayment: {
+                type: "SAAS_PAYMENT",
+                orderId: order.orderId,
+                createdAt: order.createdAt,
+                totalAmountInCents: order.totalAmountInCents,
+                currency: 'eur',
+                stripeSessionId:order.stripeSessionId,
+            }
+    
+        }
+        item = {$push:{payments:payment}}
+
+    // SE HAN DESCONTADO COINS DE LA CUENTA DEL USUARIO POR CONSUMO EN LA PLATAFORMA
+    }else if(type === "DESCOUNT_COINS"){
+
+        payment = {
+            _id:{
+                paymentId: `micropay_${new ObjectId().toHexString()}_${timeStampOrder}`,
+                userId: user._id.userId,
+                email: user._id.email
+            },
+            dataPayment: {
+                type: type,
+            }
+        
+        }
+
+
+    // SE AÑADEN COINS A LA CUENTA DEL USUARIO POR CUMPLIR HITOS, OBJETIVOS, ...
+    }else if(type === "INCREMENT_COINS"){
+       
+        payment = {
+            _id:{
+                paymentId: `micropay_${new ObjectId().toHexString()}_${timeStamp}`,
+                userId: user._id.userId,
+                email: user._id.email
+            },
+            dataPayment: {
+                type: type,
+            }
+        
+        }
+
+    }
+
+    // USAMOS UPDATE PORQUE LO QUE HACEMOS ES AÑADIR ITEMS A UN UNICO DOCUMENTO DEL USUARIO POR MES Y AÑO
+    await activityDb.collection(collection).updateOne(filter, item, {upsert:true});
+
+}
+
 
 /**
  *  ACTUALIZA ALGUN CAMPO DEL USER EN MONGODB Y EN REDIS
@@ -152,5 +298,6 @@ export default {
     addUser,
     getUserByEmail, 
     updateUser,
-    incrementUserCoins
+    incrementUserCoins,
+    addPaymentToUserAccounting
 };

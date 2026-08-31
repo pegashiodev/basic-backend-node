@@ -66,7 +66,12 @@ console.log("Disparaao Triger !!!!")
                     paymentStatus: session.payment_status,
                     paidAt: new Date()
                 });
+                if(!order){
+                    console.log(`❌ Pedido ${order.orderId} NO SE HA PODIDO ACTUALIZAR A SUCCESS.`);
+                    break;
+                }
 console.log("Actualizado a successs !!!!")
+
                 // 2. Tramitar el pedido (crear bots, dar permisos al usuario, enviar email/SMS)
                 await processOrderDelivery(order);
                 console.log(`✅ Pedido ${order.orderId} cobrado y tramitado con éxito.`);

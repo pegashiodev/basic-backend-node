@@ -10,6 +10,9 @@
 import { deliveryStrategies } from './orderDeliveryStrategies.js';
 import { getDb } from '../db/openDbs.js';
 import systemConfig from '../globalData/systemConfig.js';
+import {updateAfiliatePromotion} from '../affiliates/affiliateService.js';
+import { getUserByEmail } from '../users/userHandler.js';
+import { addItemToUserActivity, addPaymentToUserAccounting } from '../users/userHandler.js';
 
 // const [, month, day , year] = new Date().toString().split(' ');
 
@@ -27,6 +30,7 @@ export async function createOrder(user, order) {
             email: user.email
             
         },
+        language: order.language,
         orderId: order.orderId,
         userId: user.userId,
         customerEmail: user.email,
@@ -106,11 +110,11 @@ export async function updateOrderStatusToSuccess(orderId, paymentDetails) {
     const dbName = systemConfig.DBS.ORDERS + orderParts[3]
     const collection = orderParts[2]
 
-    const db = await getDb(dbName);
+    const dbOrders = await getDb(dbName);
     const date = new Date()
     try{
 
-        const order = await db.collection(collection).findOneAndUpdate(
+        const order = await dbOrders.collection(collection).findOneAndUpdate(
             { "_id.orderId": orderId, status: { $ne: 'SUCCESS' } },
             { 
                 $set: { 
@@ -133,6 +137,7 @@ export async function updateOrderStatusToSuccess(orderId, paymentDetails) {
 
     }catch(e){
         console.log(`❌ ERROR Actualizando STATUS DE ORDER A SUCCESS`)
+        return null;
     }
 }
 
@@ -164,11 +169,6 @@ export async function markOrderAsExpired(orderId) {
  */
 export async function processOrderDelivery(order) {
    
-    // 1. Obtener la orden confirmada
-    // const order = await getOrderById(orderId);
-    // if (!order) {
-    //     throw new Error(`No se encontró el pedido ${orderId} para entrega.`);
-    // }
 
     const deliveryResults = [];
 
@@ -186,11 +186,14 @@ export async function processOrderDelivery(order) {
             continue;
         }
 
+        // BLOQUE IMPORTANTE: order-strategy + user-accounting
         try {
+            // realizamos la accion correspondiente de cada producto
             const result = await strategy(item, order);
             deliveryResults.push(result);
+
         } catch (itemError) {
-            console.error(`❌ Error entregando ítem ${item.productId} en orden ${orderId}:`, itemError);
+            console.error(`❌ Error entregando ítem ${item.productId} en orden ${order.orderId}:`, itemError);
             deliveryResults.push({
                 productId: item.productId,
                 status: 'DELIVERY_FAILED',
@@ -199,22 +202,53 @@ export async function processOrderDelivery(order) {
         }
     }
 
-    // 3.- Añadimos Pago a la Contabilidad del usuario y Actividad de usuarios
-    const paymentData = {}
-    //await addPaymentToUserAccounting()
-    //await addItemToUserActivity()
+    //REVISAR LA LISTA DE RESULTADOS. 
+console.log({deliveryResults})
 
-    if(order.promotion){
-        // almacenar en Afiliates este evento para compensar al Afiliado
+    try{
+
+        // ARCHIVAMOS EL PAGO EN USERS-ACCOUNTING
+        const paymentData = {}
+        await addPaymentToUserAccounting(order)
+    
+        // Bloque independiente para user-activity
+        try{
+            await addItemToUserActivity(order, "SAAS_PAYMENT")
+        }catch(e){
+            console.error(`❌ Error en orderService.js, añadiendo item a DB users_activity: -> `, e)
+        }
+    
+        // Bloque independiente para el envio de notificacion final al usuario por email
+        try{
+            await senEmail(order._id.email, "SUCCESS_PAYMENT", order.language, {})
+        }catch(e){
+            console.error(`❌ Error en orderService.js, enviando Email Final al usuario: ->`, e)
+        }
+    
+        // Bloque independiente para actualizar la lista de usuarios del Afiliado
+        if(order.promotion){
+            // Obtengo el user con el email que esta en el order
+            try {
+                const user = getUserByEmail(order._id.email)
+                if(!user){
+                    throw new Error(" ERROr en orderService.processOrderDelivery. No hemos podido acceder al usuario para gestionar la promocion del pedido: -> ENVIAR A ADMIN LA TAREA PENDIENTE");
+                }
+                await updateAfiliatePromotion(order.promotion, user)
+            } catch (e) {
+                console.error(`❌ Error en orderService.processOrderDelivery, Actualizando el Listado de usuarios del Afiliado: ->`, e)
+            }
+        }
+
+    }catch(e){
+        console.error(`❌ Error Añadiendo Pago a DB users-accounting. -> NOTIFICAR A ADMIN: -> `, e);
     }
 
-    // 4.- ENVIAMOS UN EMAIL DE CONFIRMACION DEL PEDIDO REALIZADO -> TE ENVIAMOS FACTURA PRONTO ??
-    //await senEmail
+    
 
     // 5. Guardar el log de entrega en el pedido
     // const db = getDb();
     // await db.collection(ORDERS_COLLECTION).updateOne(
-    //     { "_id.orderId": orderId },
+    //     { "_id.orderId": order.orderId },
     //     { 
     //         $set: { 
     //             deliveryResults: deliveryResults,
@@ -224,7 +258,6 @@ export async function processOrderDelivery(order) {
     //     }
     // );
 
-    console.log(`🚀 Despacho finalizado para el pedido ${orderId}`);
-    console.log({deliveryResults});
+    console.log(`🚀 Despacho finalizado para el pedido ${order.orderId}`);
 }
 

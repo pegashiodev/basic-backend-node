@@ -83,6 +83,32 @@ function buildEmailTemplate({ type, code, language = 'es', customData = {} }) {
         `;
         return { subject, textBody, htmlBody };
     
+    }else if(type === "SUCCESS_PAYMENT"){
+
+        const subject = 'PEDIDO PROCESADO'
+        const textBody = `Hola,\n\nTu pedido se ha realizado correctamente\n En unos instantes tendras el saldo de tus COINS ACTUALIZADO.\n`
+        const htmlBody = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                <h2 style="color: #333; text-align: center;">${isEn ? 'Success Payment' : 'Pedido Realizado Crrectamente'}</h2>
+                <p style="color: #555; font-size: 16px;">
+                    ${isEn ? 'Please use the following code to complete your registration or verification:' : 'Utiliza el siguiente código para completar tu registro o verificación:'}
+                </p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1a73e8; background: #f1f3f4; padding: 10px 24px; border-radius: 6px; display: inline-block;">
+                        ${code}
+                    </span>
+                </div>
+                <p style="color: #777; font-size: 14px;">
+                    ${isEn ? 'This code is valid for 15 minutes.' : 'Este código es válido durante 15 minutos.'}
+                </p>
+                <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;">
+                <p style="color: #999; font-size: 12px; text-align: center;">
+                    ${isEn ? 'If you did not request this code, you can safely ignore this email.' : 'Si no solicitaste este código, puedes ignorar este correo de forma segura.'}
+                </p>
+            </div>
+        `;
+        return { subject, textBody, htmlBody };
+
     }
 
     // Plantilla por defecto o personalizada
@@ -102,19 +128,27 @@ function buildEmailTemplate({ type, code, language = 'es', customData = {} }) {
  * @param {string} [options.language] - Idioma ('es' | 'en')
  * @param {Object} [options.customData] - Asunto y textos libres alternativos
  */
-export default async function sendEmail({ email, code, type = 'VERIFICATION_CODE', language, customData }) {
+export default async function sendEmail({ email, type = 'VERIFICATION_CODE', language, customData = {} }) {
 
     if (!email) {
         console.error('❌ Error sendEmail: No se proporcionó dirección de correo de destino.');
         return { status: 'error', message: 'Email de destino obligatorio' };
     }
-
     const lang = language || systemConfig.MAIN_LANGUAGE || 'es';
+    let code = "";
+
+    if(type === "VERIFICATION_CODE"){
+        code = await generateValidationToken(normalizedEmail);
+    }else if(type === "VERIFICATION_ENDPOINT"){
+        code = await generateVerificationEndpoint(normalizedEmail);
+    }
+console.log({code})
+
     const { subject, textBody, htmlBody } = buildEmailTemplate({ type, code, language: lang, customData });
 
 console.log({ subject, textBody, htmlBody })
 
-    const fromAddress = process.env.AWS_SES_FROM_EMAIL || systemConfig.SYSTEM_EMAIL || 'no-reply@tudominio.com';
+    const fromAddress = process.env.AWS_SES_FROM_EMAIL || 'no-reply@tudominio.com';
 
     const params = {
         Source: fromAddress,

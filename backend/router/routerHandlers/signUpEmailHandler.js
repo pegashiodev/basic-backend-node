@@ -62,11 +62,9 @@ console.log({ email, password, name, code, userAgent, deviceId, language, promoC
                 await redisClient.set(cooldownKey, '1', { EX: 60 });
             }
 
-            const validationCode = await generateValidationToken(normalizedEmail);
             const lang = language || systemConfig.MAIN_LANGUAGE || 'es';
             const emailResult = await sendEmail({
                 email: normalizedEmail,
-                code: validationCode,
                 type: 'VERIFICATION_CODE',
                 language: lang
             });

@@ -67,13 +67,11 @@ export default async function(req, res){
     }
 
     // ENVIAMOS EMAIL PARA HACER EL CAMBIO DE PASSWORD 
-    const validationEndpoint = await generateVerificationEndpoint(normalizedEmail);
+    
     const lang = req.urlData?.language || systemConfig.MAIN_LANGUAGE || 'es';
-console.log({validationEndpoint})
     
     const emailResult = await sendEmail({
         email: normalizedEmail,
-        code: validationEndpoint,
         type: 'VERIFICATION_ENDPOINT',
         language: lang
     });
