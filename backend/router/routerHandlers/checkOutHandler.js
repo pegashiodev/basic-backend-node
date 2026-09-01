@@ -145,14 +145,12 @@ export default async function checkOutHandler(req, res) {
             totalAmountInCentsBeforeDiscount += currentProduct.priceInCents * quantity;
             
             // Si hay req.promotion es que el promoCode es valido y aplicamos el descuento
-            if(req.body.promotion){
+            if(req.body.promotion && req.body.promotion.type === "DISCOUNT"){
                 currentProduct.priceInCents = Math.round(currentProduct.priceInCents - (currentProduct.priceInCents * (req.body.promotion.discountPercent / 100)))
             }
             
-            const itemTotalCents = currentProduct.priceInCents * quantity;
             // PRECIO PAGADO POR EL USUARIO CON EL DESCUENTO DEL AFILIADO
-            totalAmountInCents += itemTotalCents;
-           
+            totalAmountInCents += currentProduct.priceInCents * quantity
 
             //Almacenamos el item completo para luego manipularlo en processOrderDelivery
             verifiedOrderItems.push(currentProduct);

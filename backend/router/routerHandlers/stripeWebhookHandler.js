@@ -39,10 +39,6 @@ console.log("STRIPE WEBHOOK HANDLER")
         return res.end(JSON.stringify({ status: 'error', message: `Webhook Error: ${err.message}` }));
     }
 
-    console.log("HEMOS - PASADO !!!!!")
-console.log(event.type)
-    
-
     try {
         // Stripe exige un 200 rápido para confirmar la recepción
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -53,7 +49,7 @@ console.log(event.type)
             case 'checkout.session.completed': {
                 const session = event.data.object;
                 const orderId = session.metadata?.orderId;
-console.log("Disparaao Triger !!!!")
+console.log("STRIPE SESION COMPLETED !!!!")
                 if (!orderId) {
                     console.error('❌ Webhook recibido sin orderId en metadata:', session.id);
                     break;
@@ -70,7 +66,6 @@ console.log("Disparaao Triger !!!!")
                     console.log(`❌ Pedido ${order.orderId} NO SE HA PODIDO ACTUALIZAR A SUCCESS.`);
                     break;
                 }
-console.log("Actualizado a successs !!!!")
 
                 // 2. Tramitar el pedido (crear bots, dar permisos al usuario, enviar email/SMS)
                 await processOrderDelivery(order);
@@ -84,7 +79,7 @@ console.log("Actualizado a successs !!!!")
                 const orderId = session.metadata?.orderId;
                 if (orderId) {
                     await markOrderAsExpired(orderId);
-                    console.log(`⏱️ Sesión expirada para el pedido ${orderId}`);
+                    console.log(`⏱️ Sesión STRIPE expirada para el pedido ${orderId}`);
                 }
                 break;
             }

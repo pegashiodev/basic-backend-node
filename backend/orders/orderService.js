@@ -6,7 +6,6 @@
  */
 
 // Importa tu cliente de base de datos MongoDB nativo
-// import { getDb } from '../../database/mongoClient.js';
 import { deliveryStrategies } from './orderDeliveryStrategies.js';
 import { getDb } from '../db/openDbs.js';
 import systemConfig from '../globalData/systemConfig.js';
@@ -49,7 +48,7 @@ export async function createOrder(user, order) {
     const orderParts = order.orderId.split("_")
     const dbName = systemConfig.DBS.ORDERS +  orderParts[3]
     const collection = orderParts[2]
-    const dbOrders = await getDb(dbName);
+    const dbOrders = getDb(dbName);
 
     // ALMACENAMOS EN DB CON ESTADO "PENDING"
     try{
@@ -73,7 +72,7 @@ export async function getOrderById(orderId) {
     const orderParts = orderId.split("_")
     const dbName = systemConfig.DBS.ORDERS + orderParts[3]
     const collection = orderParts[2]
-    const dbOrders = await getDb(dbName);
+    const dbOrders = getDb(dbName);
 
     return await dbOrders.collection(collection).findOne({ "_id.orderId": orderId });
 }
@@ -86,7 +85,7 @@ export async function updateOrderStripeSession(orderId, stripeSessionId) {
     const orderParts = orderId.split("_")
     const dbName = systemConfig.DBS.ORDERS + orderParts[3]
     const collection = orderParts[2]
-    const dbOrders = await getDb(dbName);
+    const dbOrders = getDb(dbName);
 
     try{
 
@@ -111,7 +110,7 @@ export async function updateOrderStatusToSuccess(orderId, paymentDetails) {
     const dbName = systemConfig.DBS.ORDERS + orderParts[3]
     const collection = orderParts[2]
 
-    const dbOrders = await getDb(dbName);
+    const dbOrders = getDb(dbName);
     const date = new Date()
     try{
 
@@ -151,7 +150,7 @@ export async function markOrderAsExpired(orderId) {
     const orderParts = orderId.split("_")
     const dbName = systemConfig.DBS.ORDERS + orderParts[3]
     const collection = orderParts[2]
-    const db = await getDb(dbName);
+    const db = getDb(dbName);
 
     try{
 
@@ -221,7 +220,7 @@ console.log({deliveryResults})
     
         // Bloque independiente para el envio de notificacion final al usuario por email
         try{
-            await sendEmail(
+            sendEmail(
                 {   email: order._id.email, 
                     type: "SUCCESS_PAYMENT", 
                     language: order.language, 

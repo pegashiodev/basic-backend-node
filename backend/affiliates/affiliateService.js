@@ -13,7 +13,7 @@ export const updateAffiliatePromotion = async (promotion, user)=>{
 
     // OBTENEMOS LA BASE DE DATOS PARA ACTUALIZAR EL CONTENIDO DE LA PROMOCION
     try{
-        dbAffiliates = await getDb(systemConfig.DBS.AFILIATES)
+        dbAffiliates = getDb(systemConfig.DBS.AFILIATES)
     }catch(e){
         console.log("ERROR al Obtener getDb() desde promotionsHandler.js")
         throw new Error(`Error en "affiliateService.updateAffiliatePromotion"  al Obtener la base de datos`);

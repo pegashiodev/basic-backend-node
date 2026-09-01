@@ -79,7 +79,7 @@ export const  validatePromotion = async (req, from)=>{
     // Verificar DAtos de la promocion
     let dbPromotions;
     try{
-        dbPromotions = await getDb(systemConfig.DBS.PROMOTIONS)
+        dbPromotions = getDb(systemConfig.DBS.PROMOTIONS)
     }catch(e){
 
         console.log("ERROR al Obtener getDb()")

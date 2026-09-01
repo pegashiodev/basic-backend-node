@@ -28,7 +28,7 @@ export const addUser = async (body) => {
         }
 
         // 3. Guardar en MongoDB en la colección del mes de alta
-        const dbUsers = await getDb(systemConfig.DBS.USERS_DATA);
+        const dbUsers = getDb(systemConfig.DBS.USERS_DATA);
         const collection = normalizedMonth
 
         const dbResult = await dbUsers.collection(collection).insertOne(user)
@@ -65,7 +65,7 @@ export const getUserByEmail = async (email) => {
 
         // 2. Buscar documento exacto en su colección mensual de MongoDB
 
-        const dbUsers = await getDb(systemConfig.DBS.USERS_DATA);
+        const dbUsers = getDb(systemConfig.DBS.USERS_DATA);
         const collection = pointer.from.month;
         let dbResult = null;
        
@@ -87,7 +87,7 @@ export const incrementUserCoins = async (userId, coins)=>{
     const userIdParts = userId.split('_')
     const dbName = systemConfig.DBS.USERS_DATA
     const collection = userIdParts[2].toLowerCase();
-    const dbUsers = await getDb(dbName);
+    const dbUsers = getDb(dbName);
 
     const incObject = {$inc: 
         {  
@@ -117,7 +117,6 @@ export const addPaymentToUserPayments = async (order)=>{
         throw new Error("Error en addPaymentToUserAccounting: No hemos obtenido usuario a partir de Order");
         
     }
-console.log({user})
     const orderIdParts = order._id.orderId.split("_")
     const yearDb = orderIdParts[3];
     const normalizedMonth = orderIdParts[2].toLowerCase();
@@ -125,7 +124,7 @@ console.log({user})
     const collection = normalizedMonth;
     const timeStampOrder = Date.now(order.createdAt)
    
-    const accountingDb = await getDb(dbName);
+    const accountingDb = getDb(dbName);
 
     // Vamos a usar un UpdateOne: preparamos filtro de busqueda y datos a insertar
     const filter = {
@@ -196,7 +195,7 @@ export const addItemToUserActivity = async(order, type)=>{
     const normalizedMonth = orderIdParts[2].toLowerCase();
     const dbName = systemConfig.DBS.USERS_ACTIVITY + yearDb
     const collection = systemConfig.COLLECTIONS.USERS_ACTIVITY
-    const activityDb = await getDb(dbName);
+    const activityDb = getDb(dbName);
 
     // Vamos a usar un UpdateOne: preparamos filtro de busqueda y datos a insertar
     const filter = {
@@ -314,7 +313,7 @@ export const updateUser = async (data, user)=>{
             "_id.email": user._id.email
         }
         const updateData =  { "$set": { password: data.password } }
-        const dbUsers = await getDb(dbName)
+        const dbUsers = getDb(dbName)
 
         const resultUpdate = dbUsers.collection(collection).updateOne(filter, updateData)
 
