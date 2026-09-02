@@ -11,7 +11,6 @@
 
 
 
-import dbCrudHandler from "../db/dbCrudHandler.js"
 import { getDb } from "../db/openDbs.js";
 import systemConfig from "../globalData/systemConfig.js";
 
@@ -37,7 +36,7 @@ const promotions = [
             userId: '12312nmnmkj123jk'
         },
         type: "DISCOUNT",        
-        discountPercent: 20,
+        discountPercent: 25,
         units: 120,
         
     },
@@ -74,12 +73,11 @@ export const  validatePromotion = async (req, from)=>{
     console.log("VERIFY_PROMO_CODE")
 
     const promoCode = req.body.promoCode.toUpperCase();
-    // getDB
     
     // Verificar DAtos de la promocion
     let dbPromotions;
     try{
-        dbPromotions = getDb(systemConfig.DBS.PROMOTIONS)
+        dbPromotions = await getDb(systemConfig.DBS.PROMOTIONS)
     }catch(e){
 
         console.log("ERROR al Obtener getDb()")

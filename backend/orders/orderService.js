@@ -12,6 +12,7 @@ import systemConfig from '../globalData/systemConfig.js';
 import {updateAffiliatePromotion} from '../affiliates/affiliateService.js';
 import { addPaymentToUserPayments, getUserByEmail, addItemToUserActivity } from '../users/userHandler.js';
 import sendEmail from '../notifications/sendEmail.js';
+import { ObjectId } from 'mongodb';
 
 // const [, month, day , year] = new Date().toString().split(' ');
 
@@ -22,19 +23,14 @@ export async function createOrder(user, order) {
     
     const now = new Date();
     const newOrder = {
-        _id: {
-            orderId: order.orderId,
-            stripeSessionId: order.stripeSessionId,
-            userId: user.userId,
-            email: user.email
-            
-        },
+        _id: order.orderId,
         language: order.language,
         orderId: order.orderId,
         userId: user.userId,
-        customerEmail: user.email,
+        email: user.email,
         items: order.verifiedOrderItems,
         totalAmountInCents: order.totalAmountInCents,
+        totalAmountInCentsBeforeDiscount: order.totalAmountInCentsBeforeDiscount || order.totalAmountInCents,
         currency: 'eur',
         status: 'PENDING',          // PENDING -> SUCCESS / CANCELED / EXPIRED
         billed: false,
@@ -45,10 +41,14 @@ export async function createOrder(user, order) {
         promotion: order.promotion || false,
     };
 
-    const orderParts = order.orderId.split("_")
-    const dbName = systemConfig.DBS.ORDERS +  orderParts[3]
-    const collection = orderParts[2]
-    const dbOrders = getDb(dbName);
+    // A Partir del _id obtenemos el Año de creacion del pedido para acceder a la base de datos
+    const fechaCreacion = order.orderId.getTimestamp(); 
+    // 2. Extraer el año para tu base de datos dinámica
+    const year= fechaCreacion.getFullYear(); // Devuelve: 2026
+    const dbName = systemConfig.DBS.ORDERS +  year
+    const collection = systemConfig.COLLECTIONS.ORDERS
+
+    const dbOrders = await getDb(dbName);
 
     // ALMACENAMOS EN DB CON ESTADO "PENDING"
     try{
@@ -68,11 +68,24 @@ export async function createOrder(user, order) {
  * 2. Obtiene un pedido por su orderId
  */
 export async function getOrderById(orderId) {
+
+    let validOrderId;
     
-    const orderParts = orderId.split("_")
-    const dbName = systemConfig.DBS.ORDERS + orderParts[3]
-    const collection = orderParts[2]
-    const dbOrders = getDb(dbName);
+    if (orderId instanceof ObjectId) {
+        console.log("Ya es un objeto ObjectId nativo de MongoDB");
+        validOrderId = orderId
+    } else if (typeof orderId === 'string') {
+        console.log("Es una cadena de texto (string)");
+        validOrderId = new ObjectId(orderId)
+    }
+    // A Partir del orderId obtenemos el Año de creacion del pedido para acceder a la base de datos
+    const fechaCreacion = validOrderId.getTimestamp(); 
+    // 2. Extraer el año para tu base de datos dinámica
+    const year= fechaCreacion.getFullYear(); 
+    const dbName = systemConfig.DBS.ORDERS +  year
+    const collection = systemConfig.COLLECTIONS.ORDERS
+
+    const dbOrders = await getDb(dbName);
 
     return await dbOrders.collection(collection).findOne({ "_id.orderId": orderId });
 }
@@ -82,10 +95,21 @@ export async function getOrderById(orderId) {
  */
 export async function updateOrderStripeSession(orderId, stripeSessionId) {
 
-    const orderParts = orderId.split("_")
-    const dbName = systemConfig.DBS.ORDERS + orderParts[3]
-    const collection = orderParts[2]
-    const dbOrders = getDb(dbName);
+    let validOrderId;
+    
+    if (orderId instanceof ObjectId) {
+        validOrderId = orderId
+    } else if (typeof orderId === 'string') {
+        validOrderId = new ObjectId(orderId)
+    }
+    // A Partir del orderId obtenemos el Año de creacion del pedido para acceder a la base de datos
+    const fechaCreacion = validOrderId.getTimestamp(); 
+    // 2. Extraer el año para tu base de datos dinámica
+    const year= fechaCreacion.getFullYear(); 
+    const dbName = systemConfig.DBS.ORDERS +  year
+    const collection = systemConfig.COLLECTIONS.ORDERS
+    
+    const dbOrders = await getDb(dbName);
 
     try{
 
@@ -106,12 +130,23 @@ export async function updateOrderStripeSession(orderId, stripeSessionId) {
  */
 export async function updateOrderStatusToSuccess(orderId, paymentDetails) {
 
-    const orderParts = orderId.split("_")
-    const dbName = systemConfig.DBS.ORDERS + orderParts[3]
-    const collection = orderParts[2]
+    let validOrderId;
+    
+    if (orderId instanceof ObjectId) {
+        validOrderId = orderId
+    } else if (typeof orderId === 'string') {
+        validOrderId = new ObjectId(orderId)
+    }
+    // A Partir del orderId obtenemos el Año de creacion del pedido para acceder a la base de datos
+    const fechaCreacion = validOrderId.getTimestamp(); 
+    // 2. Extraer el año para tu base de datos dinámica
+    const year= fechaCreacion.getFullYear(); 
+    const dbName = systemConfig.DBS.ORDERS +  year
+    const collection = systemConfig.COLLECTIONS.ORDERS
 
-    const dbOrders = getDb(dbName);
+    const dbOrders = await getDb(dbName);
     const date = new Date()
+
     try{
 
         const order = await dbOrders.collection(collection).findOneAndUpdate(
@@ -147,10 +182,21 @@ export async function updateOrderStatusToSuccess(orderId, paymentDetails) {
  */
 export async function markOrderAsExpired(orderId) {
 
-    const orderParts = orderId.split("_")
-    const dbName = systemConfig.DBS.ORDERS + orderParts[3]
-    const collection = orderParts[2]
-    const db = getDb(dbName);
+    let validOrderId;
+    
+    if (orderId instanceof ObjectId) {
+        validOrderId = orderId
+    } else if (typeof orderId === 'string') {
+        validOrderId = new ObjectId(orderId)
+    }
+    // A Partir del orderId obtenemos el Año de creacion del pedido para acceder a la base de datos
+    const fechaCreacion = validOrderId.getTimestamp(); 
+    // 2. Extraer el año para tu base de datos dinámica
+    const year= fechaCreacion.getFullYear(); 
+    const dbName = systemConfig.DBS.ORDERS +  year
+    const collection = systemConfig.COLLECTIONS.ORDERS
+
+    const dbOrders = await getDb(dbName);
 
     try{
 
@@ -174,7 +220,7 @@ export async function processOrderDelivery(order) {
 
     // 2. Iterar sobre cada ítem y aplicar la estrategia correspondiente
     for (const item of order.items) {
-        const productType = item.type || 'AUDIOBOOK'; // AUDIOBOOK | BALANCE_RECHARGE | PHYSICAL
+        const productType = item.type; //  BALANCE_RECHARGE | PHYSICAL | AUDIO_STREAMING | AUDIO_DOWNLOAD | TEXT_CONTENT ...
         const strategy = deliveryStrategies[productType];
 
         if (!strategy) {
@@ -220,7 +266,7 @@ console.log({deliveryResults})
     
         // Bloque independiente para el envio de notificacion final al usuario por email
         try{
-            sendEmail(
+            await sendEmail(
                 {   email: order._id.email, 
                     type: "SUCCESS_PAYMENT", 
                     language: order.language, 
@@ -251,7 +297,7 @@ console.log({deliveryResults})
     
 
     // 5. Guardar el log de entrega en el pedido
-    // const db = getDb();
+    // const db = gawait etDb();
     // await db.collection(ORDERS_COLLECTION).updateOne(
     //     { "_id.orderId": order.orderId },
     //     { 

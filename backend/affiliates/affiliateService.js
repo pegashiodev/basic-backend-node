@@ -7,13 +7,12 @@ export const updateAffiliatePromotion = async (promotion, user)=>{
 
     // ACTUALIZAMOS EL LISTADO DE USUARIOS DEL AFILIADO
     let dbAffiliates;
-    const now = Date.now();
     const [, month, day , year] = new Date().toString().split(' ');
     const normalizedMonth = month.toLowerCase();
 
     // OBTENEMOS LA BASE DE DATOS PARA ACTUALIZAR EL CONTENIDO DE LA PROMOCION
     try{
-        dbAffiliates = getDb(systemConfig.DBS.AFILIATES)
+        dbAffiliates = await getDb(systemConfig.DBS.AFILIATES)
     }catch(e){
         console.log("ERROR al Obtener getDb() desde promotionsHandler.js")
         throw new Error(`Error en "affiliateService.updateAffiliatePromotion"  al Obtener la base de datos`);
@@ -23,7 +22,7 @@ export const updateAffiliatePromotion = async (promotion, user)=>{
     const affiliate_data = {
         email: user.email,
         userId: user._id.userId,
-        createdAtTimestamp: promotion.endpoint === "SIGNUP" ? user.createdAtTimestamp : now,
+        createdAtTimestamp: promotion.endpoint === "SIGNUP" ? user.createdAt : new Date(),
         createdAt:{
             year: promotion.endpoint === "SIGNUP" ? user._id.from.year : year,
             month: promotion.endpoint === "SIGNUP" ? user._id.from.month : normalizedMonth,

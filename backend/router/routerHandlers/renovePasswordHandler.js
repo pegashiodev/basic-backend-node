@@ -12,7 +12,6 @@
 import sendStaticFile from "../../server/serverHandlers/sendStaticFile.js"
 import bodyDataFormatVerify from "../routerTools/bodyDataFormatVerify.js"
 import userHandler from "../../users/userHandler.js"
-import { passwordEncript } from "../routerTools/passwordEncript.js"
 import systemConfig from "../../globalData/systemConfig.js"
 import { hashPassword } from "../routerTools/passwordEncript.js"
 import passwordValidation from "../routerTools/passwordValidation.js"
@@ -128,7 +127,7 @@ async function renovePassword(req, res){
     }
 
     // VALIDAMOS QUE EL FORMATO DE LA PASSWORD ES CORRECTO
-    const isValidPassword = passwordValidation(password)
+    const isValidPassword = passwordValidation(req.body.password)
 
     if (!isValidPassword) {
         res.writeHead(415, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -155,9 +154,10 @@ async function renovePassword(req, res){
     }
 
     // encriptar password
-    const encriptedPassword = passwordEncript(req.body.password.toString())
+    //const encriptedPassword = passwordEncript(req.body.password.toString())
     
-    if(!encriptedPassword){
+    const hashedPassword = await hashPassword(req.body.password);
+    if(!hashedPassword){
         console.log('Error hasheando pasword')
         const response_data = {
             status: 'error',
@@ -168,16 +168,15 @@ async function renovePassword(req, res){
         res.end(JSON.stringify(response_data))
         return;
     }
-    const hashedPassword = await hashPassword(req.body.password);
 
     // actualizamos en USER
     const data_update_user = {
         task: "UPDATE_USER_PASSWORD",
         password: hashedPassword
     }
-    const result_user = await userHandler.updateUser(data_update_user, req.user)
+    const result_updateUserPassword = await userHandler.updateUserData(data_update_user, req.user)
    
-    if(result_user.status != 'ok'){
+    if(result_updateUserPassword.status != 'ok'){
         console.log('Error Actualizando UserDB')
         const response_data = {
             status: 'error',

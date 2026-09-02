@@ -5,10 +5,9 @@
  */
 
 import systemConfig from "../../globalData/systemConfig.js";
-import sessionsCached from "../../globalData/sessionsCached.js";
-// import sessionHandler from "../../sessions/sessionHandler.js";
 import { updateSession } from "../../sessions/sessionHandler.js";
 import getOurCookie from "../../tools/getOurCookie.js";
+import { redisClient } from '../../db/openRedis.js';
 
 
 /**
@@ -17,15 +16,14 @@ import getOurCookie from "../../tools/getOurCookie.js";
  * @param {object} Objeto Response de NodeJS
  * 
  */
-export default function(req, res){
+export default async function(req, res){
     console.log(" ** LogOutHandler !!")
 
-    console.log(req.headers);
-
+    // Si no hay cookie enviamos al home, y no se hace nada mas: No tenemos usuario para eliminar nada en el backend
     if(!req.headers.cookie){
         const response_data = {
             "status": "ok",
-            "location": systemConfig.PAGES.MAIN_CAT_ENPOINT,   
+            "location": systemConfig.PAGES.HOME,   
             "message": "NO COOKIE EN EL LOGOUT. -> ENVIAMOS A /HOME"
         }
                 //AÑADIMOS LA COOKIE COMO UN OBJETO JSON PARA COLOCAR VARIAS VARIABLES;
@@ -40,20 +38,12 @@ export default function(req, res){
 
     // OBTENEMOS NUESTRA COOKIE
     const result_getOuCookie = getOurCookie(req)
-   
-    if(result_getOuCookie.status !== 'ok'){
-        if(result_getOuCookie.task === "SEND_FETCH_ERROR"){
-            
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(result_getOuCookie.response_data));
-            return;
-        }
-    }
 
-    if(!req.has_our_cookie){
+    // Si no tiene nuestra cookie o esta incompleta-> Enviamos a Home y no hacemos nada mas en backend 
+    if(result_getOuCookie.status !== 'ok'){
         const response_data = {
             "status": "ok",
-            "location": systemConfig.PAGES.MAIN_CAT_ENPOINT,   
+            "location": systemConfig.PAGES.HOME,   
             "message": "NO COOKIE EN EL LOGOUT. -> ENVIAMOS A /HOME"
         }
                 //AÑADIMOS LA COOKIE COMO UN OBJETO JSON PARA COLOCAR VARIAS VARIABLES;
@@ -62,29 +52,42 @@ export default function(req, res){
             });
             
         res.end(JSON.stringify(response_data));
-        return;   
+        return; 
     }
 
-    let session = sessionsCached[req.our_cookie.atk_decoded.email];
+    // HAY COOKIE VALIDA: -> Eliminamos session en Redis y en MongoDB (ENDED)
     
-    if(session){
+   
+    const sessionId = req.our_cookie?.atk_decoded?.sessionId;
 
-        // MARCAMOS COMO FINALIZADA Y LA ALMACENAMOS
-        session.status = 'ENDED'
+    if(!sessionId){
+        const response_data = {
+            "status": "ok",
+            "location": systemConfig.PAGES.HOME,   
+            "message": "NO COOKIE EN EL LOGOUT. -> ENVIAMOS A /HOME"
+        }
+                //AÑADIMOS LA COOKIE COMO UN OBJETO JSON PARA COLOCAR VARIAS VARIABLES;
+        res.writeHead(200, 
+            {   'Content-Type': 'application/json'
+            });
+            
+        res.end(JSON.stringify(response_data));
+        return; 
+    }
+
+    const session = await redisClient.get(`session:${sessionId}`);
+    if(session){
         let data = {
+            sessionId: sessionId,
             task: 'SESSION_ENDED',
-            email: req.our_cookie.atk_decoded.email,
+            email: req.our_cookie?.atk_decoded?.email,
         }
         updateSession(data)
     }
 
-
-    // REENVIAMOS A /BOTS
-    // BORRAMOS LAS COOKIES
-
     const response_data = {
         "status": "ok",
-        "location": systemConfig.PAGES.MAIN_CAT_ENPOINT,
+        "location": systemConfig.PAGES.HOME,
         "message": "LOGOUT EJECUTADO CON EXITO"
     }
         //AÑADIMOS LA COOKIE COMO UN OBJETO JSON PARA COLOCAR VARIAS VARIABLES;

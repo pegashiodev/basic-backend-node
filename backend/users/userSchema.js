@@ -11,11 +11,11 @@ import { updateAffiliatePromotion } from '../affiliates/affiliateService.js';
 export default async function userSchema(body) {
 
     const [, month, day , year] = new Date().toString().split(' ');
-    const userId = new ObjectId().toHexString();
+    const userId = new ObjectId().toString();
     const id2 = randomBytes(16).toString('hex');
     const normalizedMonth = month.toLowerCase();
     const normalizedEmail = body.email.toLowerCase().trim();
-    const customUserId = `us_${userId}_${normalizedMonth}_${year}`
+    const customUserId = userId
 
     // 1. _id compuesto inmutable (clave primaria de Mongo y puntero de Redis)
     const customId = {

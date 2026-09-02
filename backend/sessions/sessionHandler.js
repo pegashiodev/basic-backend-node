@@ -4,6 +4,7 @@ import { redisClient } from '../db/openRedis.js';
 import { getDb } from '../db/openDbs.js';
 import { createSessionObject } from './sessionSchema.js';
 import systemConfig from '../globalData/systemConfig.js';
+import { ObjectId } from 'mongodb';
 
 // TTL por defecto para Redis (ej. 24 horas en segundos)
 //const SESSION_TTL_SECONDS = 60 * 60 * 24;
@@ -20,9 +21,15 @@ export async function createSession(req, from) {
     const session = createSessionObject(req, user);
     const { sessionId, userId } = session._id
     req.currentSessionId = sessionId;
-    const sessionIdParts = sessionId.split("_")
-    const month = sessionIdParts[2]
-    const year = sessionIdParts[3]
+
+    // Obtenemos la fecha del id de session para acceder a la DB
+    const sessionString = sessionId.split("_")[1]
+    // const objId = new ObjectId(sessionString);
+    const objId = ObjectId.createFromHexString(sessionString);
+
+    const fechaCreacionSession = objId.getTimestamp();
+    const [, month, day , year] = fechaCreacionSession.toString().split(' ');
+    const normalizedMonth = month.toLowerCase();
 
     // 1. Guardar en Redis con expiración automática (TTL)
     const redisKey = `session:${sessionId}`;
@@ -35,8 +42,8 @@ export async function createSession(req, from) {
 
     // 2. Persistir en MongoDB (colección centralizada de sesiones)
     try {
-        const db = getDb(systemConfig.DBS.SESSIONS + year);
-        const sessionsCollection = db.collection(month.toLowerCase());
+        const db = await getDb(systemConfig.DBS.SESSIONS + year);
+        const sessionsCollection = db.collection(normalizedMonth);
         await sessionsCollection.insertOne(session);
     } catch (err) {
         console.error('⚠️ No se pudo persistir la sesión en MongoDB (continúa con Redis):', err.message);
@@ -53,22 +60,26 @@ export async function createSession(req, from) {
  */
 export const updateSession = async (data) => {
 
-    //const [, month, , year] = new Date().toString().split(' ');
-    const sessionIdParts = data.sessionId.split("_")
-    const month = sessionIdParts[2]
-    const year = sessionIdParts[3]
+    // Obtenemos la fecha del id de session para acceder a la DB
+    const sessionString = data.sessionId.split("_")[1]
+    // const objId = new ObjectId(sessionString);
+    const objId = ObjectId.createFromHexString(sessionString);
+    const fechaCreacionSession = objId.getTimestamp();
+    const [, month, day , year] = fechaCreacionSession.toString().split(' ');
+    const normalizedMonth = month.toLowerCase();
+    const dbName = systemConfig.DBS.SESSIONS + year
+    const collection = normalizedMonth;
+    const sessionsDb = await getDb(dbName)
+
     
-    const params = {
-        dbName: systemConfig.DBS.SESSIONS + year,
-        collection: month,
-    };
 
     if (data.task === 'SESSION_ENDED') {
 
         const filter = { "_id.sessionId": data.sessionId };
-        const update_data = { $set: {status: data.newStatus}};
+        const update_data = { $set: {status: "ENDED"}};
 
-        await dbCrudHandler.updateOne(filter, update_data, params);
+        await sessionsDb.collection(collection).updateOne(filter,update_data )
+        // await dbCrudHandler.updateOne(filter, update_data, params);
         
 
         // Eliminar sesión de Redis por sessionId
@@ -81,8 +92,8 @@ export const updateSession = async (data) => {
         const filter = {"_id.sessionId": data.sessionId };
         const update_data = { $set: { "status": data.newStatus } };
 
-        await dbCrudHandler.updateOne(filter, update_data, params);
-        
+        // await dbCrudHandler.updateOne(filter, update_data, params);
+        await sessionsDb.collection(collection).updateOne(filter,update_data )
 
         // Actualizar estado en Redis
         if (data.sessionId && redisClient && redisClient.isOpen) {
@@ -105,10 +116,13 @@ export const updateSession = async (data) => {
  */
 export async function getSession(sessionId) {
     
-    // const [, month, , year] = new Date().toString().split(' ');
-    const sessionIdParts = sessionId.split("_")
-    const month = sessionIdParts[2]
-    const year = sessionIdParts[3]
+    // Obtenemos la fecha del id de session para acceder a la DB
+    const sessionString = sessionId.split("_")[1]
+    // const objId = new ObjectId(sessionString);
+    const objId = ObjectId.createFromHexString(sessionString);
+    const fechaCreacionSession = objId.getTimestamp();
+    const [, month, day , year] = fechaCreacionSession.toString().split(' ');
+    const normalizedMonth = month.toLowerCase();
     
     const now = Date.now()
     if (!sessionId) return null;
@@ -123,8 +137,8 @@ export async function getSession(sessionId) {
 
     // 2. Fallback a MongoDB si expiró en Redis o hubo reinicio
     try {
-        const db = getDb(systemConfig.DBS.SESSIONS + year);
-        const sessionsCollection = db.collection(month.toLowerCase());
+        const db = await getDb(systemConfig.DBS.SESSIONS + year);
+        const sessionsCollection = db.collection(normalizedMonth);
         const session = await sessionsCollection.findOne({ '_id.sessionId': sessionId, isValid: true });
 
         if(session && now > session.expiresAt){
@@ -163,7 +177,7 @@ export async function touchSession(sessionId) {
     }
 }
 
-/**
+/** REVISAR ESTO !!!!!
  * Invalida y elimina una sesión (Logout)
  * @param {string} sessionId
  */
@@ -179,7 +193,7 @@ export async function destroySession(sessionId) {
 
     // 2. Marcar como inválida o eliminar en MongoDB
     try {
-        const db = getDb('users_data');
+        const db = await getDb('users_data');
         const sessionsCollection = db.collection('sessions');
         await sessionsCollection.updateOne(
             { 'customId.sessionId': sessionId },

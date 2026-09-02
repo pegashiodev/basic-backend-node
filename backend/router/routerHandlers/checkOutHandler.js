@@ -173,12 +173,11 @@ export default async function checkOutHandler(req, res) {
             req.body.promotion.amountBeforeDisconunt = totalAmountInCentsBeforeDiscount
         }
 
-        const orderId = new ObjectId().toHexString();
-        const customOrderId = `ord_${orderId}_${month.toLowerCase()}_${year}`;
+        const orderId = new ObjectId();
         
         req.order = {
             language: req.urlData.language,
-            orderId: customOrderId,
+            orderId: orderId,
             verifiedOrderItems: verifiedOrderItems,
             totalAmountInCents: totalAmountInCents
         }
@@ -192,6 +191,7 @@ export default async function checkOutHandler(req, res) {
                 amountBeforeDiscount: totalAmountInCentsBeforeDiscount,
                 discountPercent: req.body.promotion.discountPercent
             }
+            req.order.totalAmountInCentsBeforeDiscount = totalAmountInCentsBeforeDiscount
             
         }
         
@@ -207,8 +207,8 @@ export default async function checkOutHandler(req, res) {
             customer_email: userEmail || undefined,
             // En metadata viaja el orderId para recuperarlo en el Webhook de forma segura
             metadata: {
-                orderId: customOrderId,
-                userId: String(userId || '')
+                orderId: orderId.toString(),
+                userId: userId || ''
             },
             // Las páginas de éxito/cancelación solo sirven para mostrar la interfaz visual
             success_url: `${protocol}://${baseUrl}/success-checkout.html?session_id={CHECKOUT_SESSION_ID}`,

@@ -21,10 +21,9 @@ export function createSessionObject(req, user) {
     const {ip, userAgent} = req
     const [, month, day , year] = new Date().toString().split(' ');
     const now = Date.now();
-    const sessionId = new ObjectId().toHexString();
+    const sessionId = new ObjectId().toString();
     const normalizedEmail = email.trim().toLowerCase();
-    const normalizedMonth = month.toLowerCase();
-    const customSessionId = `ses_${sessionId}_${normalizedMonth}_${year}`;
+    const customSessionId = sessionId;
     
     return {
         // Datos inmutables de identificación

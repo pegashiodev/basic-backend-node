@@ -232,7 +232,9 @@ export default  {
         PRODUCTS: "pcm",
         AFILIATES: "codes",
         BLACKLIST: "ips",
-        USERS_ACTIVITY: "payments"
+        USERS_ACTIVITY: "activity",
+        USERS_PAYMENTS: "payments",
+        ORDERS: "orders",
     },
     /** TIEMPO DE EXPIRACION DE LA COOKIE */
     COOKIE_AGE: ACCESS_TOKEN_MAX_AGE_SECONDS,  

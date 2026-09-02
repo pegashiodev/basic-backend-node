@@ -5,8 +5,9 @@
  */
 
 import { MongoClient } from 'mongodb';
+import systemConfig from '../globalData/systemConfig';
 
-export let mongoClient = null;
+export let mongoClientInstance = null;
 // Mapa interno con las instancias Db de las bases de datos abiertas
 const dbsInstances = new Map();
 const uri = process.env.MONGODB_URI;
@@ -21,12 +22,12 @@ function getClient() {
 
     // Si ya hay una promesa de conexión (en curso o resuelta), la reutilizamos
     if (!clientMongoPromise) {
-        const mongoClient = new MongoClient(uri, {
+            mongoClientInstance = new MongoClient(uri, {
             maxPoolSize: 10,
             serverSelectionTimeoutMS: 5000
         });
         // Guardamos la promesa directamente
-        clientMongoPromise = mongoClient.connect();
+        clientMongoPromise = mongoClientInstance.connect();
     }
     return clientMongoPromise;
 }
@@ -41,7 +42,7 @@ export default async function openDbs(dbNames) {
    
     try {
         // 1. Conectar el cliente global si aún no está conectado
-        const mongoClient = await getClient();
+        await getClient();
        
         // 2. Normalizar dbNames a un Array
         const databasesToOpen = Array.isArray(dbNames) ? dbNames : [dbNames];
@@ -50,10 +51,59 @@ export default async function openDbs(dbNames) {
         for (const name of databasesToOpen) {
             if (!name) continue;
 
-            const dbInstance = mongoClient.db(name);
+            const dbInstance = mongoClientInstance.db(name);
             
             // Opcional: hacer un ping o comprobación específica sobre la BD
             await dbInstance.command({ ping: 1 });
+
+            let collection;
+
+            // Creamos indices de busqueda en estas DBS
+            if(name === "users_activity_2026"){
+
+                collection = dbInstance.collection(systemConfig.COLLECTIONS.USERS_ACTIVITY)
+                // Para listar el historial de ACTIVIDAD del usuario ordenado por fecha
+                // Si ya existen, no pasa nada (operación ultra rápida)
+                await collection.createIndex({ userId: 1, createdAt: -1 })
+                
+
+            }else if(name === "users_payments_2026"){
+                // En el payment ha de haber userId
+                collection = dbInstance.collection(systemConfig.COLLECTIONS.USERS_PAYMENTS)
+                // Para listar el historial de PAGOS del usuario ordenado por fecha
+                // Si ya existen, no pasa nada (operación ultra rápida)
+                await collection.createIndex({ userId: 1, createdAt: -1 });
+                
+           
+            }else if(name === "orders_2026"){
+                // En el Order ha de haber userId
+                collection = dbInstance.collection(systemConfig.COLLECTIONS.ORDERS)
+                // Para listar el historial de PAGOS del usuario ordenado por fecha
+                // Si ya existen, no pasa nada (operación ultra rápida)
+                await collection.createIndex({ userId: 1, createdAt: -1 });
+               
+            }
+
+            /*
+            Con los indices con una sola consulta obtenemos todos los documentos de ese usuario en la DB
+
+                async function getUserPayments(req, res) {
+                    try {
+                        const { userIdStr } = req.params;
+
+                        const payments = await db.collection('payments')
+                        .find({ userId: new ObjectId(userIdStr) }) // Usamos ObjectId para activar el índice
+                        .sort({ createdAt: -1 }) // MongoDB usa el índice para ordenar al instante
+                        .toArray();
+
+                        // El driver nativo convierte automáticamente los ObjectIds a string al hacer res.json()
+                        res.json(payments); 
+                    } catch (error) {
+                        res.status(500).send({ error: "Error al obtener pagos." });
+                    }
+                }
+
+            */
 
             // Guardamos la referencia directa de la base de datos
             dbsInstances.set(name, dbInstance);
@@ -76,23 +126,40 @@ export default async function openDbs(dbNames) {
  * @param {string} dbName 
  * @returns {import('mongodb').Db}
  */
-export function getDb(dbName) {
+export async function getDb(dbName) {
 
    
     // 1. Si ya se abrió al inicio, la devuelve de inmediato
     if (dbsInstances.has(dbName)) {
         return dbsInstances.get(dbName);
-   
-    }else{
+    }
+    // 1. Esperamos a que el cliente esté conectado (reutiliza la misma conexión siempre)
+    await getClient();
+    
+    const dbInstance = mongoClientInstance.db(dbName);
+    // Opcional: hacer un ping o comprobación específica sobre la BD
+    await dbInstance.command({ ping: 1 });
+    dbsInstances.set(dbName, dbInstance);
 
-        // 1. Esperamos a que el cliente esté conectado (reutiliza la misma conexión siempre)
-        const mongoClient = getClient();
-        
-        const dbInstance = mongoClient.db(dbName);
-        dbsInstances.set(dbName, dbInstance);
-        return dbInstance;
+    let collection;
+    
+    // dependiendo de la base de datos hay que crear los indices PARA LA BUSQUEDA DE CONTENIDO POR USERID
+    if(dbName.includes("users_activity_")){
+        collection = dbInstance.collection(systemConfig.COLLECTIONS.USERS_ACTIVITY)
+        await collection.createIndex({ userId: 1, createdAt: -1 })
+    
+    }else if(dbName.includes("users_payments_")){
+        collection = dbInstance.collection(systemConfig.COLLECTIONS.USERS_PAYMENTS)
+        await collection.createIndex({ userId: 1, createdAt: -1 })
+
+    }else if(dbName.includes("orders_")){
+        collection = dbInstance.collection(systemConfig.COLLECTIONS.ORDERS)
+        await collection.createIndex({ userId: 1, createdAt: -1 })
+
     }
 
+    return dbInstance;
+    
 
 }
 
@@ -100,8 +167,8 @@ export function getDb(dbName) {
  * Cierre limpio de todas las conexiones
  */
 export async function closeDbs() {
-    if (mongoClient) {
-        await mongoClient.close();
+    if (mongoClientInstance) {
+        await mongoClientInstance.close();
         dbsInstances.clear();
         console.log('🔌 Conexión de MongoDB cerrada.');
     }
@@ -110,15 +177,15 @@ export async function closeDbs() {
 
 // NUEVA FUNCIÓN: Cierra el cliente de MongoDB de forma limpia
 export async function closeDbConnection() {
-    if (mongoClient) {
+    if (mongoClientInstance) {
         try {
             console.log('Cerrando pool de conexiones de MongoDB...');
-            await mongoClient.close();
+            await mongoClientInstance.close();
             console.log('Conexión a MongoDB cerrada con éxito.');
             
             // Limpiamos las variables por si la app necesita volver a conectar
-            mongoClient = null;
-            clientPromise = null;
+            mongoClientInstance = null;
+            clientMongoPromise = null;
         } catch (error) {
             console.error('Error al cerrar la conexión de MongoDB:', error);
         }
