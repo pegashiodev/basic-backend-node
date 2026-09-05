@@ -33,12 +33,12 @@ export default async function logInEmailHandler(req, res) {
         }));
     }
 
-    const cleanEmail = email.trim().toLowerCase();
+    const normalizedEmail = email.trim().toLowerCase();
 
     try {
         // 2. Obtener usuario usando el puntero en Redis (user:idx:<email>) -> MongoDB
-        const user = await userHandler.getUserByEmail(cleanEmail);
-// console.log(user)
+        const user = await userHandler.getUserByEmail(normalizedEmail);
+        
         if (!user || !user.password) {
             res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
             return res.end(JSON.stringify({

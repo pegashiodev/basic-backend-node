@@ -6,7 +6,7 @@ import generateValidationToken, { checkValidationToken } from '../../notificatio
 import sendEmail from '../../notifications/sendEmail.js';
 import userHandler from '../../users/userHandler.js';
 import { createSession } from '../../sessions/sessionHandler.js';
-import { getUserPointer } from '../../db/userIndexService.js';
+import { existingRedisUserByEmail } from '../../db/redisService.js';
 import { redisClient } from '../../db/openRedis.js';
 import systemConfig from '../../globalData/systemConfig.js';
 import verifyTokensAndSetCookie from '../../tools/verifyTokensAndSetCookie.js';
@@ -33,8 +33,8 @@ console.log({ email, password, name, code, userAgent, deviceId, language, promoC
 
     try {
         // 1. Comprobar existencia previa instantáneamente en Redis (O(1))
-        const existingPointer = await getUserPointer(normalizedEmail);
-// if (existingPointer) {
+        const existingUser = await existingRedisUserByEmail(normalizedEmail);
+// if (existingUser) {
 //     res.writeHead(409, { 'Content-Type': 'application/json; charset=utf-8' });
 //     return res.end(JSON.stringify({
 //         status: 'error',

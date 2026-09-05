@@ -235,6 +235,8 @@ export default  {
         USERS_ACTIVITY: "activity",
         USERS_PAYMENTS: "payments",
         ORDERS: "orders",
+        USERS_DATA: "users",
+        SESSIONS: "sessions",
     },
     /** TIEMPO DE EXPIRACION DE LA COOKIE */
     COOKIE_AGE: ACCESS_TOKEN_MAX_AGE_SECONDS,  

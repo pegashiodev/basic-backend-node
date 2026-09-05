@@ -1,6 +1,5 @@
 
 
-import { v4 as uuidv4 } from 'uuid';
 import systemConfig from '../globalData/systemConfig.js';
 import {ObjectId} from "mongodb"
 
@@ -19,31 +18,28 @@ export function createSessionObject(req, user) {
 
     const { userId, email, role = 'USER', extraData = {} } = user
     const {ip, userAgent} = req
-    const [, month, day , year] = new Date().toString().split(' ');
+    const date = new Date();
     const now = Date.now();
-    const sessionId = new ObjectId().toString();
+    const sessionId = new ObjectId();
+    const sessionIdString = sessionId.toString()
     const normalizedEmail = email.trim().toLowerCase();
-    const customSessionId = sessionId;
     
     return {
         // Datos inmutables de identificación
-        _id: {
-            sessionId: customSessionId,
-            userId,
-            email: normalizedEmail
-        },
-        // Estado y metadatos mutables de la sesión
-        userId: userId,
-        sessionId: customSessionId,
+        _id: sessionId,
+        sessionId: sessionId,
+        sessionIdString: sessionIdString,
         email: normalizedEmail,
+        userId: userId, 
+        userIdString: userId.toString(),
+            
         role,
         status: "ACTIVE",   // [ENDED, PAUSED, BLOCKED]
         createdAt: now,
         expiresAt: now + (systemConfig.TOKENS_AGE.SESSION_TTL_SECONDS * 1000),
         lastActiveAt: now,
         ip: ip,
-        userAgent: userAgent,
+        userAgent: userAgent || "",
         isValid: true,
-        extraData: {}
     };
 }

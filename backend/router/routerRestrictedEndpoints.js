@@ -7,7 +7,8 @@
 
 import systemConfig from '../globalData/systemConfig.js';
 import sendStaticFile from '../server/serverHandlers/sendStaticFile.js';
-import { getSession, createSession, updateSession } from '../sessions/sessionHandler.js';
+import { createSession } from '../sessions/sessionHandler.js';
+import { getRedisSession } from '../db/redisService.js';
 
 import userTemplateHandler from '../restrictedEndpoints/userTemplateHandler.js';
 import myBotsTemplateHandler from '../restrictedEndpoints/myBotsTemplateHandler.js';
@@ -37,6 +38,7 @@ endpoints_handlers[REMOTE_CONTROL_PANEL_ENDPOINT] = remoteControlPanelHandler;
 
 export default async function routerRestrictedEndpoints(req, res) {
     const from = "RESTRICTED_ENDPOINTS";
+    console.log("Router RESTRICTED !!!!")
 
     if (!endpoints_handlers[req.urlData.url_to_verify]) {
         res.code = 404;
@@ -56,9 +58,6 @@ export default async function routerRestrictedEndpoints(req, res) {
 
     // 2. Extraer y verificar tokens
     const result_getOurCookie = await getOurCookie(req);
-
-console.log("Router RESTRICTED !!!!")
-console.log(result_getOurCookie)
 
 
     if (result_getOurCookie.status !== 'ok') {
@@ -85,22 +84,16 @@ console.log(result_getOurCookie)
 
     // 3. Consultar sesión activa desde Redis mediante sessionId
     const sessionId = req.our_cookie?.atk_decoded?.sessionId;
-    let session = await getSession(sessionId);
+    let session = await getRedisSession(sessionId);
 
     // COMPROBAMOS SI HAY SESION ABIERTA Y NO EXPIRADA
     if (session) {
         const now = Date.now();
-        
+
         // Si la sesión ha expirado o su estado es 'ENDED'
-        if (session.status === 'ENDED' || !session.isValid || (session.expireTime && now > session.expireTime)) {
-            session.status = 'ENDED';
-            session.isValid = false;
+        if (session.status !== 'ACTIVE' || !session.isValid || now > session.expiresAt) {
             
-            await updateSession({
-                task: 'SESSION_ENDED',
-                sessionId: sessionId,
-                newStatus: "ENDED"
-            });
+            // NO ACTUALIZAMOS, CADUCA SOLA !!! 
 
             // CREAMOS NUEVA SESSION
             const result_session = await createSession(req, from);
@@ -109,10 +102,6 @@ console.log(result_getOurCookie)
                 res.headers = { "Location": systemConfig.PAGES.SYSTEM_ERROR_OCURRED };
                 return sendStaticFile(req, res);
             }
-        } else if (session.status === 'PAUSED' || session.status === 'BLOCKED' || req.user.status === 'PAUSED' || req.user.status === 'BLOCKED') {
-            res.code = 302;
-            res.headers = { "Location": systemConfig.PAGES.BLOCKED_ACCOUNT_INFO };
-            return sendStaticFile(req, res);
         }
 
         // Renovar tokens y setear cookie si procede
@@ -136,9 +125,15 @@ console.log(result_getOurCookie)
             res.code = 302;
             res.headers = { "Location": location};
             return sendStaticFile(req, res);
-            return;
+        }
+         
+        if (!endpoints_handlers[req.urlData.endpoint]) {
+            res.code = 404;
+            return sendStaticFile(req, res);
         }
 
+        // Ejecutar el handler QUE CORRESPONDA
+        endpoints_handlers[req.urlData.endpoint](req, res);
 
     } else {
 
@@ -149,12 +144,5 @@ console.log("NO HAY SESSION !!!! ")
         return sendStaticFile(req, res);
     }
 
-    
-    if (!endpoints_handlers[req.urlData.endpoint]) {
-        res.code = 404;
-        return sendStaticFile(req, res);
-    }
-
-    // Ejecutar el handler final
-    endpoints_handlers[req.urlData.endpoint](req, res);
+   
 }

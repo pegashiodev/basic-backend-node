@@ -17,7 +17,7 @@ console.log("GET OUR COOKIE !!!!")
     // 1. Extraer cookies de las cabeceras HTTP
     req.cookie_parsed = cookieParser(req.headers.cookie || '');
 
-console.log(req.cookie_parsed)
+// console.log(req.cookie_parsed)
 
     const deviceId = req.cookie_parsed?.deviceId;
     req.our_cookie = null;
@@ -77,7 +77,6 @@ console.log(req.cookie_parsed)
         our_cookie["rtk_decoded"] = rtk_decoded;
     }
 
-console.log({our_cookie})
     // Comprobar token especial de panel de control si viene presente
     if (req.cookie_parsed.stk) {
         const stk_decoded = decodeToken(req.cookie_parsed.stk);

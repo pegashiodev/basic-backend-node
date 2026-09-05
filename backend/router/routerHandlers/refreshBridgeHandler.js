@@ -73,8 +73,8 @@ export default async function refershBridgeHandler(req, res) {
         // }
 
         if(req.set_new_cookie){
-            console.log("AÑADIMOS NUEVA COOCKIE !!!!!!!!!!!!!")
-            console.log(req.cookie)
+            // console.log("AÑADIMOS NUEVA COOCKIE !!!!!!!!!!!!!")
+            // console.log(req.cookie)
             headers['Set-Cookie'] = req.cookie;
         }
         res.writeHead(200, headers);

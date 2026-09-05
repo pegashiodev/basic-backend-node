@@ -5,7 +5,7 @@
  */
 
 import { MongoClient } from 'mongodb';
-import systemConfig from '../globalData/systemConfig';
+import systemConfig from '../globalData/systemConfig.js';
 
 export let mongoClientInstance = null;
 // Mapa interno con las instancias Db de las bases de datos abiertas
@@ -62,27 +62,31 @@ export default async function openDbs(dbNames) {
             if(name === "users_activity_2026"){
 
                 collection = dbInstance.collection(systemConfig.COLLECTIONS.USERS_ACTIVITY)
-                // Para listar el historial de ACTIVIDAD del usuario ordenado por fecha
-                // Si ya existen, no pasa nada (operación ultra rápida)
+                // CReamos el indice por userId Para listar el historial de ACTIVIDAD del usuario ordenado por fecha
+             
                 await collection.createIndex({ userId: 1, createdAt: -1 })
-                
 
             }else if(name === "users_payments_2026"){
                 // En el payment ha de haber userId
                 collection = dbInstance.collection(systemConfig.COLLECTIONS.USERS_PAYMENTS)
-                // Para listar el historial de PAGOS del usuario ordenado por fecha
-                // Si ya existen, no pasa nada (operación ultra rápida)
+                // CReamos el indice por userId Para listar el historial de PAGOS del usuario ordenado por fecha
+              
                 await collection.createIndex({ userId: 1, createdAt: -1 });
-                
+                // Para cuando necesites filtrar solo consumos o solo recargas de Stripe de un usuario
+                await collection.createIndex({ userId: 1, type: 1 });
            
             }else if(name === "orders_2026"){
                 // En el Order ha de haber userId
                 collection = dbInstance.collection(systemConfig.COLLECTIONS.ORDERS)
-                // Para listar el historial de PAGOS del usuario ordenado por fecha
-                // Si ya existen, no pasa nada (operación ultra rápida)
+                // CReamos el indice por userId Para listar el historial de PEDIDOS del usuario ordenado por fecha
                 await collection.createIndex({ userId: 1, createdAt: -1 });
                
-            }
+            } else if(name === "users_data"){
+                collection = dbInstance.collection(systemConfig.COLLECTIONS.USERS_DATA)
+                // Creamos un indice para buscar al usuario por su  email
+                await collection.createIndex({ email: 1, createdAt: -1 }, { unique: true });
+
+            } 
 
             /*
             Con los indices con una sola consulta obtenemos todos los documentos de ese usuario en la DB
@@ -143,14 +147,18 @@ export async function getDb(dbName) {
 
     let collection;
     
-    // dependiendo de la base de datos hay que crear los indices PARA LA BUSQUEDA DE CONTENIDO POR USERID
+    // dependiendo de la base de datos hay que crear los indices PARA LA BUSQUEDA DE CONTENIDO POR userId
     if(dbName.includes("users_activity_")){
         collection = dbInstance.collection(systemConfig.COLLECTIONS.USERS_ACTIVITY)
         await collection.createIndex({ userId: 1, createdAt: -1 })
+        // Para cuando necesites filtrar solo consumos DE VARIOS TIPOS  o solo recargas de Stripe de un usuario (type)
+        await collection.createIndex({ userId: 1, type: 1 });
     
     }else if(dbName.includes("users_payments_")){
         collection = dbInstance.collection(systemConfig.COLLECTIONS.USERS_PAYMENTS)
         await collection.createIndex({ userId: 1, createdAt: -1 })
+        // Para cuando necesites filtrar solo consumos o solo recargas de Stripe de un usuario (type)
+        await collection.createIndex({ userId: 1, type: 1 });
 
     }else if(dbName.includes("orders_")){
         collection = dbInstance.collection(systemConfig.COLLECTIONS.ORDERS)
@@ -159,7 +167,6 @@ export async function getDb(dbName) {
     }
 
     return dbInstance;
-    
 
 }
 

@@ -7,6 +7,7 @@ export default [
           productId: 'pcm_recharge_12890',
           brand: "podcastmatic"   
         },
+        paymentMode: "ONCE",
         type: "BALANCE_RECHARGE",
         productId: 'pcm_recharge_12890',
         brand: 'podcastmatic',
@@ -34,6 +35,7 @@ export default [
           type: "BALANCE_RECHARGE",
           brand: "podcastmatic"   
         },
+        paymentMode: "ONCE",
         productId: 'pcm_recharge_13890',
         type: "BALANCE_RECHARGE",
         brand: 'podcastmatic',
@@ -63,6 +65,7 @@ export default [
           type: "BALANCE_RECHARGE",
           brand: "podcastmatic"   
         },
+        paymentMode: "ONCE",
         productId: 'pcm_recharge_14890',
         type: "BALANCE_RECHARGE",
         brand: 'podcastmatic',
@@ -92,6 +95,7 @@ export default [
           type: "AUDIO_STREAMING",
           brand: "podcastmatic"   
         },
+        paymentMode: "ONCE",
         productId: 'pcm_audio_20790',
         type: "AUDIO_STREAMING",
         format: "STREAMING",   
@@ -114,6 +118,7 @@ export default [
           type: "AUDIO_DOWNLOAD",
           brand: "podcastmatic"   
         },
+        paymentMode: "ONCE",
         productId: 'pcm_audio_20690',
         type: "AUDIO_DOWNLOAD",
         format: "DOWNLOAD",   
@@ -137,6 +142,7 @@ export default [
           type: "TEXT_CONTENT",
           brand: "podcastmatic"   
         },
+        paymentMode: "ONCE",
         productId: 'pcm_text_20890',
         type: "AUDIO_CONTENT",
         format: "DOWNLOAD",   
@@ -160,6 +166,7 @@ export default [
           type: "PHYSICAL",
           brand: "podcastmatic"   
         },
+        paymentMode: "ONCE",
         productId: 'pcm_physic_30021',
         type: "PHYSICAL",
         brand: 'podcastmatic',

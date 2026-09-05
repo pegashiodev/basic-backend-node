@@ -71,6 +71,8 @@ export default async function checkOutHandler(req, res) {
         // 4. Validar productos y calcular precios directamente desde la Base de Datos
         const lineItemsForStripe = [];
         const verifiedOrderItems = [];
+        let paymentMode;            // [SUBSCRIPTION, ONCE]
+        let paymentModeFail = false;
         let totalAmountInCents = 0;
         let totalAmountInCentsBeforeDiscount = 0;
 
@@ -96,6 +98,15 @@ export default async function checkOutHandler(req, res) {
                     status: 'error',
                     code: 431,
                     message: `El producto con ID ${item.productId} no está disponible o no existe.`
+                }));
+            }
+            if (!currentProduct.paymentMode ) {
+                console.log("Producto SIN PAYMENT MODE ?? ")
+                res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+                return res.end(JSON.stringify({
+                    status: 'error',
+                    code: 439,
+                    message: `El producto con ID ${item.productId} NO TIENE  MODO DE PAGO.`
                 }));
             }
             // COMPROBAMOS QUE EL PRECIO ES EL QUE TENEMOS EN EL SERVER
@@ -141,16 +152,30 @@ export default async function checkOutHandler(req, res) {
 
             */
 
-            // AÑADIMOS EL TOTAL DE LA COMPRA para luego pagar al afiliado
-            totalAmountInCentsBeforeDiscount += currentProduct.priceInCents * quantity;
-            
-            // Si hay req.promotion es que el promoCode es valido y aplicamos el descuento
-            if(req.body.promotion && req.body.promotion.type === "DISCOUNT"){
-                currentProduct.priceInCents = Math.round(currentProduct.priceInCents - (currentProduct.priceInCents * (req.body.promotion.discountPercent / 100)))
+            // Verificacmos que todos los items tienen el mismo modo de pago: (ONCE / SUBSCRIPTION)
+            if(!paymentMode){
+                paymentMode = currentProduct.paymentMode
+            }else{
+                if(paymentMode !== currentProduct.paymentMode){
+                    paymentModeFail = true;
+                    break;
+                }
             }
-            
-            // PRECIO PAGADO POR EL USUARIO CON EL DESCUENTO DEL AFILIADO
-            totalAmountInCents += currentProduct.priceInCents * quantity
+
+            // SI EL PRODUCTO NO ES SUBSCIPCION NOSOTROS GETIONAMOS EL PROMOCODE Y HACEMOS EL DESCUENTO ANTES DE ENVIAR A STRIPE
+            // LOS DESCUENTOS EN SUBSCRIPCIONES SE HACEN CON CUPONES DE STRIPE
+            if(paymentMode === "ONCE"){
+                // AÑADIMOS EL TOTAL DE LA COMPRA SIN DESCUENTO para luego pagar al afiliado
+                totalAmountInCentsBeforeDiscount += currentProduct.priceInCents * quantity;
+                
+                // Si hay req.promotion es que el promoCode es valido y aplicamos el descuento
+                if(req.body.promotion && req.body.promotion.type === "DISCOUNT"){
+                    currentProduct.priceInCents = Math.round(currentProduct.priceInCents - (currentProduct.priceInCents * (req.body.promotion.discountPercent / 100)))
+                }
+                
+                // ACTUALIZAMOS EL PRECIO PAGADO POR EL USUARIO CON EL DESCUENTO DEL AFILIADO
+                totalAmountInCents += currentProduct.priceInCents * quantity
+            }
 
             //Almacenamos el item completo para luego manipularlo en processOrderDelivery
             verifiedOrderItems.push(currentProduct);
@@ -166,6 +191,17 @@ export default async function checkOutHandler(req, res) {
                 },
                 quantity: quantity,
             });
+        }
+
+        // LOS ITEMS TIENEN DISTINTOS FORMAS DE PAGO: HAN DE SER TODOS IGUALES (ONCE / SUSCRIPTION)
+        if(paymentModeFail){
+            console.log("Productos CON DISTINTAS FORMAS DE PAGO")
+            res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+            return res.end(JSON.stringify({
+                status: 'error',
+                code: 437,
+                message: `Productos del carrito con distinta forma de Pago.`
+            }));
         }
     
         // Si hay promotio, almacenamos el coste del servicio antes del descuento para liquidar posteriormente al afiliado
@@ -183,39 +219,116 @@ export default async function checkOutHandler(req, res) {
         }
         // Si habia promocion añadimos mas informacion al pedido: code, percio base, descuento aplicado, ...
         if(req.body.promotion){
-            req.order.promotion = {
-                affiliate: req.body.promotion.affiliate,
-                endpoint: req.body.promotion.endpoint,
-                type: req.body.promotion.type,
-                promoCode: promoCode,
-                amountBeforeDiscount: totalAmountInCentsBeforeDiscount,
-                discountPercent: req.body.promotion.discountPercent
-            }
-            req.order.totalAmountInCentsBeforeDiscount = totalAmountInCentsBeforeDiscount
+            if(paymentMode === "ONCE"){
+
+                req.order.promotion = {
+                    mode: "ONCE",
+                    affiliate: req.body.promotion.affiliate,
+                    endpoint: req.body.promotion.endpoint,
+                    type: req.body.promotion.type,
+                    promoCode: promoCode,
+                    amountBeforeDiscount: totalAmountInCentsBeforeDiscount,
+                    discountPercent: req.body.promotion.discountPercent
+                }
+                req.order.totalAmountInCentsBeforeDiscount = totalAmountInCentsBeforeDiscount
             
+            // SI ES UNA SUBSCRIPTION SE TRAMITARA DE FORMA DISTINTA
+            }else if(paymentMode === "SUBSCRIPTION"){
+
+                req.order.promotion = {
+                    mode: "SUBSCRIPTION",
+                    affiliate: req.body.promotion.affiliate,
+                    endpoint: req.body.promotion.endpoint,
+                    type: req.body.promotion.type,
+                    promoCode: promoCode
+                }
+            }
         }
         
         // 5. Determinar host base según entorno (DEV vs PROD)
         const baseUrl = process.env.MODE === 'DEV' ? systemConfig.HOST_DEV : systemConfig.HOST_PROD;
         const protocol = process.env.MODE === 'DEV' ? 'http' : 'https';
 
-        // 6. Crear la sesión en Stripe Checkout
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card', 'bizum'],
-            mode: 'payment',
-            line_items: lineItemsForStripe,
-            customer_email: userEmail || undefined,
-            // En metadata viaja el orderId para recuperarlo en el Webhook de forma segura
-            metadata: {
-                orderId: orderId.toString(),
-                userId: userId || ''
-            },
-            // Las páginas de éxito/cancelación solo sirven para mostrar la interfaz visual
-            success_url: `${protocol}://${baseUrl}/success-checkout.html?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${protocol}://${baseUrl}/cancel-checkout.html?order_id=${customOrderId}`,
-        });
+        
+        // ENVIAMOS A STRIPE SEGUN EL MODO DE PAGO DE LOS PRODUCTOS DEL CARRITO
+        if(paymentMode === "ONCE"){
 
-        if(!session || !session.id){
+            // 6. PAGO UNICO: -> Crear la sesión en Stripe Checkout 
+            const stripeSession = await stripe.checkout.sessions.create({
+                payment_method_types: ['card', 'bizum'],
+                mode: 'payment',
+                line_items: lineItemsForStripe,
+                customer_email: userEmail || undefined,
+                // En metadata viaja el orderId para recuperarlo en el Webhook de forma segura
+                metadata: {
+                    orderId: orderId.toString(),
+                    userId: userId.toString() || ''
+                },
+                // Las páginas de éxito/cancelación solo sirven para mostrar la interfaz visual
+                success_url: `${protocol}://${baseUrl}/success-checkout.html?session_id={CHECKOUT_SESSION_ID}`,
+                cancel_url: `${protocol}://${baseUrl}/cancel-checkout.html?order_id=${orderId.toString()}`,
+            });
+        
+
+        }else if(paymentMode === "SUBSCRIPTION"){
+
+            // 7.- PAGO POR SUSCRIPCION: 
+    
+            /*
+            // Definir el Price ID de Stripe según lo que eligió el usuario (Mensual o Anual)
+            // Estos IDs empiezan por "price_..." y los copias desde tu Dashboard de Stripe
+            const stripePriceId = planUsuario === 'MONTH' ? 'price_1M23MonthlyID...' : 'price_1M23YearlyID...';
+    
+            // 2. Crear la sesión en Stripe Checkout para Suscripciones
+            const stripeSession = await stripe.checkout.sessions.create({
+                payment_method_types: ['card'], 
+                
+                // CAMBIO CLAVE 1: El modo ahora es 'subscription'
+                mode: 'subscription', 
+                
+                // CAMBIO CLAVE 2: Estructura para suscripciones usando el ID del precio
+                line_items: [
+                    {
+                        price: stripePriceId, // El ID del precio mensual o anual
+                        quantity: 1,
+                    },
+                ],
+                 // APLICAR EL DESCUENTO AQUÍ si esta habilitado en Stripe
+                discounts: [
+                    {
+                        coupon: 'ID_DE_TU_CUPON_DE_STRIPE', // El ID que copiaste en el paso 1 (ej. '50OFF1M')
+                    },
+                ],
+                
+                customer_email: userEmail || undefined,
+                
+                // CAMBIO CLAVE 3: En el metadata pasas el userId para asociarlo en el Webhook
+                metadata: {
+                    orderId: orderId.toString(),
+                    userId: userId.toString()
+                },
+                
+                // En las suscripciones, el éxito suele redirigir al panel de control/dashboard de tu SaaS
+                success_url: `${protocol}://${baseUrl}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+                cancel_url: `${protocol}://${baseUrl}/pricing`,
+            });
+    
+            */
+        
+        }else{
+
+            console.log("No hay MODO de pago NO ES CORECCTO")
+            res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+            return res.end(JSON.stringify({
+                status: 'error',
+                code: 437,
+                message: `Modo de pago incorrecto`
+            }));
+
+        }
+
+
+        if(!stripeSession || !stripeSession.id){
             res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
                 return res.end(JSON.stringify({
                     status: 'error',
@@ -225,7 +338,7 @@ export default async function checkOutHandler(req, res) {
         }
 
         // AÑADIMOS EL session.id de Stripe al pedido
-        req.order.stripeSessionId = session.id
+        req.order.stripeSessionId = stripeSession.id
 
         //7.- Guardamos el pedido en estado PENDING en MongoDB
         const result_createOrder = await createOrder(req.user, req.order);
@@ -245,7 +358,7 @@ export default async function checkOutHandler(req, res) {
             code: 200,
             message: 'Sesión de checkout creada con éxito.',
             checkoutData: {
-                checkoutUrl: session.url,
+                checkoutUrl: stripeSession.url,
                 orderId: customOrderId
             }
         }));

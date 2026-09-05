@@ -6,10 +6,11 @@
 
 import userSchema from './userSchema.js';
 import { hashPassword } from '../router/routerTools/passwordEncript.js';
-import { setUserPointer, getUserPointer, deleteUserPointer } from '../db/userIndexService.js';
+import {setRedisUserHset, getRedisUser} from '../db/redisService.js';
 import systemConfig from '../globalData/systemConfig.js';
 import { getDb } from '../db/openDbs.js';
 import { ObjectId } from 'mongodb';
+import { redisClient } from '../db/openRedis.js';
 
 export const addUser = async (body) => {
     try {
@@ -20,23 +21,23 @@ export const addUser = async (body) => {
         const bodyWithHashedPass = { ...body, email: normalizedEmail, password: hashedPassword };
 
         // 2. Construir el documento con su esquema y _id compuesto
-        const { user, normalizedMonth} = await userSchema(bodyWithHashedPass);
+        const user = await userSchema(bodyWithHashedPass);
 
-        if(!user || ! normalizedMonth){
+        if(!user){
             return { status: 'error', code: 500, message: 'Error Creando esquema del usuario' };
         }
 
         // 3. Guardar en MongoDB en la colección del mes de alta
         const dbUsers = await getDb(systemConfig.DBS.USERS_DATA);
-        const collection = normalizedMonth
+        const collection = systemConfig.COLLECTIONS.USERS_DATA
 
         const dbResult = await dbUsers.collection(collection).insertOne(user)
         if(!dbResult.acknowledged || !dbResult.insertedId){
             return { status: 'error', code: 500, message: 'Error guardando usuario en Base de Datos' };
         }
 
-        // 4. Guardar puntero en Redis de forma permanente
-        await setUserPointer(normalizedEmail, user._id);
+        // Guardamos una copia modificada (todo String) del user en REdis 
+        await setRedisUserHset(user)
 
         return {
             status: 'ok',
@@ -51,30 +52,30 @@ export const addUser = async (body) => {
 };
 
 /**
- * Obtener usuario completo desde MongoDB usando el puntero de Redis
+ * Obtener usuario completo desde Redis.  SI NO EN REDIS BUSCAMOS EN MONGO
  */
 export const getUserByEmail = async (email) => {
-        const normalizedEmail = email.toLowerCase().trim();
+        
+    const normalizedEmail = email.toLowerCase().trim();
 
-        // 1. Obtener puntero desde Redis
-        const pointer = await getUserPointer(normalizedEmail);
-        if (!pointer || !pointer.from?.month) {
-            return null;
-        }
+    const userRedis = await getRedisUser(normalizedEmail)
+    if (userRedis) {
+        return userRedis;
+    }
 
-        // 2. Buscar documento exacto en su colección mensual de MongoDB
+    // 2. Buscar documento exacto en su colección mensual de MongoDB
 
-        const dbUsers = await getDb(systemConfig.DBS.USERS_DATA);
-        const collection = pointer.from.month;
-        let dbResult = null;
-       
-        try{
-            dbResult = await dbUsers.collection(collection).findOne({ "_id.email": normalizedEmail })
-            return dbResult;
-        }catch(e){
-            console.error('❌ Error en userHandler.getUserByEmail:', error);
-            return null;
-        }
+    const dbUsers = await getDb(systemConfig.DBS.USERS_DATA);
+    const collection = systemConfig.COLLECTIONS.USERS_DATA
+    let userMongo = null;
+    
+    try{
+        userMongo = await dbUsers.collection(collection).findOne({ "email": normalizedEmail })
+        return userMongo;
+    }catch(e){
+        console.error('❌ Error en userHandler.getUserByEmail:', error);
+        return null;
+    }
         
 };
 
@@ -257,12 +258,53 @@ export const addItemToUserActivity = async(order, type)=>{
             coins: totalCoins,
             type: "MICROPAYMENT",
             serviceName: "new-podcast",         // [personaje, podcast, trailer, entrevista, ...]
+            "amount": 0.50,                 // Coste del servicio (puede ser en dinero o equivalente)
+            "coinsDebited": 5,
             dataPayment: {
                 
             }
             
         
         }
+        /*
+        Nunca traigas el usuario a Node.js, restes el saldo en memoria y luego hagas un save(). 
+        Si el usuario hace dos clics rápidos, ambos leerán el mismo saldo inicial y uno pisará al otro.
+        En su lugar, delega la resta directamente a MongoDB usando el operador $inc con un valor negativo, 
+        y añade una condición en el filtro para asegurarte de que el usuario aún tiene saldo suficiente:
+
+        async function autorizarYDescontarCoins(userId, costoServicio) {
+            const result = await db.collection('users').updateOne(
+              { 
+                _id: new ObjectId(userId), 
+                coins: { $gte: costoServicio } // Con esto validas el saldo de forma atómica
+              },
+              { 
+                $inc: { coins: -costoServicio } // Resta los coins directamente en la BD
+              }
+            );
+          
+            // Si modifiedCount es 0, significa que el usuario no tenía saldo suficiente
+            return result.modifiedCount > 0; 
+        }
+
+            Como buena práctica contable, cada vez que registres un micropago en payments_YEAR, 
+            guarda un campo llamado balanceSnapshot. Este campo almacena cuántos coins le quedaron 
+            al usuario exactamente después de esa transacción.
+
+        {
+            "_id": ObjectId("65f1a2cc..."),
+            "userId": ObjectId("507f1f77..."),
+            "type": "micropayment",
+            "coinsDebited": 5,
+            "balanceSnapshot": 95, // Tenía 100, consumió 5, le quedan 95
+            "createdAt": ISODate("2026-09-02T20:00:00Z")
+        }
+        Si en el futuro algún usuario reclama que su saldo está mal, 
+        no tendrás que calcular todo su historial desde el año uno. 
+        Bastará con mirar el balanceSnapshot de su último micropago para saber 
+        con total certeza qué falló y en qué momento exacto.
+
+        */
 
 
     // SE AÑADEN COINS A LA CUENTA DEL USUARIO POR CUMPLIR HITOS, OBJETIVOS, ...
@@ -311,7 +353,11 @@ export const updateUserData = async (data, user)=>{
 
         const resultUpdate = await dbUsers.collection(collection).updateOne(filter, updateData)
         if(resultUpdate.acknowledged && resultUpdate.matchedCount === 1 && resultUpdate.modifiedCount === 1){
+
+            // ACTUALIZAMOS AHORA EN REDIS
+            await redisClient.hSet(`user:${user.email}`, "password", data.password);
             return { status: 'ok', message: "PASWORD ACTUALIZADO CON EXITO"}
+            
         }else{
             return { status: 'error', code: 500, message: 'Error guardando usuario en Base de Datos' };
         }

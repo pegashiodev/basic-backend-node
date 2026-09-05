@@ -4,7 +4,7 @@ import dbsOpened from './backend/globalData/dbsOpened.js';
 import systemConfig from './backend/globalData/systemConfig.js';
 import initControler from './backend/init/initControler.js';
 import server from './backend/server/server.js';
-import { syncUsersIndexToRedis } from './backend/db/initUsersIndex.js';
+import { syncUsersIndexToRedis } from './backend/db/syncDbDataToRedis.js';
 
 // Cargar variables de entorno
 process.loadEnvFile();

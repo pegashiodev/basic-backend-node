@@ -5,6 +5,7 @@ import { getDb } from '../db/openDbs.js';
 import { createSessionObject } from './sessionSchema.js';
 import systemConfig from '../globalData/systemConfig.js';
 import { ObjectId } from 'mongodb';
+import { setRedisSessionHset } from '../db/redisService.js';
 
 // TTL por defecto para Redis (ej. 24 horas en segundos)
 //const SESSION_TTL_SECONDS = 60 * 60 * 24;
@@ -16,41 +17,30 @@ import { ObjectId } from 'mongodb';
  */
 export async function createSession(req, from) {
     const user = req.user
-    // const [, month, , year] = new Date().toString().split(' ');
+    const [, month, , year] = new Date().toString().split(' ');
     
     const session = createSessionObject(req, user);
-    const { sessionId, userId } = session._id
+    const { sessionIdString, sessionId } = session
     req.currentSessionId = sessionId;
+    req.currentSessionIdString = sessionIdString;
 
-    // Obtenemos la fecha del id de session para acceder a la DB
-    const sessionString = sessionId.split("_")[1]
-    // const objId = new ObjectId(sessionString);
-    const objId = ObjectId.createFromHexString(sessionString);
+    // Almacenamos una copia modificada (todo String) en Redis
+    await setRedisSessionHset(session)
 
-    const fechaCreacionSession = objId.getTimestamp();
-    const [, month, day , year] = fechaCreacionSession.toString().split(' ');
-    const normalizedMonth = month.toLowerCase();
-
-    // 1. Guardar en Redis con expiración automática (TTL)
-    const redisKey = `session:${sessionId}`;
-    await redisClient.set(redisKey, JSON.stringify(session), {
-        EX: systemConfig.TOKENS_AGE.SESSION_TTL_SECONDS
-    });
 
     // Opcional: Índice secundario en Redis para rastrear sesiones activas por usuario
-    await redisClient.sAdd(`user:sessions:${userId}`, sessionId);
+    // await redisClient.sAdd(`user:sessions:${userId}`, sessionIdString);
 
     // 2. Persistir en MongoDB (colección centralizada de sesiones)
     try {
         const db = await getDb(systemConfig.DBS.SESSIONS + year);
-        const sessionsCollection = db.collection(normalizedMonth);
+        const sessionsCollection = db.collection(systemConfig.COLLECTIONS.SESSIONS);
         await sessionsCollection.insertOne(session);
     } catch (err) {
         console.error('⚠️ No se pudo persistir la sesión en MongoDB (continúa con Redis):', err.message);
         return {status: "error", session: session};
 
     }
-
 
     return {status: "ok", session: session};
 }
@@ -61,16 +51,14 @@ export async function createSession(req, from) {
 export const updateSession = async (data) => {
 
     // Obtenemos la fecha del id de session para acceder a la DB
-    const sessionString = data.sessionId.split("_")[1]
+    
+    const sessionString = data.sessionIdString
     // const objId = new ObjectId(sessionString);
     const objId = ObjectId.createFromHexString(sessionString);
-    const fechaCreacionSession = objId.getTimestamp();
-    const [, month, day , year] = fechaCreacionSession.toString().split(' ');
-    const normalizedMonth = month.toLowerCase();
-    const dbName = systemConfig.DBS.SESSIONS + year
-    const collection = normalizedMonth;
+    const yearCreationSession = objId.getTimestamp().getFullYear()
+    const dbName = systemConfig.DBS.SESSIONS + yearCreationSession
+    const collection = systemConfig.COLLECTIONS.SESSIONS
     const sessionsDb = await getDb(dbName)
-
     
 
     if (data.task === 'SESSION_ENDED') {

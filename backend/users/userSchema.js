@@ -11,68 +11,47 @@ import { updateAffiliatePromotion } from '../affiliates/affiliateService.js';
 export default async function userSchema(body) {
 
     const [, month, day , year] = new Date().toString().split(' ');
-    const userId = new ObjectId().toString();
+    const userId = new ObjectId();
     const id2 = randomBytes(16).toString('hex');
     const normalizedMonth = month.toLowerCase();
     const normalizedEmail = body.email.toLowerCase().trim();
-    const customUserId = userId
+    const userIdString = userId.toString()
 
-    // 1. _id compuesto inmutable (clave primaria de Mongo y puntero de Redis)
-    const customId = {
-        //_id: userUuid,
-        userId: customUserId,
-        email: normalizedEmail,
-        from: {
-            year: year,
-            month: normalizedMonth,
-            day: day
-        },
-        id2: id2
-    };
-
-    // 2. Dispositivo inicial si viene en la petición
-    const initialDevices = [];
-    if (body.deviceId && body.userAgent) {
-        initialDevices.push({
-            deviceId: body.deviceId,
-            userAgent: body.userAgent,
-            lastLogin: new Date()
-        });
-    }
-
+   
     const date = new Date()
+
     // 3. Estructura completa del documento
     const user = {
-        _id: customId,
-        userId: customUserId,
+        _id: userId,
+        userId: userId,
+        userIdString: userIdString,
         id2: id2,
         name: (body.name || '').trim(),
         nick: (body.nick || '').trim(),
         channelName: (body.channelName || '').trim(),
         email: normalizedEmail,
-        password: body.password,        // Llega ya hasheada desde userHandler
+        password: body.password,        
         signupIp: body.ip,
         
-        status: 'ACTIVE',
-        role: 'USER',                   // [EMPLOYEE_PYME, ADMIN, ADMIN_PYME, AFILIATE]
-
+        status: 'ACTIVE',           // [ PAUSED, BLOCKED, ]
+        role: 'USER',                // [EMPLOYEE_PYME, ADMIN, ADMIN_PYME, AFILIATE]  
+        
         createdAt: date,
         createdAtTimestamp: date.getTime(),
-        userDevices: initialDevices,
-        isPromoAfiliate: body.promotion ? true : false,
-        afiliateData: body.promotion?.affiliate || null,
-        coins:{
-            create: body.promotion?.coins?.create || 0,             // CREAR CONTENIDO: ENTRVISTA, AUDIO, IMAGENES, ....
-            training: body.promotion?.coins?.training || 0,       // ENTRENAR CREAR AUDIOS, ...
-            coaching: body.promotion?.coins?.coaching || 0,       // CONSULTAR DUDAS CREATIVAS ....
-            generator: body.promotion?.coins?.generator || 0,
-            audio: body.promotion?.coins?.audio || 0,
-            images: body.promotion?.coins?.images || 0,
-            video: body.promotion?.coins?.video || 0
+        //userDevices: initialDevices,
+        isPromoAffiliate: body.promotion ? true : false,
+        affiliateData: body.promotion?.affiliate || null,
+       
+        coinsCreate: body.promotion?.coins?.create ?? 0,           // CREAR CONTENIDOs: ENTRVISTA, AUDIO, IMAGENES, ....
+        coinsTraining: body.promotion?.coins?.training ?? 0,       // ENTRENAR CREAR AUDIOS, ...
+        coinsCoaching: body.promotion?.coins?.coaching ?? 0,       // CONSULTAR DUDAS CREATIVAS ....
+        coinsGenerator: body.promotion?.coins?.generator ?? 0,
+        coinsAudio: body.promotion?.coins?.audio ?? 0,
+        coinsImages: body.promotion?.coins?.images ?? 0,
+        coinsVideo: body.promotion?.coins?.video ?? 0,
 
-        },
-        saldoAds: body.saldoAds || 0, 
-        saldoMoney: body.saldoMoney || 0,
+        saldoAds: body.saldoAds ?? 0, 
+        saldoMoney: body.saldoMoney ?? 0,
     };
 
     if(systemConfig.HAS_PROMO_CODES_SIGNUP && body.promotion){
@@ -80,8 +59,5 @@ export default async function userSchema(body) {
        
     }
 
-    return { user, normalizedMonth};
-    
-
-
+    return user;
 }

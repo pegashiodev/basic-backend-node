@@ -8,6 +8,10 @@ export let redisClient = null;
 export default async function openRedis() {
     const url = process.env.REDIS_URI || 'redis://127.0.0.1:6379';
 
+    if(redisClient){
+        return { status: 'ok', client: redisClient };
+    }
+
     try {
         console.log('Iniciando conexión con Redis...');
         
@@ -38,6 +42,19 @@ export default async function openRedis() {
         console.error('❌ Fallo al conectar con Redis:', err.message);
         return { status: 'error', message: err.message };
     }
+}
+
+
+export async function getRedisClient() {
+
+    if(redisClient){
+        return redisClient;
+    }
+
+    console.log(redisClient)
+    return false;
+
+    
 }
 
 // Cierre limpio de Redis en el apagado del servidor
