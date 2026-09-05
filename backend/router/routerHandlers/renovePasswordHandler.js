@@ -32,9 +32,8 @@ export default async function(req, res){
 
     console.log(" ** RENOVE-PASSWORD-HANDLER")
     
-    // POR AQUI LLEGA DESDE EL LINK QUE LE HEMOS ENVIADO POR CORREO
+    // GET  -->> POR AQUI LLEGA DESDE EL LINK QUE LE HEMOS ENVIADO POR CORREO 
     if(req.method === 'GET'){
-console.log(req.urlData)
         // COMPROBAMOS LOS DATOS DE LA URL: 
         const url_token = req.urlData.searchParams?.tk
         const email = req.urlData.searchParams?.email

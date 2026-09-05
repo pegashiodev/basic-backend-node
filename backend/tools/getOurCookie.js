@@ -17,15 +17,13 @@ console.log("GET OUR COOKIE !!!!")
     // 1. Extraer cookies de las cabeceras HTTP
     req.cookie_parsed = cookieParser(req.headers.cookie || '');
 
-// console.log(req.cookie_parsed)
 
-    const deviceId = req.cookie_parsed?.deviceId;
     req.our_cookie = null;
     req.has_our_cookie = false;
 
     // 2. Si no hay cookies o faltan parámetros
-    //if (!req.cookie_parsed || !req.cookie_parsed.atk || !req.cookie_parsed.rtk || !deviceId) {
     if (!req.cookie_parsed || !req.cookie_parsed.atk) {
+
         result.status = "error";
         if (req.method === "GET") {
             if (!req.urlData) req.urlData = {};
@@ -45,23 +43,25 @@ console.log("GET OUR COOKIE !!!!")
         return result;
     }
 
+
     // 3. Decodificar y verificar firmas criptográficas HMAC
     const atk_decoded = decodeToken(req.cookie_parsed.atk);
-    let rtk_decoded;
-    
-    if(req.cookie_parsed.rtk){
-        rtk_decoded = decodeToken(req.cookie_parsed.rtk);
-    }
 
     if (!atk_decoded) {
-
         result.status = "error";
         console.warn('⚠️ Token con firma alterada o inválido detectado.');
         return generateErrorResponse(req, result, 453, "Tokens de sesión inválidos", systemConfig.PAGES.ACCESS_PLATFORM);
     }
 
+
+    let rtk_decoded;
+    if(req.cookie_parsed.rtk){
+        rtk_decoded = decodeToken(req.cookie_parsed.rtk);
+    }
+    
+
     // 4. Vínculo de seguridad: Comprobar que pertenecen al mismo sessionId y usuario
-    if (!atk_decoded && !rtk_decoded) {
+    if (atk_decoded && rtk_decoded) {
         if (atk_decoded.sessionId !== rtk_decoded.sessionId || atk_decoded.email !== rtk_decoded.email) {
 
             result.status = "error";
@@ -84,9 +84,6 @@ console.log("GET OUR COOKIE !!!!")
             our_cookie["stk_decoded"] = stk_decoded;
         }
     }
-
-    if (!req.body) req.body = {};
-//req.body.deviceId = deviceId;
 
     // 5. Asignación de datos válidos al objeto req
     req.has_our_cookie = true;
@@ -116,7 +113,6 @@ function generateErrorResponse(req, result, code, message, location=null) {
             location: systemConfig.PAGES.SESSION_IS_REQUIRED,
             code: code,
             message: message,
-            location: location,
             task : "SEND_FETCH_ERROR",
         };
         

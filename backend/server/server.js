@@ -105,6 +105,7 @@ export default createServer(async (req, res) => {
             '/renove-password.html': 'renove-password.html',
             '/renove-password-expired': 'renove-password-expired.html',
             '/renove-password-expired.html': 'renove-password-expired.html',
+            
             '/forgot-password': 'renove-password.html',
             '/forgot-password.html': 'renove-password.html',
 
@@ -119,7 +120,8 @@ export default createServer(async (req, res) => {
             '/stripe-webhook.html': "srtipe-webhook.html",
 
             '/checkout': 'checkout.html',
-            '/checkout.html': 'checkout.html'
+            '/checkout.html': 'checkout.html',
+          
 
         };
         const canonicalPath = req.urlData.canonicalPath

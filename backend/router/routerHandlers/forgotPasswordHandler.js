@@ -14,7 +14,6 @@
 
 import sendEmail from "../../notifications/sendEmail.js";
 import systemConfig from "../../globalData/systemConfig.js";
-import generateVerificationEndpoint from "../../notifications/notificationsTools/generateVerificationEndpoint.js";
 import userHandler from "../../users/userHandler.js";
 import emailValidation from "../routerTools/emailValidation.js";
 

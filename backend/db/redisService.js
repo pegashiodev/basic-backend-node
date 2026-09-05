@@ -9,6 +9,8 @@ import { redisClient } from './openRedis.js';
 import { ObjectId } from 'mongodb';
 import systemConfig from '../globalData/systemConfig.js';
 
+
+
 export async function getUserPointer(email) {
     if (!email || !redisClient || !redisClient.isOpen) return null;
     try {
@@ -54,6 +56,7 @@ export async function setRedisUserHset(user) {
 
     // TODOS LOS VALORES HAN DE SER STRING
     const userData = {
+        _id: user._id.toString(),
         userId: user.userId.toString(),
         userIdString: user.userIdString,
         role: user.role,
@@ -98,7 +101,7 @@ export async function setRedisUserHset(user) {
 export async function setRedisSessionHset(session) {
 
     const sessionData = {
-
+        _id: session._id.toString(),
         sessionId: session.sessionId.toString(),
         sessionIdString: session.sessionIdString,
         email: session.email,
@@ -110,7 +113,7 @@ export async function setRedisSessionHset(session) {
         expiresAt: session.expiresAt.toString(),
         lastActiveAt: session.lastActiveAt.toString(),
         ip: session.ip,
-        userAgent: session.userAgent,
+        // userAgent: session.userAgent,
         isValid: session.isValid.toString()
     }
 
@@ -151,7 +154,8 @@ export async function getRedisUser(email) {
         const userIdString = userHash.userId
 
         const user = {
-            userId: new ObjectId(userIdString),     // Convertimos a ObjectId()
+            _id: new ObjectId(userHash._id),
+            userId: new ObjectId(userHash.userid),     // Convertimos a ObjectId()
             userIdString: userIdString,
             role: userHash.role,
             name: userHash.name,
@@ -161,15 +165,15 @@ export async function getRedisUser(email) {
             channelName: userHash.channelName || "",
             createdAt: new Date(userHash.createdAt),
             password: userHash.password,
-            coinsCreate: Number(userHash.coinsCreate || 0),
-            coinsTraining: Number(userHash.coinsTraining || 0),
-            coinsGenerator: Number(userHash.coinsGenerator || 0),
-            coinsCoaching: Number(serHash.coinsCoaching || 0),
-            coinsImages: Number(userHash.coinsImages || 0),
-            coinsAudio: Number(userHash.coinsAudio|| 0),
-            coinsVideo: Number(userHash.coinsVideo || 0),
-            saldoMoney: Number(userHash.saldoMoney || 0),
-            saldoAds: Number(userHash.saldoAds || 0)
+            coinsCreate: Number(userHash.coinsCreate ?? 0),
+            coinsTraining: Number(userHash.coinsTraining ?? 0),
+            coinsGenerator: Number(userHash.coinsGenerator ?? 0),
+            coinsCoaching: Number(userHash.coinsCoaching ?? 0),
+            coinsImages: Number(userHash.coinsImages ?? 0),
+            coinsAudio: Number(userHash.coinsAudio ?? 0),
+            coinsVideo: Number(userHash.coinsVideo ?? 0),
+            saldoMoney: Number(userHash.saldoMoney ?? 0),
+            saldoAds: Number(userHash.saldoAds ?? 0)
             
         };
         return user
@@ -215,7 +219,7 @@ export async function getRedisSession(sessionIdString) {
             expiresAt: new Date(sessionHash.expiresAt),
             lastActiveAt: new Date(sessionHash.lastActiveAt),
             ip: sessionHash.ip,
-            userAgent: sessionHash.userAgent,
+            // userAgent: sessionHash.userAgent,
             isValid: Boolean(sessionHash.isValid)
         }
 

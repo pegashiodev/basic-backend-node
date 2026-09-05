@@ -60,6 +60,7 @@ export const getUserByEmail = async (email) => {
 
     const userRedis = await getRedisUser(normalizedEmail)
     if (userRedis) {
+console.log("Usuario retornado de REDIS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         return userRedis;
     }
 
@@ -71,6 +72,9 @@ export const getUserByEmail = async (email) => {
     
     try{
         userMongo = await dbUsers.collection(collection).findOne({ "email": normalizedEmail })
+
+console.log("Usuario retornado de MONGO  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+
         return userMongo;
     }catch(e){
         console.error('❌ Error en userHandler.getUserByEmail:', error);
@@ -339,30 +343,30 @@ export const addItemToUserActivity = async(order, type)=>{
 export const updateUserData = async (data, user)=>{
 
     const dbName = systemConfig.DBS.USERS_DATA;
-    const collection = user._id.from.month.toLowerCase();
+    const collection = systemConfig.COLLECTIONS.USERS_DATA
 
+ 
     if(data.task === "UPDATE_USER_PASSWORD"){
 
         // 3. Guardar en MongoDB en la colección del mes de alta
+
         
         const filter = {
-            "_id.userId": user._id.userId
+            "_id": user.userId
         }
         const updateData =  { "$set": { password: data.password } }
         const dbUsers = await getDb(dbName)
 
         const resultUpdate = await dbUsers.collection(collection).updateOne(filter, updateData)
-        if(resultUpdate.acknowledged && resultUpdate.matchedCount === 1 && resultUpdate.modifiedCount === 1){
+        if(resultUpdate.modifiedCount === 1){
 
             // ACTUALIZAMOS AHORA EN REDIS
             await redisClient.hSet(`user:${user.email}`, "password", data.password);
             return { status: 'ok', message: "PASWORD ACTUALIZADO CON EXITO"}
-            
+
         }else{
             return { status: 'error', code: 500, message: 'Error guardando usuario en Base de Datos' };
         }
-
-        
         
     }
 

@@ -262,46 +262,52 @@
         })
         
 
-        btn_logout.addEventListener('click', (ev=>{
+        btn_logout.addEventListener('click',  async (ev)=>{
 
             ev.preventDefault();
+            const url = "http://localhost:3000/logout.html"
+
+            try{
+                const result = await fetch(url,
+                
+                {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {  "Content-Type": "application/json",
+                                "Cookie": document.cookie
+                            },
+                    body:  JSON.stringify({user:"lolo"})
+                
+                });
+
+                const payload = await result.json()
             
-            fetch("http://localhost:3000/logout.html", 
-            
-            {
-                method: 'POST',
-                credentials: 'include',
-                headers: {  "Content-Type": "application/json",
-                            "cookie": document.cookie,
-                        },
-                body:  JSON.stringify({message: "logout"})
-                            
-            })
-            .then(response=>{
+                if(result.status >= 200 && result.status <300){
 
-                if(response.ok){
-                    return response.json()
-                }else{
-                    throw new Error("Error en el Alta del Usuario -> MAs tarde!!");
-                }   
-
-            }).then(result=>{
-                console.log(result);
-
-                if(result.status === 'ok'){
-                    // alert("Mira en la Consola")
-                    console.log(result)
-                    document.location.href =  result.location
-                }else{
-                    console.log('ERROR en la respuesta del SignIN')
+                    alert(payload.message)
+                    if(payload.location){
+                        window.location.replace(payload.location)
+                    }
+                    
+                }else{ 
+                    
+                    alert(payload.message)
+                    if(payload.location){
+                        window.location.replace(payload.location)
+                    }
+                    
                 }
-            }).catch(err=>{
-                console.log(err)
-                // Redirigir a HOME
 
-            })
+            }catch(e){
+                
+                console.log(e)
+                alert("Error en el Fetch -> redirigir a home")
+                
+            }
+            
+           
 
-        }))
+        })
 
 
         async function fetchRequest(url, data){

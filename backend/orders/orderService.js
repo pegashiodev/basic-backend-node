@@ -213,8 +213,15 @@ export async function markOrderAsExpired(orderId) {
 /**
  * 6. PROCESAR LA ENTREGA DEL PEDIDO (Disparado por el Webhook de Stripe)
  */
-export async function processOrderDelivery(order) {
-   
+export async function processOrderDelivery(orderId, paymentDetails) {
+
+    const order = await updateOrderStatusToSuccess(orderId, paymentDetails);
+    
+    if(!order){
+        console.log(`❌ Pedido ${order.orderId} NO SE HA PODIDO ACTUALIZAR A SUCCESS.`);
+        return;
+    }
+
 
     const deliveryResults = [];
 

@@ -8,6 +8,7 @@ import systemConfig from "../../globalData/systemConfig.js";
 import { updateSession } from "../../sessions/sessionHandler.js";
 import getOurCookie from "../../tools/getOurCookie.js";
 import { redisClient } from '../../db/openRedis.js';
+import { getRedisSession } from "../../db/redisService.js";
 
 
 /**
@@ -37,17 +38,17 @@ export default async function(req, res){
     }
 
     // OBTENEMOS NUESTRA COOKIE
-    const result_getOuCookie = getOurCookie(req)
+    const result_getOuCookie = await getOurCookie(req)
 
     // Si no tiene nuestra cookie o esta incompleta-> Enviamos a Home y no hacemos nada mas en backend 
     if(result_getOuCookie.status !== 'ok'){
         const response_data = {
-            "status": "ok",
+            "status": "error",
             "location": systemConfig.PAGES.HOME,   
             "message": "NO COOKIE EN EL LOGOUT. -> ENVIAMOS A /HOME"
         }
                 //AÑADIMOS LA COOKIE COMO UN OBJETO JSON PARA COLOCAR VARIAS VARIABLES;
-        res.writeHead(200, 
+        res.writeHead(400, 
             {   'Content-Type': 'application/json'
             });
             
@@ -59,7 +60,6 @@ export default async function(req, res){
     
    
     const sessionId = req.our_cookie?.atk_decoded?.sessionId;
-
     if(!sessionId){
         const response_data = {
             "status": "ok",
@@ -75,14 +75,11 @@ export default async function(req, res){
         return; 
     }
 
-    const session = await redisClient.get(`session:${sessionId}`);
+    const session = await getRedisSession(sessionId)
+    console.log({session})
+
     if(session){
-        let data = {
-            sessionId: sessionId,
-            task: 'SESSION_ENDED',
-            email: req.our_cookie?.atk_decoded?.email,
-        }
-        updateSession(data)
+        await redisClient.expire(`session:${sessionId}`, 1); 
     }
 
     const response_data = {

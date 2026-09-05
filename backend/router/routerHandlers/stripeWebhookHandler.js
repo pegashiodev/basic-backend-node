@@ -43,13 +43,18 @@ console.log("STRIPE WEBHOOK HANDLER")
         // Stripe exige un 200 rápido para confirmar la recepción
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ received: true }));
-        
+    
+        console.log("Event-Type: ", event.type)
         // Manejamos los eventos relevantes
         switch (event.type) {
+
             case 'checkout.session.completed': {
                 const session = event.data.object;
                 const orderId = session.metadata?.orderId;
-console.log("STRIPE SESION COMPLETED !!!!")
+
+                console.log("STRIPE SESION COMPLETED !!!!")
+                console.log(session.metadata)
+
                 if (!orderId) {
                     console.error('❌ Webhook recibido sin orderId en metadata:', session.id);
                     break;
@@ -57,19 +62,30 @@ console.log("STRIPE SESION COMPLETED !!!!")
 
                 
                 //1. Actualizar estado a SUCCESS en DB
-                const order = await updateOrderStatusToSuccess(orderId, {
+                // const order = await updateOrderStatusToSuccess(orderId, {
+                //     paymentIntentId: session.payment_intent,
+                //     paymentStatus: session.payment_status,
+                //     paidAt: new Date()
+                // });
+                // if(!order){
+                //     console.log(`❌ Pedido ${order.orderId} NO SE HA PODIDO ACTUALIZAR A SUCCESS.`);
+                //     break;
+                // }
+
+                // 2. Tramitar el pedido (crear bots, dar permisos al usuario, enviar email/SMS)
+                await processOrderDelivery(orderId, {
                     paymentIntentId: session.payment_intent,
                     paymentStatus: session.payment_status,
                     paidAt: new Date()
                 });
-                if(!order){
-                    console.log(`❌ Pedido ${order.orderId} NO SE HA PODIDO ACTUALIZAR A SUCCESS.`);
-                    break;
-                }
 
-                // 2. Tramitar el pedido (crear bots, dar permisos al usuario, enviar email/SMS)
-                await processOrderDelivery(order);
-                console.log(`✅ Pedido ${order.orderId} cobrado y tramitado con éxito.`);
+                console.log(`✅ Pedido ${orderId} cobrado y tramitado con éxito.`);
+                break;
+            }
+
+            case 'invoice.paid':{
+                console.log("Notificacion  de Pago recibido")
+                console.log(session.metadata);
                 break;
             }
 

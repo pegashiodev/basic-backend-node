@@ -39,7 +39,7 @@ export function createSessionObject(req, user) {
         expiresAt: now + (systemConfig.TOKENS_AGE.SESSION_TTL_SECONDS * 1000),
         lastActiveAt: now,
         ip: ip,
-        userAgent: userAgent || "",
+        // userAgent: userAgent || "",
         isValid: true,
     };
 }
