@@ -10,7 +10,7 @@ import { deliveryStrategies } from './orderDeliveryStrategies.js';
 import { getDb } from '../db/openDbs.js';
 import systemConfig from '../globalData/systemConfig.js';
 import {updateAffiliatePromotion} from '../affiliates/affiliateService.js';
-import { addPaymentToUserPayments, getUserByEmail, addItemToUserActivity } from '../users/userHandler.js';
+import { getUserByEmail, addItemToUserActivity, addUserPaymentToTransactions } from '../users/userHandler.js';
 import sendEmail from '../notifications/sendEmail.js';
 import { ObjectId } from 'mongodb';
 
@@ -93,6 +93,7 @@ export async function getOrderById(orderId) {
 /**
  * 3. Actualiza el stripeSessionId en la orden PENDING
  */
+/*
 export async function updateOrderStripeSession(orderId, stripeSessionId) {
 
     let validOrderId;
@@ -124,6 +125,7 @@ export async function updateOrderStripeSession(orderId, stripeSessionId) {
         return {status: "error"}
     }
 }
+*/
 
 /**
  * 4. Pasa el pedido a SUCCESS (Con control de Idempotencia)
@@ -132,25 +134,26 @@ export async function updateOrderStatusToSuccess(orderId, paymentDetails) {
 
     let validOrderId;
     
+    // 2. Extraer el año para tu base de datos dinámica
     if (orderId instanceof ObjectId) {
-        validOrderId = orderId
+        validOrderId = orderId;
     } else if (typeof orderId === 'string') {
         validOrderId = new ObjectId(orderId)
     }
-    // A Partir del orderId obtenemos el Año de creacion del pedido para acceder a la base de datos
-    const fechaCreacion = validOrderId.getTimestamp(); 
-    // 2. Extraer el año para tu base de datos dinámica
-    const year= fechaCreacion.getFullYear(); 
-    const dbName = systemConfig.DBS.ORDERS +  year
+    const yearCreacionOrder = validOrderId.getTimestamp().getFullYear();
+    
+    const dbName = systemConfig.DBS.ORDERS +  yearCreacionOrder
     const collection = systemConfig.COLLECTIONS.ORDERS
+console.log(dbName)
 
     const dbOrders = await getDb(dbName);
     const date = new Date()
+console.log(validOrderId)
 
     try{
 
-        const order = await dbOrders.collection(collection).findOneAndUpdate(
-            { "_id.orderId": orderId, status: { $ne: 'SUCCESS' } },
+        const result  = await dbOrders.collection(collection).findOneAndUpdate(
+            { _id: validOrderId, status: { $ne: 'SUCCESS' } },
             { 
                 $set: { 
                     status: 'SUCCESS',
@@ -163,15 +166,27 @@ export async function updateOrderStatusToSuccess(orderId, paymentDetails) {
         );
         // TENEMOS EL PEDIDO ANTERIOR A LA ACTUALIZACION
         // ASI QUE AÑADIMOS LOS CAMBIOS PARA RETORNARLO
-        order.status = "SUCCESS"
-        order.paymentDetails = paymentDetails,
-        order.paidAt = date,
-        order.updatedAt= date
-        return order;
-        
+        // El resultado depende de la version del Driver de MongoDB
+        if(result){
+            let order;
+            if(result.value){
+                order = result.value
+            }else{
+                order = result
+            }
+            order.status = "SUCCESS"
+            order.paymentDetails = paymentDetails,
+            order.paidAt = date,
+            order.updatedAt= date
+            return order;
 
-    }catch(e){
+        }else{
+            return null
+        }
+
+    }catch(error){
         console.log(`❌ ERROR Actualizando STATUS DE ORDER A SUCCESS`)
+        console.log(error)
         return null;
     }
 }
@@ -215,6 +230,7 @@ export async function markOrderAsExpired(orderId) {
  */
 export async function processOrderDelivery(orderId, paymentDetails) {
 
+    // ACTUALIZAMOS EL PEDIDO A "SUCCESS" Y NOS DEVUELVE EL PEDIDO DE LA DB
     const order = await updateOrderStatusToSuccess(orderId, paymentDetails);
     
     if(!order){
@@ -246,7 +262,7 @@ export async function processOrderDelivery(orderId, paymentDetails) {
             deliveryResults.push(result);
 
         } catch (itemError) {
-            console.error(`❌ Error entregando ítem ${item.productId} en orden ${order.orderId}:`, itemError);
+            console.error(`❌ Error entregando ítem ${item.productId} en orden ${order._Id}:`, itemError);
             deliveryResults.push({
                 productId: item.productId,
                 status: 'DELIVERY_FAILED',
@@ -262,7 +278,7 @@ console.log({deliveryResults})
 
         // ARCHIVAMOS EL PAGO EN USERS-ACCOUNTING
         const paymentData = {}
-        await addPaymentToUserPayments(order)
+        await addUserPaymentToTransactions(order)
     
         // Bloque independiente para user-activity
         try{
@@ -291,7 +307,7 @@ console.log({deliveryResults})
                 if(!user){
                     throw new Error(" ERROr en orderService.processOrderDelivery. No hemos podido acceder al usuario para gestionar la promocion del pedido: -> ENVIAR A ADMIN LA TAREA PENDIENTE");
                 }
-                await updateAffiliatePromotion(order.promotion, user)
+                await updateAffiliatePromotion(order.promotion)
             } catch (e) {
                 console.error(`❌ Error en orderService.processOrderDelivery, Actualizando el Listado de usuarios del Afiliado: ->`, e)
             }

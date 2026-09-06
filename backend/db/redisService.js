@@ -178,8 +178,8 @@ export async function getRedisUser(email) {
         };
         return user
 
-    }catch(e){
-        console.error('❌ Error en userIndexService: Obteniendo Ususario de Redis: ->', e);
+    }catch(error){
+        console.error('❌ Error en userIndexService: Obteniendo Ususario de Redis: ->', error);
         return null;
     }
 

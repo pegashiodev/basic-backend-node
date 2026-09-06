@@ -83,8 +83,8 @@ export default async function routerRestrictedEndpoints(req, res) {
     req.body.userAgent = req.headers['user-agent'];
 
     // 3. Consultar sesión activa desde Redis mediante sessionId
-    const sessionId = req.our_cookie?.atk_decoded?.sessionId;
-    let session = await getRedisSession(sessionId);
+    const sessionIdString = req.our_cookie?.atk_decoded?.sessionId;
+    let session = await getRedisSession(sessionIdString);
 
     // COMPROBAMOS SI HAY SESION ABIERTA Y NO EXPIRADA
     if (session) {

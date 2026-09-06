@@ -11,6 +11,7 @@ export default [
         status: 'ACTIVE',               
         endpoint: "CHECKOUT",
         promoCode: 'MIDU',
+        mode: "ONCE",           // [ONCE /SUBSCRIPTION]
         expiresAt: new Date('2027-12-31T23:59:59').getTime(),
         affiliate: {
             name: 'mididev',
@@ -30,6 +31,7 @@ export default [
         status: 'ACTIVE',
         endpoint: "SIGNUP",
         promoCode: 'BIENVENIDA',
+        mode: "ONCE",           // [ONCE /SUBSCRIPTION]
         expiresAt: new Date('2027-12-31T23:59:59').getTime(),
         affiliate: {
           name: 'system',

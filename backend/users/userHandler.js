@@ -60,7 +60,6 @@ export const getUserByEmail = async (email) => {
 
     const userRedis = await getRedisUser(normalizedEmail)
     if (userRedis) {
-console.log("Usuario retornado de REDIS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         return userRedis;
     }
 
@@ -73,46 +72,48 @@ console.log("Usuario retornado de REDIS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     try{
         userMongo = await dbUsers.collection(collection).findOne({ "email": normalizedEmail })
 
-console.log("Usuario retornado de MONGO  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-
         return userMongo;
-    }catch(e){
-        console.error('❌ Error en userHandler.getUserByEmail:', error);
+    }catch(error){
+        console.error('❌ Error en userHandler.getUserByEmail, ACCEDIENDO AL USER EN MONGODB:', error);
         return null;
     }
-        
+    
 };
 
 /**
  * ACTUALIZA LOS COINS DE UN USUARIO
+ * 
+ * @param{coins} -> es un objeto . Ej : {coinsCreate: 200, coinsGenerator: 200, ...}
  */
 
 export const incrementUserCoins = async (userId, coins)=>{
 
-    // Obtenemos a partir de userId datos para acceder a la DB
-    const userIdString = userId.split("_")[1]
-    const objId = ObjectId.createFromHexString(userIdString);
-    const fechaCreacionUser = objId.getTimestamp();
-    const [, month, day , year] = fechaCreacionUser.toString().split(' ');
-    const normalizedMonth = month.toLowerCase();
+
+    let validUserId;
     
+    if (userId instanceof ObjectId) {
+        validUserId = userId
+    } else if (typeof userId === 'string') {
+        validUserId = new ObjectId(userId)
+    }
+
     const dbName = systemConfig.DBS.USERS_DATA
-    const collection = normalizedMonth
+    const collection = systemConfig.COLLECTIONS.USERS_DATA
     const dbUsers = await getDb(dbName);
 
     const incObject = {$inc: 
         {  
-            "coins.create": coins.create || 0,
-            "coins.generator": coins.generator || 0,
-            "coins.training": coins.training || 0,
-            "coins.coaching": coins.coaching || 0,
-            "coins.audio": coins.audio || 0,
-            "coins.images": coins.images || 0,
-            "coins.video": coins.video || 0
+            "coins.create": coins.create ?? 0,
+            "coins.generator": coins.generator ?? 0,
+            "coins.training": coins.training ?? 0,
+            "coins.coaching": coins.coaching ?? 0,
+            "coins.audio": coins.audio ?? 0,
+            "coins.images": coins.images ?? 0,
+            "coins.video": coins.video ?? 0
         }}
 
     // El error se controla en un try-cath anterior
-    await dbUsers.collection(collection).updateOne({"_id.userId": userId}, incObject)
+    await dbUsers.collection(collection).updateOne({"_id": validUserId}, incObject)
         
 }
 
@@ -121,30 +122,32 @@ export const incrementUserCoins = async (userId, coins)=>{
  * AÑADE PAGO REALIZADO POR EL USUARIO EN LA PLATAFORMA A SU CONTABILIDAD
  */
 
-export const addPaymentToUserPayments = async (order)=>{
+export const addUserPaymentToTransactions = async (order)=>{
+    
     // Obtenemos el usuario que realizo el pedido
-    const user = await getUserByEmail(order.email)
-    if(!user){
-        throw new Error("Error en addPaymentToUserAccounting: No hemos obtenido usuario a partir de Order");
-        
+    let validUserId;
+    if (order.userId instanceof ObjectId) {
+        validUserId = order.userId
+    } else if (typeof order.userId === 'string') {
+        validUserId = new ObjectId(order.userId)
+    }else{
+        throw new Error("Error en addUserPaymentToTransactions: order.userID no es NI STRING NI OBJECT ???");
     }
-    const orderId = order.orderId
+   
+    // obtenemos el año de la DB desde el orderId, que sera el que asignemos al _id de la trasaccion
     let validOrderId;
-        
-    if (orderId instanceof ObjectId) {
-        console.log("Ya es un objeto ObjectId nativo de MongoDB");
+    if (order.orderId instanceof ObjectId) {
         validOrderId = order.orderId
-    } else if (typeof orderId === 'string') {
-        console.log("Es una cadena de texto (string)");
-        validOrderId = new ObjectId(orderId)
+    } else if (typeof order.orderId === 'string') {
+        validOrderId = new ObjectId(order.orderId)
+    }else{
+        throw new Error("Error en addUserPaymentToTransactions: order.orderID no es NI STRING NI OBJECT ???");
     }
-    // A Partir del orderId obtenemos el Año de creacion del pedido para acceder a la base de datos
-    const fechaCreacion = validOrderId.getTimestamp(); 
-    // 2. Extraer el año para tu base de datos dinámica
-    const year= fechaCreacion.getFullYear(); 
-    const dbName = systemConfig.DBS.USERS_PAYMENTS + year
-    const collection = systemConfig.COLLECTIONS.USERS_PAYMENTS
-    const accountingDb = await getDb(dbName);
+    const year = order.orderId.getTimestamp().getFullYear()
+   
+    const dbName = systemConfig.DBS.USERS_TRANSACTIONS + year
+    const collection = systemConfig.COLLECTIONS.USERS_TRANSACTIONS
+    const transacciónsDb = await getDb(dbName);
 
     // Obtenemos los coins totales de la recarga de coins que ha comprado en la plataforma
     let totalCoins = []
@@ -158,16 +161,17 @@ export const addPaymentToUserPayments = async (order)=>{
         }
     }
     
-    const payment = {
+    const transaction = {
         _id: validOrderId,
-        userId: user._id.userId,
+        transactionId: validOrderId,
+        userId: order.userId,
+        orderId: validOrderId,
         createdAt: order.createdAt,
         coins: totalCoins,
-        taype: "GATEWAY",
+        type: "gateway",
         gateway: "stripe",
         dataPayment: {
             type: "SAAS_PAYMENT",
-            orderId: validOrderId,
             createdAt: order.createdAt,
             totalAmountInCents: order.totalAmountInCents,
             currency: 'eur',
@@ -181,7 +185,7 @@ export const addPaymentToUserPayments = async (order)=>{
 
 
     // USAMOS UPDATE PORQUE LO QUE HACEMOS ES AÑADIR ITEMS A UN UNICO DOCUMENTO DEL USUARIO POR MES Y AÑO
-    await accountingDb.collection(collection).insertOne(payment);
+    await transacciónsDb.collection(collection).insertOne(transaction);
 
 }
 
@@ -192,31 +196,33 @@ export const addPaymentToUserPayments = async (order)=>{
 
 export const addItemToUserActivity = async(order, type)=>{
 
+    
     // Obtenemos el usuario que realizo el pedido
-    const user = await getUserByEmail(order._id.email)
-    if(!user){
-        throw new Error("Error en addPaymentToUserAccounting: No hemos obtenido usuario a partir de Order");
-        
+    let validUserId;
+    if (order.userId instanceof ObjectId) {
+        validUserId = order.userId
+    } else if (typeof order.userId === 'string') {
+        validUserId = new ObjectId(order.userId)
+    }else{
+        throw new Error("Error en addUserPaymentToTransactions: order.userID no es NI STRING NI OBJECT ???");
     }
-    const orderId = order.orderId
+   
+    // obtenemos el año de la DB desde el orderId, que sera el que asignemos al _id de la trasaccion
     let validOrderId;
-        
-    if (orderId instanceof ObjectId) {
-        console.log("Ya es un objeto ObjectId nativo de MongoDB");
-        validOrderId = orderId
-    } else if (typeof orderId === 'string') {
-        console.log("Es una cadena de texto (string)");
-        validOrderId = new ObjectId(orderId)
+    if (order.orderId instanceof ObjectId) {
+        validOrderId = order.orderId
+    } else if (typeof order.orderId === 'string') {
+        validOrderId = new ObjectId(order.orderId)
+    }else{
+        throw new Error("Error en addUserPaymentToTransactions: order.orderID no es NI STRING NI OBJECT ???");
     }
-    // A Partir del orderId obtenemos el Año de creacion del pedido para acceder a la base de datos
-    const fechaCreacion = validOrderId.getTimestamp(); 
-    // 2. Extraer el año para tu base de datos dinámica
-    const year = fechaCreacion.getFullYear(); 
+    const year = order.orderId.getTimestamp().getFullYear()
+   
     const dbName = systemConfig.DBS.USERS_ACTIVITY + year
     const collection = systemConfig.COLLECTIONS.USERS_ACTIVITY
     const activityDb = await getDb(dbName);
 
-    let payment, item;
+    let activity, item;
     // SE INSERTA UN PAGO EN LA PLATAFORMA PARA COMPRAR COINS, U OTRO SERVICIO
     if(type === "SAAS_PAYMENT"){
         // Obtenemos los coins totales de la recarga de coins que ha comprado en la plataforma
@@ -230,16 +236,16 @@ export const addItemToUserActivity = async(order, type)=>{
                 }
             }
         }
-        const payment = {
+        activity = {
             _id: validOrderId,
-            userId: user._id.userId,
+            activityId: validOrderId,
+            userId: validUserId,
+            orderId: validOrderId,
             createdAt: order.createdAt,
             coins: totalCoins,
-            type: "GATEWAY",
+            type: "gateway",
             gateway: "stripe",
             dataPayment: {
-                type: "SAAS_PAYMENT",
-                orderId: order.orderId,
                 createdAt: order.createdAt,
                 totalAmountInCents: order.totalAmountInCents,
                 currency: 'eur',
@@ -254,16 +260,18 @@ export const addItemToUserActivity = async(order, type)=>{
     // SE HAN DESCONTADO COINS DE LA CUENTA DEL USUARIO POR CONSUMO EN LA PLATAFORMA
     }else if(type === "DESCOUNT_COINS"){
 
-        payment = {
+        activity = {
 
             _id: validOrderId,
-            userId: user._id.userId,
+            activityId: validOrderId,
+            userId: validUserId,
+            orderId: validOrderId,
             createdAt: order.createdAt,
             coins: totalCoins,
-            type: "MICROPAYMENT",
+            type: "micropayment",
             serviceName: "new-podcast",         // [personaje, podcast, trailer, entrevista, ...]
-            "amount": 0.50,                 // Coste del servicio (puede ser en dinero o equivalente)
-            "coinsDebited": 5,
+            amount: 0.50,                 // Coste del servicio (puede ser en dinero o equivalente)
+            coinsDebited: 5,
             dataPayment: {
                 
             }
@@ -314,13 +322,15 @@ export const addItemToUserActivity = async(order, type)=>{
     // SE AÑADEN COINS A LA CUENTA DEL USUARIO POR CUMPLIR HITOS, OBJETIVOS, ...
     }else if(type === "INCREMENT_COINS"){
        
-        payment = {
+        activity = {
 
             _id: validOrderId,
-            userId: user._id.userId,
+            activityId: validOrderId,
+            userId: validUserId,
+            orderId: validOrderId,
             createdAt: order.createdAt,
             coins: totalCoins,
-            type: "MICROPAYMENT",
+            type: "mocropayment",
             serviceName: "new-podcast",         // [personaje, podcast, trailer, entrevista, ...]
             dataPayment: {
                 
@@ -332,7 +342,7 @@ export const addItemToUserActivity = async(order, type)=>{
     }
 
     // USAMOS UPDATE PORQUE LO QUE HACEMOS ES AÑADIR ITEMS A UN UNICO DOCUMENTO DEL USUARIO POR MES Y AÑO
-    await activityDb.collection(collection).insertOne(payment);
+    await activityDb.collection(collection).insertOne(activity);
 
 }
 
@@ -348,9 +358,6 @@ export const updateUserData = async (data, user)=>{
  
     if(data.task === "UPDATE_USER_PASSWORD"){
 
-        // 3. Guardar en MongoDB en la colección del mes de alta
-
-        
         const filter = {
             "_id": user.userId
         }
@@ -378,6 +385,6 @@ export default {
     getUserByEmail, 
     updateUserData,
     incrementUserCoins,
-    addPaymentToUserPayments,
+    addUserPaymentToTransactions,
     addItemToUserActivity
 }

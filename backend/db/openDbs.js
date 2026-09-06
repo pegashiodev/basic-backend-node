@@ -66,9 +66,9 @@ export default async function openDbs(dbNames) {
              
                 await collection.createIndex({ userId: 1, createdAt: -1 })
 
-            }else if(name === "users_payments_2026"){
+            }else if(name === "saas_transactions_2026"){
                 // En el payment ha de haber userId
-                collection = dbInstance.collection(systemConfig.COLLECTIONS.USERS_PAYMENTS)
+                collection = dbInstance.collection(systemConfig.COLLECTIONS.USERS_TRANSACTIONS)
                 // CReamos el indice por userId Para listar el historial de PAGOS del usuario ordenado por fecha
               
                 await collection.createIndex({ userId: 1, createdAt: -1 });
@@ -154,8 +154,8 @@ export async function getDb(dbName) {
         // Para cuando necesites filtrar solo consumos DE VARIOS TIPOS  o solo recargas de Stripe de un usuario (type)
         await collection.createIndex({ userId: 1, type: 1 });
     
-    }else if(dbName.includes("users_payments_")){
-        collection = dbInstance.collection(systemConfig.COLLECTIONS.USERS_PAYMENTS)
+    }else if(dbName.includes("saas_transactions_")){
+        collection = dbInstance.collection(systemConfig.COLLECTIONS.USERS_TRANSACTIONS)
         await collection.createIndex({ userId: 1, createdAt: -1 })
         // Para cuando necesites filtrar solo consumos o solo recargas de Stripe de un usuario (type)
         await collection.createIndex({ userId: 1, type: 1 });

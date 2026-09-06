@@ -9,7 +9,7 @@ import Stripe from 'stripe';
 import {ObjectId} from "mongodb"
 import systemConfig from '../../globalData/systemConfig.js';
 import { redisClient } from '../../db/openRedis.js';
-import { createOrder, updateOrderStripeSession } from '../../orders/orderService.js';
+import { createOrder } from '../../orders/orderService.js';
 import { validatePromotion } from '../../promotions/promotionsHandler.js';
 
 process.loadEnvFile();
@@ -218,12 +218,20 @@ export default async function checkOutHandler(req, res) {
             totalAmountInCents: totalAmountInCents
         }
         // Si habia promocion añadimos mas informacion al pedido: code, percio base, descuento aplicado, ...
+        // PARA POSTERIORMENTE AL PAGO DE STRIPE RECUPERAR LA PROMOCION DEL PEDIDO
         if(req.body.promotion){
             if(paymentMode === "ONCE"){
 
                 req.order.promotion = {
                     mode: "ONCE",
-                    affiliate: req.body.promotion.affiliate,
+                    affiliate: {
+                        affiliateId: req.body.promotion.affiliate.userId,
+                        affiliateEmail: req.body.promotion.affiliate.email,
+                    },
+                    user: {
+                        email: user.email,
+                        userId: user._id,
+                    },
                     endpoint: req.body.promotion.endpoint,
                     type: req.body.promotion.type,
                     promoCode: promoCode,
@@ -237,7 +245,15 @@ export default async function checkOutHandler(req, res) {
 
                 req.order.promotion = {
                     mode: "SUBSCRIPTION",
-                    affiliate: req.body.promotion.affiliate,
+                    affiliate: {
+                        affiliateId: req.body.promotion.affiliate.userId,
+                        affiliateEmail: req.body.promotion.affiliate.email,
+                    },
+                    user:{
+                        email: user.email,
+                        userId: user._id,
+                        createdAt: user.createdAt
+                    },
                     endpoint: req.body.promotion.endpoint,
                     type: req.body.promotion.type,
                     promoCode: promoCode
@@ -249,12 +265,13 @@ export default async function checkOutHandler(req, res) {
         const baseUrl = process.env.MODE === 'DEV' ? systemConfig.HOST_DEV : systemConfig.HOST_PROD;
         const protocol = process.env.MODE === 'DEV' ? 'http' : 'https';
 
+        let stripeSession;
         
         // ENVIAMOS A STRIPE SEGUN EL MODO DE PAGO DE LOS PRODUCTOS DEL CARRITO
         if(paymentMode === "ONCE"){
 
             // 6. PAGO UNICO: -> Crear la sesión en Stripe Checkout 
-            const stripeSession = await stripe.checkout.sessions.create({
+                stripeSession = await stripe.checkout.sessions.create({
                 payment_method_types: ['card', 'bizum'],
                 mode: 'payment',
                 line_items: lineItemsForStripe,
@@ -280,7 +297,7 @@ export default async function checkOutHandler(req, res) {
             const stripePriceId = planUsuario === 'MONTH' ? 'price_1M23MonthlyID...' : 'price_1M23YearlyID...';
     
             // 2. Crear la sesión en Stripe Checkout para Suscripciones
-            const stripeSession = await stripe.checkout.sessions.create({
+                stripeSession = await stripe.checkout.sessions.create({
                 payment_method_types: ['card'], 
                 
                 // CAMBIO CLAVE 1: El modo ahora es 'subscription'
@@ -359,7 +376,7 @@ export default async function checkOutHandler(req, res) {
             message: 'Sesión de checkout creada con éxito.',
             checkoutData: {
                 checkoutUrl: stripeSession.url,
-                orderId: customOrderId
+                orderId: orderId
             }
         }));
 

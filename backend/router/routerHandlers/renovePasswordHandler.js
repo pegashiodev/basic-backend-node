@@ -57,7 +57,6 @@ export default async function(req, res){
         
         // 2. Verificar el código de validación almacenado en Redis
         const isValidEndpoint = await checkValidationEndpoint(normalizedEmail, url_token, "VERIFY_ENDPOINT");
-        console.log({isValidEndpoint})
 
         if (!isValidEndpoint) {
             // MOSTRAR PAGINA DICIENDO QUE HA ESPIRADO PARA VOLVER A GENERAR EL CODIGO
@@ -65,7 +64,6 @@ export default async function(req, res){
             req.urlData.filename = systemConfig.PAGES.RENOVE_PASSWORD_EXPIRES
             req.urlData.ext = systemConfig.EXTENSION_STATIC_VIEWS
             return sendStaticFile(req, res)
-            
         }
 
         // Enviamos la pagina solicitada
@@ -110,9 +108,8 @@ async function renovePassword(req, res){
     }
     const normalizedEmail = req.body.email.toLowerCase().trim();
         
-    // 2. Verificar el código de validación almacenado en Redis
+    // 2. Verificar el código de validación almacenado en Redis Y LO BORRA SI ES EL CORRECTO
     const isValidEndpoint = await checkValidationEndpoint(normalizedEmail, req.body.tk, "DELETE_ENDPOINT");
-    console.log({isValidEndpoint})
     
     if (!isValidEndpoint) {
         res.writeHead(410, { 'Content-Type': 'application/json; charset=utf-8' });

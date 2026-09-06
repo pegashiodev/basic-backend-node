@@ -55,7 +55,14 @@ export default async function userSchema(body) {
     };
 
     if(systemConfig.HAS_PROMO_CODES_SIGNUP && body.promotion){
-        await updateAffiliatePromotion(body.promotion, user)
+
+        body.promotion.user = {
+            userId: user.userId,
+            email: user.email,
+            createdAt: user.createdAt
+        }
+
+        await updateAffiliatePromotion(body.promotion)
        
     }
 

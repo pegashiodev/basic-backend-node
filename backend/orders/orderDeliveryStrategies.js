@@ -58,8 +58,8 @@ export const deliveryStrategies = {
         // ALMACENAMOS ESTA ACCION EN USER_ACCOUNTING
 
         // 1.- Obtenemos el user y los coins a actualizar
-        const userId = order._id.userId;
-        const coins = item.coins
+        const userId = order.userId;
+        const coins = item.coins        // es un Objeto
         
         // 2.- Incrementamos los coins en la cuenta del usuario 
         const resultIncrementCoins = await incrementUserCoins(userId, coins);

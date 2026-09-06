@@ -2,14 +2,10 @@
 
 export default [
       {
-        _id: {
-          type: "BALANCE_RECHARGE",
-          productId: 'pcm_recharge_12890',
-          brand: "podcastmatic"   
-        },
+        _id: 'pcm_recharge_12890',
+        productId: 'pcm_recharge_12890',
         paymentMode: "ONCE",
         type: "BALANCE_RECHARGE",
-        productId: 'pcm_recharge_12890',
         brand: 'podcastmatic',
         currency: 'eur',
         plan_name: 'OCASIONAL',
@@ -30,11 +26,7 @@ export default [
         active: true,
       }, 
       {
-        _id: {
-          productId: 'pcm_recharge_13890',
-          type: "BALANCE_RECHARGE",
-          brand: "podcastmatic"   
-        },
+        _id: 'pcm_recharge_13890',
         paymentMode: "ONCE",
         productId: 'pcm_recharge_13890',
         type: "BALANCE_RECHARGE",
@@ -60,11 +52,7 @@ export default [
       },
       // Ejemplo 1: Recarga de Saldo
       {
-        _id: {
-          productId: 'pcm_recharge_14890',
-          type: "BALANCE_RECHARGE",
-          brand: "podcastmatic"   
-        },
+        _id: 'pcm_recharge_14890',
         paymentMode: "ONCE",
         productId: 'pcm_recharge_14890',
         type: "BALANCE_RECHARGE",
@@ -90,11 +78,7 @@ export default [
       // Ejemplo 2: Audiolibro / Podcast para consumir en streaming
       // INCLUYE EL id del contenido que se quiere descargar o consumir en la plataforma
       {
-        _id: {
-          productId: 'pcm_audio_20790',
-          type: "AUDIO_STREAMING",
-          brand: "podcastmatic"   
-        },
+        _id: 'pcm_audio_20790',
         paymentMode: "ONCE",
         productId: 'pcm_audio_20790',
         type: "AUDIO_STREAMING",
@@ -113,11 +97,7 @@ export default [
       // Ejemplo 3: Audiolibro / Podcast para consumir descargandolo
       // INCLUYE EL id del contenido que se quiere descargar o consumir en la plataforma
       {
-        _id: {
-          productId: 'pcm_audio_20690',
-          type: "AUDIO_DOWNLOAD",
-          brand: "podcastmatic"   
-        },
+        _id: 'pcm_audio_20690',
         paymentMode: "ONCE",
         productId: 'pcm_audio_20690',
         type: "AUDIO_DOWNLOAD",
@@ -137,11 +117,7 @@ export default [
       // COMO UN PDF PARA PODER DESCARGARLO O ENVIARLO POR EMAIL
       // INCLUYE EL id del contenido que se quiere descargar o consumir en la plataforma
       {
-        _id: {
-          productId: 'pcm_text_20890',
-          type: "TEXT_CONTENT",
-          brand: "podcastmatic"   
-        },
+        _id: 'pcm_text_20890',
         paymentMode: "ONCE",
         productId: 'pcm_text_20890',
         type: "AUDIO_CONTENT",
@@ -161,11 +137,7 @@ export default [
 
       // Ejemplo 3: Libro Físico para envio ordinario
       {
-        _id: {
-          productId: 'pcm_fhysic_30021',
-          type: "PHYSICAL",
-          brand: "podcastmatic"   
-        },
+        _id: 'pcm_fhysic_30021',
         paymentMode: "ONCE",
         productId: 'pcm_physic_30021',
         type: "PHYSICAL",

@@ -59,27 +59,24 @@ export default async function(req, res){
     // HAY COOKIE VALIDA: -> Eliminamos session en Redis y en MongoDB (ENDED)
     
    
-    const sessionId = req.our_cookie?.atk_decoded?.sessionId;
-    if(!sessionId){
+    const sessionIdString = req.our_cookie?.atk_decoded?.sessionId;
+    if(!sessionIdString){
         const response_data = {
             "status": "ok",
             "location": systemConfig.PAGES.HOME,   
             "message": "NO COOKIE EN EL LOGOUT. -> ENVIAMOS A /HOME"
         }
                 //AÑADIMOS LA COOKIE COMO UN OBJETO JSON PARA COLOCAR VARIAS VARIABLES;
-        res.writeHead(200, 
-            {   'Content-Type': 'application/json'
-            });
-            
+        res.writeHead(200, {'Content-Type': 'application/json'});
         res.end(JSON.stringify(response_data));
         return; 
     }
 
-    const session = await getRedisSession(sessionId)
-    console.log({session})
+    const session = await getRedisSession(sessionIdString)
 
+    // SI HAY SESSION EN REDIS, LA BORRAMOS
     if(session){
-        await redisClient.expire(`session:${sessionId}`, 1); 
+        await redisClient.del(`session:${sessionIdString}`); 
     }
 
     const response_data = {

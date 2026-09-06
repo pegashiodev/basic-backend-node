@@ -17,8 +17,9 @@ import { setRedisSessionHset } from '../db/redisService.js';
  */
 export async function createSession(req, from) {
     const user = req.user
-    const [, month, , year] = new Date().toString().split(' ');
-    
+    // const [, month, , year] = new Date().toString().split(' ');
+    const year = new Date().getFullYear();
+    // Creamos la session sobre el schema establecido
     const session = createSessionObject(req, user);
     const { sessionIdString, sessionId } = session
     req.currentSessionId = sessionId;
@@ -36,13 +37,14 @@ export async function createSession(req, from) {
         const db = await getDb(systemConfig.DBS.SESSIONS + year);
         const sessionsCollection = db.collection(systemConfig.COLLECTIONS.SESSIONS);
         await sessionsCollection.insertOne(session);
-    } catch (err) {
-        console.error('⚠️ No se pudo persistir la sesión en MongoDB (continúa con Redis):', err.message);
+        return {status: "ok", session: session};
+    
+    } catch (error) {
+        console.error('⚠️ No se pudo persistir la sesión en MongoDB (continúa con Redis):', error.message);
         return {status: "error", session: session};
 
     }
 
-    return {status: "ok", session: session};
 }
 
 /**
@@ -103,7 +105,15 @@ export const updateSession = async (data) => {
  * @returns {Promise<Object|null>}
  */
 export async function getSession(sessionId) {
+
+    // El session ID es un ObjectId que incluye la fecha de creacion que nos permite obtener el año y acceder a su DB
     
+    if (!sessionId) return null;
+
+    console.log("GEt SESSIION esta por hacer !!!!!")
+    const year = sessionId.getTimestamp().getFullYear();
+    
+    /*
     // Obtenemos la fecha del id de session para acceder a la DB
     const sessionString = sessionId.split("_")[1]
     // const objId = new ObjectId(sessionString);
@@ -113,7 +123,6 @@ export async function getSession(sessionId) {
     const normalizedMonth = month.toLowerCase();
     
     const now = Date.now()
-    if (!sessionId) return null;
 
     // 1. Intentar leer desde Redis (rápido en RAM)
     const redisKey = `session:${sessionId}`;
@@ -147,6 +156,7 @@ export async function getSession(sessionId) {
     }
 
     return null;
+    */
 }
 
 /**
