@@ -143,7 +143,7 @@ export const addUserPaymentToTransactions = async (order)=>{
     }else{
         throw new Error("Error en addUserPaymentToTransactions: order.orderID no es NI STRING NI OBJECT ???");
     }
-    const year = order.orderId.getTimestamp().getFullYear()
+    const year = validOrderId.getTimestamp().getFullYear()
    
     const dbName = systemConfig.DBS.USERS_TRANSACTIONS + year
     const collection = systemConfig.COLLECTIONS.USERS_TRANSACTIONS
@@ -180,7 +180,7 @@ export const addUserPaymentToTransactions = async (order)=>{
 
     }
     if(order.promotion){
-        payment.dataPayment.promotion = order.promotion;
+        transaction.dataPayment.promotion = order.promotion;
     }
 
 
@@ -216,7 +216,7 @@ export const addItemToUserActivity = async(order, type)=>{
     }else{
         throw new Error("Error en addUserPaymentToTransactions: order.orderID no es NI STRING NI OBJECT ???");
     }
-    const year = order.orderId.getTimestamp().getFullYear()
+    const year = validOrderId.getTimestamp().getFullYear()
    
     const dbName = systemConfig.DBS.USERS_ACTIVITY + year
     const collection = systemConfig.COLLECTIONS.USERS_ACTIVITY

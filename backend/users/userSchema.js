@@ -16,8 +16,6 @@ export default async function userSchema(body) {
     const normalizedMonth = month.toLowerCase();
     const normalizedEmail = body.email.toLowerCase().trim();
     const userIdString = userId.toString()
-
-   
     const date = new Date()
 
     // 3. Estructura completa del documento
@@ -41,7 +39,7 @@ export default async function userSchema(body) {
         //userDevices: initialDevices,
         isPromoAffiliate: body.promotion ? true : false,
         affiliateData: body.promotion?.affiliate || null,
-       
+
         coinsCreate: body.promotion?.coins?.create ?? 0,           // CREAR CONTENIDOs: ENTRVISTA, AUDIO, IMAGENES, ....
         coinsTraining: body.promotion?.coins?.training ?? 0,       // ENTRENAR CREAR AUDIOS, ...
         coinsCoaching: body.promotion?.coins?.coaching ?? 0,       // CONSULTAR DUDAS CREATIVAS ....
@@ -52,6 +50,13 @@ export default async function userSchema(body) {
 
         saldoAds: body.saldoAds ?? 0, 
         saldoMoney: body.saldoMoney ?? 0,
+
+        // Para marcar si el usuaro ha heco una recarga de algun tipo de coins en ese mes.
+        // y aadir al mes siguiente los que no utilice de la recarga
+        rechargeCoinsCreate: 0,
+        rechargeCoinsTraining: 0,
+        rechargeCoinsCoaching: 0,
+
     };
 
     if(systemConfig.HAS_PROMO_CODES_SIGNUP && body.promotion){
@@ -63,7 +68,6 @@ export default async function userSchema(body) {
         }
 
         await updateAffiliatePromotion(body.promotion)
-       
     }
 
     return user;

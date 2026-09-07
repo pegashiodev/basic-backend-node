@@ -72,11 +72,11 @@ export async function getOrderById(orderId) {
     let validOrderId;
     
     if (orderId instanceof ObjectId) {
-        console.log("Ya es un objeto ObjectId nativo de MongoDB");
         validOrderId = orderId
     } else if (typeof orderId === 'string') {
-        console.log("Es una cadena de texto (string)");
         validOrderId = new ObjectId(orderId)
+    }else{
+        throw new Error("Error en orderService.getOrderById order.userID no es NI STRING NI OBJECT ???");
     }
     // A Partir del orderId obtenemos el Año de creacion del pedido para acceder a la base de datos
     const fechaCreacion = validOrderId.getTimestamp(); 
@@ -139,16 +139,16 @@ export async function updateOrderStatusToSuccess(orderId, paymentDetails) {
         validOrderId = orderId;
     } else if (typeof orderId === 'string') {
         validOrderId = new ObjectId(orderId)
+    }else{
+        throw new Error("Error en orderService.updateOrderStatusToSuccess order.userID no es NI STRING NI OBJECT ???");
     }
     const yearCreacionOrder = validOrderId.getTimestamp().getFullYear();
     
     const dbName = systemConfig.DBS.ORDERS +  yearCreacionOrder
     const collection = systemConfig.COLLECTIONS.ORDERS
-console.log(dbName)
 
     const dbOrders = await getDb(dbName);
     const date = new Date()
-console.log(validOrderId)
 
     try{
 
