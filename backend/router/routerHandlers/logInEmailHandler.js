@@ -36,7 +36,7 @@ export default async function logInEmailHandler(req, res) {
     const normalizedEmail = email.trim().toLowerCase();
 
     try {
-        // 2. Obtener usuario usando el puntero en Redis (user:idx:<email>) -> MongoDB
+        // 2. Obtener usuario usando el puntero en Redis (user:<email>) -> MongoDB
         const user = await userHandler.getUserByEmail(normalizedEmail);
         
         if (!user || !user.password) {

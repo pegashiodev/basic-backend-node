@@ -30,7 +30,7 @@ export default async function(req, res){
 
     const from = "RENOVE_PASSWORD"
 
-    console.log(" ** RENOVE-PASSWORD-HANDLER")
+    // console.log(" ** RENOVE-PASSWORD-HANDLER")
     
     // GET  -->> POR AQUI LLEGA DESDE EL LINK QUE LE HEMOS ENVIADO POR CORREO 
     if(req.method === 'GET'){
@@ -39,14 +39,14 @@ export default async function(req, res){
         const email = req.urlData.searchParams?.email
 
         if(!url_token || !email){
-            console.log("NO HAY URL TOKEN EN EL LINK RECIBIDO de RENOVE_PASSWORD !!!")
+            console.log("RENOVE PASSWORD: NO HAY URL TOKEN EN EL LINK RECIBIDO de RENOVE_PASSWORD !!!")
             res.code = 500
             res.headers = {}
             return sendStaticFile(req, res)
         }
          
         if (!email || !emailValidation(email)) {
-            console.log("EL FORMATO DEL EMAIL ES INCORRECTO ??? !!!")
+            console.log("RENOVE PASSWORD: EL FORMATO DEL EMAIL ES INCORRECTO ??? !!!")
             res.code = 400
             res.headers = {}
             return sendStaticFile(req, res)
@@ -87,7 +87,7 @@ export default async function(req, res){
 async function renovePassword(req, res){
     
     const from = "RENOVE_PASSWORD"
-    console.log(req.body)
+    // console.log(req.body)
 
     let result = bodyDataFormatVerify(req.body)
             
@@ -138,7 +138,7 @@ async function renovePassword(req, res){
     req.user = await userHandler.getUserByEmail(normalizedEmail);
 
     if(!req.user){
-        console.log('No hay User con ese email')
+        console.log(' RENOVE PASSWORD: No hay User con ese email')
         const response_data = {
             status: 'error',
             message: 'NO HAY USER CON ESE EMAIL',
@@ -154,7 +154,7 @@ async function renovePassword(req, res){
     
     const hashedPassword = await hashPassword(req.body.password);
     if(!hashedPassword){
-        console.log('Error hasheando pasword')
+        console.log('RENOVE PASSWORD: Error hasheando pasword')
         const response_data = {
             status: 'error',
             message: 'ERROR HASHEANDO EL  PASSWORD',
@@ -173,7 +173,7 @@ async function renovePassword(req, res){
     const result_updateUserPassword = await userHandler.updateUserData(data_update_user, req.user)
    
     if(result_updateUserPassword.status != 'ok'){
-        console.log('Error Actualizando UserDB')
+        console.log('RENOVE PASSWORD: Error Actualizando UserDB')
         const response_data = {
             status: 'error',
             message: 'ERROR Actualizando UserDB',
@@ -184,7 +184,7 @@ async function renovePassword(req, res){
         return;
     }
     
-    console.log('PASSWORD ACTUALIZADO')
+    // console.log('PASSWORD ACTUALIZADO')
     // MARCAMOS EL TOKEN COMO USADO
 
     // RE-ENVIAMOS A "ACCESO-PLATAFORMA" PARA QUE SE LOGUEE CON EL NUEVO PASSWORD

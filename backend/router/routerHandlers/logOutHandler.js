@@ -18,7 +18,7 @@ import { getRedisSession } from "../../db/redisService.js";
  * 
  */
 export default async function(req, res){
-    console.log(" ** LogOutHandler !!")
+    // console.log(" ** LogOutHandler !!")
 
     // Si no hay cookie enviamos al home, y no se hace nada mas: No tenemos usuario para eliminar nada en el backend
     if(!req.headers.cookie){

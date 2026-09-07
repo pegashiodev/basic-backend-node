@@ -86,7 +86,13 @@ export default async function openDbs(dbNames) {
                 // Creamos un indice para buscar al usuario por su  email
                 await collection.createIndex({ email: 1, createdAt: -1 }, { unique: true });
 
-            } 
+            } else if(name === "sessions_2026"){
+                collection = dbInstance.collection(systemConfig.COLLECTIONS.SESSIONS)
+                await collection('sessions').createIndex(
+                    { expiresAt: 1 }, 
+                    { expireAfterSeconds: 0 } // eXPIRA EN EL MISMO SEGUNDO QUE SE CUMPLE EL expriresAt
+                );
+            }
 
             /*
             Con los indices con una sola consulta obtenemos todos los documentos de ese usuario en la DB
@@ -164,6 +170,12 @@ export async function getDb(dbName) {
         collection = dbInstance.collection(systemConfig.COLLECTIONS.ORDERS)
         await collection.createIndex({ userId: 1, createdAt: -1 })
 
+    }else if(dbName.includes("sessions_")){
+        collection = dbInstance.collection(systemConfig.COLLECTIONS.SESSIONS)
+        await collection('sessions').createIndex(
+            { expiresAt: 1 }, 
+            { expireAfterSeconds: 0 } // eXPIRA EN EL MISMO SEGUNDO QUE SE CUMPLE EL expriresAt
+        );
     }
 
     return dbInstance;

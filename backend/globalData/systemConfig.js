@@ -220,9 +220,10 @@ export default  {
         SESSIONS: 'sessions_',                              // + AÑO EN EL QUE SE CREA LA SESSION ACTUAL -> COLLECTION = MES ... IDEM
         SITE_STATS: "site_stats_",                          // + año. Collection = mes
         USERS_ACTIVITY: 'users_activity_',                  // + año -> coll = name user
-        USERS_TRANSACTIONS: 'saas_transactions_',                  // + AÑO  -> coll = MONTH
+        SAAS_TRANSACTIONS: 'saas_transactions_',                  // + AÑO  -> coll = MONTH
         USERS_DATA: 'users_data',                          //  -> COLLECTION = MES DE ALTA DEL USUARIO
         AFILIATES: 'affiliates',                             // -> COLLECTION = codes
+        USERS_SUBSCRIPTIONS: "users_subscriptions",                     // collection: 
 
     },
 
@@ -233,10 +234,11 @@ export default  {
         AFILIATES: "codes",
         BLACKLIST: "ips",
         USERS_ACTIVITY: "activity",
-        USERS_TRANSACTIONS: "transactions",
+        SAAS_TRANSACTIONS: "transactions",
         ORDERS: "orders",
         USERS_DATA: "users",
         SESSIONS: "sessions",
+        USERS_SUBSCRIPTIONS: "subscriptions"
     },
     /** TIEMPO DE EXPIRACION DE LA COOKIE */
     COOKIE_AGE: ACCESS_TOKEN_MAX_AGE_SECONDS,  
@@ -268,7 +270,7 @@ export default  {
     /** 
     *   NOMBRES DE LAS BASES DE DATOS QUE HAY QUE ABRIR ANTES DE LANZAR EL SERVIDOR HTTP  
     */
-    DBS_TO_OPEN: [ "promotions", "products", "orders_2026", "users_activity_2026", "saas_transactions_2026","billing_2026", 'blacklist', 'users_data', 'sessions_2026', "site_stats_2026", "affiliates"],
+    DBS_TO_OPEN: [ "subscriptions", "promotions", "products", "orders_2026", "users_activity_2026", "saas_transactions_2026","billing_2026", 'blacklist', 'users_data', 'sessions_2026', "site_stats_2026", "affiliates"],
 
     /** 
     *   BASES DE DATOS DE LAS QUE HAY QUE CACHEAR CIERTOS DATOS ENTES DE LANZAR EL SERVIDOR HTTP 

@@ -26,11 +26,11 @@ import emailValidation from "../routerTools/emailValidation.js";
 export default async function(req, res){
 
     const from = "FORGOT_PASSWORD"
-    console.log("FORGOT PASSWORD !!!!")
-    console.log(req.body)
+    // console.log("FORGOT PASSWORD !!!!")
+    // console.log(req.body)
 
     if(!req.body.email){
-        console.log('NO HAY EMAIL EN EL FORGOT-PASSWORD')
+        console.log('FORGOT PASSWORD: NO HAY EMAIL EN EL FORGOT-PASSWORD')
         const response_data = {
         status: systemConfig.STATUS.ERROR_FETCH,
         message: 'FALTAN DATOS EN LA PETICION: EMAIL',
@@ -54,7 +54,7 @@ export default async function(req, res){
     req.user = await userHandler.getUserByEmail(normalizedEmail);
 
     if(!req.user){
-        console.log('NO HAY USUARIO CON ESE EMAIL')
+        console.log('FORGOT PASWORD: NO HAY USUARIO CON ESE EMAIL')
         const response_data = {
         status: systemConfig.STATUS.ERROR_FETCH,
         message: 'EMAIL INCORRECTO',

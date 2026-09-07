@@ -50,6 +50,7 @@ export default createServer(async (req, res) => {
 
         // COMPROBAMOS SI LA RUTA COMPLETA ESTA EN NUESTRO SITEMAP
         // 1. Tu diccionario de rutas canónicas mapping a su archivo físico
+        
         const sitemapRoutes = {
             '/': 'index.html',
             '/index': "index.html",
@@ -85,7 +86,8 @@ export default createServer(async (req, res) => {
             '/505-es': '505-es.html',
             '/505-es.html': '505-es.html',
 
-            
+            '/checkout': 'checkout.html',
+            '/checkout.html': 'checkout.html',
             '/shopping-cart': 'shoping-cart.html',
             '/shopping-cart.html': 'shoping-cart.html',
             '/cancel-checkout': 'cancel-checkout.html',
@@ -97,6 +99,9 @@ export default createServer(async (req, res) => {
             '/login-email.html': 'acceso-plataforma.html',
             '/signup-email': 'acceso-plataforma.html',
             '/signup-email.html': 'acceso-plataforma.html',
+            '/logout': "logout.html",
+            '/logout.html': "logout.html",
+            
 
             '/session-is-required': 'session-is-required.html',
             '/session-is-required.html': 'session-is-required.html',
@@ -111,19 +116,14 @@ export default createServer(async (req, res) => {
 
             '/refresh-bridge': "refresh-bridge.html",
             '/refresh-bridge.html': "refresh-bridge.html",
-            '/logout': "logout.html",
-            '/logout.html': "logout.html",
-            
+           
             '/get-main-menu': "get-main-menu.html",
             '/get-main-menu.html': "get-main-menu.html",
             '/stripe-webhook': "stripe-webhook.html", 
             '/stripe-webhook.html': "srtipe-webhook.html",
 
-            '/checkout': 'checkout.html',
-            '/checkout.html': 'checkout.html',
-          
-
         };
+
         const canonicalPath = req.urlData.canonicalPath
         // SOLO REVISAMOS LOS ENDPINTS SIN EXTENSION O SON EXTENSION HTML
         if(req.urlData.ext === "html" || req.urlData.ext === ""){

@@ -109,8 +109,8 @@ export default async function verifyTokensAndSetCookie(req, from) {
                         refreshData = generateRefreshToken(userName, userEmail, sessionIdString);
                         req.refreshData = refreshData;
 
-                        accessData = generateAccessToken(userName, userEmail, sessionIdString);
-                        req.accessData = accessData;
+                        // accessData = generateAccessToken(userName, userEmail, sessionIdString);
+                        // req.accessData = accessData;
 
                         // Actualizar identificadores en la sesión de Redis
                         // session.rtk = refreshData.rtk;

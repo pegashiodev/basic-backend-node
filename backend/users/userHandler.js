@@ -86,7 +86,7 @@ export const getUserByEmail = async (email) => {
  * @param{coins} -> es un objeto . Ej : {coinsCreate: 200, coinsGenerator: 200, ...}
  */
 
-export const incrementUserCoins = async (userId, coins)=>{
+export const incrementUserCoins = async (userId, coins, from)=>{
 
 
     let validUserId;
@@ -109,7 +109,12 @@ export const incrementUserCoins = async (userId, coins)=>{
             "coins.coaching": coins.coaching ?? 0,
             "coins.audio": coins.audio ?? 0,
             "coins.images": coins.images ?? 0,
-            "coins.video": coins.video ?? 0
+            "coins.video": coins.video ?? 0,
+
+            "rechargeCoinsCreate": coins.create ?? 0,
+            "rechargeCoinsTraining": coins.training ?? 0,
+            "rechargeCoinsCoaching": coins.coaching ?? 0,
+
         }}
 
     // El error se controla en un try-cath anterior
@@ -145,8 +150,8 @@ export const addUserPaymentToTransactions = async (order)=>{
     }
     const year = validOrderId.getTimestamp().getFullYear()
    
-    const dbName = systemConfig.DBS.USERS_TRANSACTIONS + year
-    const collection = systemConfig.COLLECTIONS.USERS_TRANSACTIONS
+    const dbName = systemConfig.DBS.SAAS_TRANSACTIONS + year
+    const collection = systemConfig.COLLECTIONS.SAAS_TRANSACTIONS
     const transacciónsDb = await getDb(dbName);
 
     // Obtenemos los coins totales de la recarga de coins que ha comprado en la plataforma

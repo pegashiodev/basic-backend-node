@@ -14,7 +14,7 @@ import verifyTokensAndSetCookie from "../../tools/verifyTokensAndSetCookie.js";
 
 export default async function refershBridgeHandler(req, res) {
 
-    console.log("REFRESH-BRIDGE-HANDLER !!")
+    // console.log("REFRESH-BRIDGE-HANDLER !!")
 
     // OBTENEMOS NUESTRA COOKIE CON ATK Y RTK
    const result_getOurCookie = await getOurCookie(req);
@@ -67,14 +67,8 @@ export default async function refershBridgeHandler(req, res) {
         const headers = {
             'Content-Type': 'application/json; charset=utf-8' 
         }
-        // const headers = { 'Content-Type': 'application/json; charset=utf-8' };
-        // if (req.cookie && Array.isArray(req.cookie)) {
-        //     headers['Set-Cookie'] = req.cookie;
-        // }
-
         if(req.set_new_cookie){
-            // console.log("AÑADIMOS NUEVA COOCKIE !!!!!!!!!!!!!")
-            // console.log(req.cookie)
+           
             headers['Set-Cookie'] = req.cookie;
         }
         res.writeHead(200, headers);

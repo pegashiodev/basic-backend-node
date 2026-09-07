@@ -15,7 +15,6 @@ import renovePasswordHandler from "./routerHandlers/renovePasswordHandler.js";
 import systemConfig from "../globalData/systemConfig.js";
 import checkOutHandler from "./routerHandlers/checkOutHandler.js";
 import forgotPasswordHandler from "./routerHandlers/forgotPasswordHandler.js";
-// import expiredEndpointHandler from "./routerHandlers/expiredEndpointHandler.js";
 import remoteControlAccessHandler from "../restrictedEndpoints/remoteControlAccessHandler.js";
 import remoteControlPanelHandler from "../restrictedEndpoints/remoteControlPanelHandler.js";
 import uploadFilesHandler from "./routerHandlers/uploadFilesHandler.js";
@@ -30,9 +29,9 @@ process.loadEnvFile();
 
 export default function (req, res){
 
-    console.log("** routerPostRequest !!")
-    console.log(req.urlData)
-    console.log({endpoint: req.urlData.endpoint})
+    // console.log("** routerPostRequest !!")
+    // console.log(req.urlData)
+    // console.log({endpoint: req.urlData.endpoint})
 
     const REMOTE_CONTROL_PANEL_ENDPOINT = systemConfig.REMOTE_CONTROL_PANEL_ENDPOINT
     const REMOTE_CONTROL_ACCESS_POST = systemConfig.REMOTE_CONTROL_ACCESS_ENDPOINT_POST
@@ -51,18 +50,13 @@ export default function (req, res){
         
         "forgot-password":      {handler: forgotPasswordHandler, access: systemConfig.HAS_USERS},
         "forgot-password.html": {handler: forgotPasswordHandler, access: systemConfig.HAS_USERS},
-        //"expired-endpoint":     {handler: expiredEndpointHandler, access: systemConfig.HAS_USERS},
-        //"expired-endpoint.html":{handler: expiredEndpointHandler, access: systemConfig.HAS_USERS},
+        
 
         "upload-files.html":    {handler: uploadFilesHandler, access: systemConfig.HAS_USERS},
         "upload-files":         {handler: uploadFilesHandler, access: systemConfig.HAS_USERS},
 
         "renove-password":      {handler: renovePasswordHandler, access: systemConfig.HAS_USERS},
         "renove-password.html": {handler: renovePasswordHandler, access: systemConfig.HAS_USERS},
-        
-        // "recovery-account":     {handler: recoveryAccountHandler, access: systemConfig.HAS_USERS},
-        // "recovery-account.html":{handler: recoveryAccountHandler, access: systemConfig.HAS_USERS},
-
 
         "checkout":             {handler: checkOutHandler, access: systemConfig.HAS_USERS},
         "checkout.html":        {handler: checkOutHandler, access: systemConfig.HAS_USERS},
@@ -71,8 +65,6 @@ export default function (req, res){
 
         "stripe-webhook":       {handler: stripeWebhookHandler, access: systemConfig.HAS_USERS},
         "stripe-webhook.html":  {handler: stripeWebhookHandler, access: systemConfig.HAS_USERS},
-
-        
 
         "get-html-items":       {handler: getHtmlItems, access: true},
         "get-main-menu":        {handler: getMainMenu, access: true} ,                       // Acceso Siempre. Luego se comprueba la cookie

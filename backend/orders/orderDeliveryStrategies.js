@@ -62,7 +62,7 @@ export const deliveryStrategies = {
         const coins = item.coins        // es un Objeto
         
         // 2.- Incrementamos los coins en la cuenta del usuario 
-        const resultIncrementCoins = await incrementUserCoins(userId, coins);
+        const resultIncrementCoins = await incrementUserCoins(userId, coins, "BALANCE_RECHARGE");
     
         console.log(`💰 [BALANCE] Se han añadido COINS  al saldo del usuario ${userId}`);
         return {

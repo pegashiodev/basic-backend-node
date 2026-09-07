@@ -13,6 +13,7 @@ const PORT = process.env.MODE === "DEV" ? process.env.PORT_DEV : process.env.POR
 const HOST = process.env.MODE === "DEV" ? process.env.HOST_DEV : process.env.HOST_PROD;
 
 async function bootstrap() {
+    
     try {
         console.log(`\n🚀 Iniciando proceso PID ${process.pid} en modo ${process.env.MODE || 'DEV'}...`);
 

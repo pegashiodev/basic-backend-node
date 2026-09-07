@@ -11,40 +11,6 @@ import systemConfig from '../globalData/systemConfig.js';
 
 
 
-export async function getUserPointer(email) {
-    if (!email || !redisClient || !redisClient.isOpen) return null;
-    try {
-        const raw = await redisClient.get(`user:idx:${email.toLowerCase().trim()}`);
-        return raw ? JSON.parse(raw) : null;
-    } catch (err) {
-        console.error('❌ Error leyendo user:idx en Redis:', err.message);
-        return null;
-    }
-}
-
-export async function setUserPointer(email, pointerData) {
-    if (!email || !pointerData || !redisClient || !redisClient.isOpen) return false;
-    try {
-        // Sin TTL: es un índice permanente en Redis
-        await redisClient.set(`user:idx:${email.toLowerCase().trim()}`, JSON.stringify(pointerData));
-        return true;
-    } catch (err) {
-        console.error('❌ Error guardando user:idx en Redis:', err.message);
-        return false;
-    }
-}
-
-export async function deleteUserPointer(email) {
-    if (!email || !redisClient || !redisClient.isOpen) return false;
-    try {
-        await redisClient.del(`user:idx:${email.toLowerCase().trim()}`);
-        return true;
-    } catch (err) {
-        console.error('❌ Error borrando user:idx en Redis:', err.message);
-        return false;
-    }
-}
-
 /*
     CREA UN SNAPSHOT DEL USER PRA EL ACCESO RAPIDO A ALGUNO DE SUS VALORES
 */
@@ -75,7 +41,11 @@ export async function setRedisUserHset(user) {
         coinsAudio: user.coinsAudio ?? "0",
         coinsVideo: user.coinsVideo ?? "0",
         saldoMoney: user.saldoMoney ?? "0",
-        saldoAds: user.saldoAds ?? "0"
+        saldoAds: user.saldoAds ?? "0", 
+
+        rechargeCoinsCreate: user.rechargeCoinsCreate ?? "0",
+        rechargeCoinsTraining: user.rechargeCoinsTraining ?? "0",
+        rechargeCoinsCoaching: user.rechargeCoinsCoaching ?? "0",
     }
     
 
@@ -165,6 +135,7 @@ export async function getRedisUser(email) {
             channelName: userHash.channelName || "",
             createdAt: new Date(userHash.createdAt),
             password: userHash.password,
+           
             coinsCreate: Number(userHash.coinsCreate ?? 0),
             coinsTraining: Number(userHash.coinsTraining ?? 0),
             coinsGenerator: Number(userHash.coinsGenerator ?? 0),
@@ -172,8 +143,13 @@ export async function getRedisUser(email) {
             coinsImages: Number(userHash.coinsImages ?? 0),
             coinsAudio: Number(userHash.coinsAudio ?? 0),
             coinsVideo: Number(userHash.coinsVideo ?? 0),
+            
             saldoMoney: Number(userHash.saldoMoney ?? 0),
-            saldoAds: Number(userHash.saldoAds ?? 0)
+            saldoAds: Number(userHash.saldoAds ?? 0), 
+
+            rechargeCoinsCreate: Number(userHash.rechargeCoinsCreate ?? "0"),
+            rechargeCoinsTraining: Number(userHash.rechargeCoinsTraining ?? "0"),
+            rechargeCoinsCoaching: Number(userHash.rechargeCoinsCoaching ?? "0"),
             
         };
         return user

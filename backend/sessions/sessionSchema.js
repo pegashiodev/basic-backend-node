@@ -36,7 +36,9 @@ export function createSessionObject(req, user) {
         role,
         status: "ACTIVE",   // [ENDED, PAUSED, BLOCKED]
         createdAt: now,
-        expiresAt: now + (systemConfig.TOKENS_AGE.SESSION_TTL_SECONDS * 1000),
+        // El indice creado en Mongodb para "expiresAt" hace que la session se destruya cuando se cumpla esa fecha
+        // Lo que nos permite modificarla y que la session siga activa
+        expiresAt: new Date(now + (systemConfig.TOKENS_AGE.SESSION_TTL_SECONDS * 1000)),
         lastActiveAt: now,
         ip: ip,
         // userAgent: userAgent || "",

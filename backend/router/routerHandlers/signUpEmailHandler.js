@@ -19,7 +19,7 @@ import { validatePromotion } from '../../promotions/promotionsHandler.js';
 export default async function signUpEmailHandler(req, res) {
     const { email, password, name, code, userAgent, deviceId, language, promoCode } = req.body || {};
 
-console.log({ email, password, name, code, userAgent, deviceId, language, promoCode })
+// console.log({ email, password, name, code, userAgent, deviceId, language, promoCode })
     
     if (!email || !emailValidation(email)) {
         res.writeHead(415, { 'Content-Type': 'application/json; charset=utf-8' });
