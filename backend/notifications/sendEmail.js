@@ -111,6 +111,33 @@ function buildEmailTemplate({ type, code, language = 'es', customData = {} }) {
         `;
         return { subject, textBody, htmlBody };
 
+    }else if(type === "GOOGLE_AUTH_USER"){
+
+        const subject = 'CAMBIO DE PASSWORD'
+        const textBody = `Hola,\n\nTu código de verificación es: ${code}\nEste código caduca en 15 minutos.\nSi no has solicitado este código, puedes ignorar este correo.`
+        const htmlBody = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                <h2 style="color: #333; text-align: center;">${isEn ? 'Verification Code' : 'Código de Verificación'}</h2>
+                <p style="color: #555; font-size: 16px;">
+                    ${isEn ? 'Please use the following code to complete your registration or verification:' : '"Hola, hemos recibido una solicitud para cambiar tu contraseña. Tu cuenta fue creada mediante Inicio de sesión con Google, por lo que habitualmente no necesitas contraseña. Si deseas establecer una contraseña para entrar también con email y contraseña, haz clic en el siguiente enlace..."'}
+                </p>
+               
+                <div style="text-align: center; margin: 30px 0;">
+                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1a73e8; background: #f1f3f4; padding: 10px 24px; border-radius: 6px; display: inline-block;">
+                        ${code}
+                    </span>
+                </div>
+                <p style="color: #777; font-size: 14px;">
+                    ${isEn ? 'This code is valid for 15 minutes.' : 'Este código es válido durante 15 minutos.'}
+                </p>
+                <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;">
+                <p style="color: #999; font-size: 12px; text-align: center;">
+                    ${isEn ? 'If you did not request this code, you can safely ignore this email.' : 'Si no solicitaste este código, puedes ignorar este correo de forma segura.'}
+                </p>
+            </div>
+        `;
+        return { subject, textBody, htmlBody };
+
     }
 
     // Plantilla por defecto o personalizada
@@ -141,7 +168,7 @@ export default async function sendEmail({ email, type = 'VERIFICATION_CODE', lan
 
     if(type === "VERIFICATION_CODE"){
         code = await generateValidationToken(email);
-    }else if(type === "VERIFICATION_ENDPOINT"){
+    }else if(type === "VERIFICATION_ENDPOINT" || type === "GOOGLE_AUTH_USER"){
         code = await generateVerificationEndpoint(email);
     }
 console.log({code})

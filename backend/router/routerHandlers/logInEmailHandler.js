@@ -77,7 +77,7 @@ export default async function logInEmailHandler(req, res) {
         req.body.userAgent = userAgent || req.headers['user-agent'] || '';
 
         // 6. Crear la sesión activa (persiste en Redis y MongoDB)
-        await createSession(req, 'LOGIN');
+        await createSession(req, 'LOGIN-EMAIL');
 
         // 7. Generar tokens vinculados al sessionId y poblar req.cookie con las cabeceras Set-Cookie
         await verifyTokensAndSetCookie(req, 'LOGIN-EMAIL');

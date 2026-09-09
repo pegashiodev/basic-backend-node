@@ -366,14 +366,42 @@ export const updateUserData = async (data, user)=>{
         const filter = {
             "_id": user.userId
         }
-        const updateData =  { "$set": { password: data.password } }
+        let updateData;
+        if(data.googleSubId){
+
+            updateData =  { "$set": { password: data.password, updatedAt: new Date() }, $addToSet: { authProviders: "EMAIL" } }
+        }else{
+            updateData =  { "$set": { password: data.password, updatedAt: new Date() }}
+
+        }
         const dbUsers = await getDb(dbName)
 
         const resultUpdate = await dbUsers.collection(collection).updateOne(filter, updateData)
+
         if(resultUpdate.modifiedCount === 1){
 
-            // ACTUALIZAMOS AHORA EN REDIS
-            await redisClient.hSet(`user:${user.email}`, "password", data.password);
+            if(data.googleSubId){
+                    
+                // 1. Obtenemos la lista actual de proveedores desde el usuario en memoria
+
+                console.log({currentProviders})
+
+                const currentProviders = new Set(user.authProviders || [user.authProvider || 'GOOGLE']);
+                currentProviders.add('EMAIL');
+
+                console.log/({currentProviders})
+
+                // 2. Actualizamos atómicamente el Hash en Redis
+                await redisClient.hSet(`user:${user.email}`, {
+                    password: data.password,
+                    authProviders: JSON.stringify(Array.from(currentProviders))
+                });
+            }else{
+
+                // ACTUALIZAMOS AHORA EN REDIS
+                await redisClient.hSet(`user:${user.email}`, "password", data.password, "updatedAt", new Date().toString());
+            }
+
             return { status: 'ok', message: "PASWORD ACTUALIZADO CON EXITO"}
 
         }else{

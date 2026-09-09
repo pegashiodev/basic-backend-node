@@ -32,7 +32,14 @@ export async function setRedisUserHset(user) {
         channelName: user.channelName ?? "",
         status: user.status,
         createdAt: user.createdAt.getTime().toString(),     // pasamos el Date a un String
-        password: user.password,
+        updatedAt: user.updatedAt.getTime().toString(),
+        isPromoAffiliate: user.isPromoAffiliate,
+
+        password: user.password || "",
+
+        googleSubId: user.googleSubId,
+        authProviders: JSON.stringify(user.authProviders || []),
+
         coinsCreate: user.coinsCreate ?? "0",
         coinsTraining: user.coinsTraining ?? "0",
         coinsGenerator: user.coinsGenerator ?? "0",
@@ -130,11 +137,19 @@ export async function getRedisUser(email) {
             role: userHash.role,
             name: userHash.name,
             email: userHash.email, 
-            nick: userHash.nick || "",
             status: userHash.status, 
+
+            nick: userHash.nick || "",
             channelName: userHash.channelName || "",
+
             createdAt: new Date(userHash.createdAt),
-            password: userHash.password,
+            updatedAt: new Date(userHash.updatedAt),
+
+            password: userHash.password === '' ? null : userHash.password,
+            isPromoAffiliate: userHash.isPromoAffiliate === "1" ? true : false,
+
+            googleSubId: user.googleSubId,
+            authProviders: JSON.parse(userHash.authProviders || []),
            
             coinsCreate: Number(userHash.coinsCreate ?? 0),
             coinsTraining: Number(userHash.coinsTraining ?? 0),

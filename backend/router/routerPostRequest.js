@@ -24,6 +24,7 @@ import verifyFromRemotePanel from "../remotePanel/verifyFromRemotePanel.js";
 import refreshBridgeHandler from "./routerHandlers/refreshBridgeHandler.js";
 
 import stripeWebhookHandler from "./routerHandlers/stripeWebhookHandler.js";
+import googleAuthHandler from "./routerHandlers/googleAuthHandler.js";
 process.loadEnvFile();
 
 
@@ -74,6 +75,10 @@ export default function (req, res){
 
         "refresh-bridge":       {handler: refreshBridgeHandler, access: systemConfig.HAS_USERS},
         "refresh-bridge.html":  {handler: refreshBridgeHandler, access: systemConfig.HAS_USERS},
+
+        "/google-oauth":        {handler: googleAuthHandler, access: systemConfig.HAS_USERS},
+        "/google-oauth.html":   {handler: googleAuthHandler, access: systemConfig.HAS_USERS},
+
 
     }
     // postHandlers[REMOTE_CONTROL_PANNEL_ENDPOINT] = {handler: remoteControlPannelHandler, access: systemConfig.HAS_USERS}

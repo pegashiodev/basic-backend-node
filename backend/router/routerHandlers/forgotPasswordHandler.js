@@ -68,12 +68,16 @@ export default async function(req, res){
     // ENVIAMOS EMAIL PARA HACER EL CAMBIO DE PASSWORD 
     
     const lang = req.urlData?.language || systemConfig.MAIN_LANGUAGE || 'es';
-    
-    const emailResult = await sendEmail({
+    let email_data = {
         email: normalizedEmail,
         type: 'VERIFICATION_ENDPOINT',
-        language: lang
-    });
+        language: lang,
+    }
+    // sI ES UN USUARIO QUE SE LOGUEA CON GOOGLE LE ENVIAMOS UN CORREO ADVIRTIENDOLO DE ESTA CIRCUSTANCIA
+    if(user.googleSub.length > 3){
+        email_data.type = "GOOGLE_AUTH_USER"
+    }
+    const emailResult = await sendEmail(email_data);
 
     if (emailResult && emailResult.status === 'error') {
         res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });

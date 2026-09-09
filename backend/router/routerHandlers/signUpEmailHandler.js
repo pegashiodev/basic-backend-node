@@ -2,7 +2,6 @@
  * HANDLER DE REGISTRO POR EMAIL (SIGNUP)
  */
 
-import generateValidationToken, { checkValidationToken } from '../../notifications/notificationsTools/generateValidationToken.js';
 import sendEmail from '../../notifications/sendEmail.js';
 import userHandler from '../../users/userHandler.js';
 import { createSession } from '../../sessions/sessionHandler.js';

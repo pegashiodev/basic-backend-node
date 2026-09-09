@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Request Client</title>
+    <!-- 1. Carga del SDK oficial de Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         .wrap{
             display: flex;
@@ -43,6 +45,13 @@
 
                 <button id="btn_signup">ENVIAR CODIGO</button>
             </div>
+
+            <!-- 2. Contenedor visual del botón de Google -->
+            <div id="googleBtnContainer"></div>
+            <!-- Mensajes de feedback -->
+            <div id="authStatusMessage" style="display: none; margin-top: 10px;"></div>
+
+
             <div id="promoCodeWrap">
                 <input id="promoCode" type="text" placeholder="BIENVENIDA">
             </div>
@@ -92,7 +101,8 @@
             email: "",
             signup_method: "USER-EMAIL",
             password: "",
-            promoCode: undefined          
+            promoCode: undefined,
+            authProvider: "EMAIL"         
            
         }
 
@@ -352,6 +362,81 @@
         }
 
     </script>
+
+    <script type="module">
+
+    import { authFetch } from './statics/apiClient.js';
+
+    // Tu Client ID obtenido en Google Cloud Console
+    const GOOGLE_CLIENT_ID = "91494631029-fllv3la87i5h817febl31bsstfjqc277.apps.googleusercontent.com";
+
+    // Callback ejecutado por Google tras la autorización
+    async function handleGoogleCredentialResponse(googleResponse) {
+        const statusBox = document.getElementById('authStatusMessage');
+        statusBox.style.display = 'block';
+        statusBox.textContent = 'Autenticando con Google...';
+
+        try {
+            // Enviamos el JWT firmado por Google a nuestro backend
+            const res = await fetch('/google-oauth', {
+                method: 'POST',
+                //credentials: 'include', // Para recibir las cookies de sesión (atk, rtk)
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    id_google_token: googleResponse.credential,
+                    authProvider: "GOOGLE"
+                })
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (res.ok && data.status === 'ok') {
+                statusBox.textContent = '¡Inicio de sesión correcto! Redirigiendo...';
+                // Redirigir al panel del usuario o destino previsto
+                console.log(data.location)
+                aler("REdirigimos a: ", data.location)
+                window.location.replace(data.location);
+            } else {
+                statusBox.textContent = data.message || 'Error al autenticar con Google.';
+                console.error('Error auth Google:', data);
+            }
+        } catch (error) {
+            statusBox.textContent = 'Error de conexión con el servidor.';
+            console.error('Error de red:', error);
+        }
+    }
+
+    // Inicializar Google Sign-In al cargar la ventana
+    window.addEventListener('load', () => {
+        if (window.google) {
+            window.google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: handleGoogleCredentialResponse,
+                auto_select: false,
+                cancel_on_tap_outside: true
+            });
+
+            // Renderizar el botón en el contenedor
+            window.google.accounts.id.renderButton(
+                document.getElementById('googleBtnContainer'),
+                { 
+                    theme: 'outline', 
+                    size: 'large', 
+                    type: 'standard', 
+                    shape: 'rectangular',
+                    text: 'signin_with', 
+                    logo_alignment: 'left',
+                    width: 280 
+                }
+            );
+
+            // Opcional: Mostrar selector One Tap si el usuario ya tiene sesión en Google
+            // window.google.accounts.id.prompt();
+        }
+    });
+</script>
     
 </body>
 </html>

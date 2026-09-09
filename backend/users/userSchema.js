@@ -28,17 +28,20 @@ export default async function userSchema(body) {
         nick: (body.nick || '').trim(),
         channelName: (body.channelName || '').trim(),
         email: normalizedEmail,
-        password: body.password,        
+        password: body.password || "",        
         signupIp: body.ip,
         
-        status: 'ACTIVE',           // [ PAUSED, BLOCKED, ]
-        role: 'USER',                // [EMPLOYEE_PYME, ADMIN, ADMIN_PYME, AFILIATE]  
+        status: 'ACTIVE',                       // [ PAUSED, BLOCKED, ]
+        role: 'USER',                           // [EMPLOYEE_PYME, ADMIN, ADMIN_PYME, AFILIATE] 
+        authProviders: [],                      // ["EMAIL", "GOOGLE", ...]
+        googleSubId: 0,                           // Mantienes el ID de Google 
         
         createdAt: date,
+        updatedAt: date,
         createdAtTimestamp: date.getTime(),
         //userDevices: initialDevices,
-        isPromoAffiliate: body.promotion ? true : false,
-        affiliateData: body.promotion?.affiliate || null,
+        isPromoAffiliate: body.promotion ? "1" : "0" ,
+        affiliateData: body.promotion?.affiliate || {},
 
         coinsCreate: body.promotion?.coins?.create ?? 0,           // CREAR CONTENIDOs: ENTRVISTA, AUDIO, IMAGENES, ....
         coinsTraining: body.promotion?.coins?.training ?? 0,       // ENTRENAR CREAR AUDIOS, ...
@@ -58,6 +61,13 @@ export default async function userSchema(body) {
         rechargeCoinsCoaching: 0,
 
     };
+
+    if(body.authProvider){
+        user.authProviders.push(body.authProvider)
+        if(body.authProvider === "GOOGLE"){
+            user.googleSub = body.googleSubId
+        }
+    }
 
     if(systemConfig.HAS_PROMO_CODES_SIGNUP && body.promotion){
 
