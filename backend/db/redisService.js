@@ -19,7 +19,6 @@ export async function setRedisUserHset(user) {
 
     if (!user.email || !redisClient || !redisClient.isOpen) return false;
 
-
     // TODOS LOS VALORES HAN DE SER STRING
     const userData = {
         _id: user._id.toString(),
@@ -33,29 +32,27 @@ export async function setRedisUserHset(user) {
         status: user.status,
         createdAt: user.createdAt.getTime().toString(),     // pasamos el Date a un String
         updatedAt: user.updatedAt.getTime().toString(),
-        isPromoAffiliate: user.isPromoAffiliate,
 
         password: user.password || "",
 
-        googleSubId: user.googleSubId,
-        authProviders: JSON.stringify(user.authProviders || []),
+        googleSubId: user.googleSubId.toString(),
+        authProviders: JSON.stringify(user.authProviders),
 
-        coinsCreate: user.coinsCreate ?? "0",
-        coinsTraining: user.coinsTraining ?? "0",
-        coinsGenerator: user.coinsGenerator ?? "0",
-        coinsCoaching: user.coinsCoaching ?? "0",
-        coinsImages: user.coinsImages ?? "0",
-        coinsAudio: user.coinsAudio ?? "0",
-        coinsVideo: user.coinsVideo ?? "0",
-        saldoMoney: user.saldoMoney ?? "0",
-        saldoAds: user.saldoAds ?? "0", 
+        coinsCreate: user.coinsCreate.toString() ?? "0",
+        coinsTraining: user.coinsTraining.toString() ?? "0",
+        coinsGenerator: user.coinsGenerator.toString() ?? "0",
+        coinsCoaching: user.coinsCoaching.toString() ?? "0",
+        coinsImages: user.coinsImages.toString() ?? "0",
+        coinsAudio: user.coinsAudio.toString() ?? "0",
+        coinsVideo: user.coinsVideo.toString() ?? "0",
+        saldoMoney: user.saldoMoney.toString() ?? "0",
+        saldoAds: user.saldoAds.toString() ?? "0", 
 
-        rechargeCoinsCreate: user.rechargeCoinsCreate ?? "0",
-        rechargeCoinsTraining: user.rechargeCoinsTraining ?? "0",
-        rechargeCoinsCoaching: user.rechargeCoinsCoaching ?? "0",
+        rechargeCoinsCreate: user.rechargeCoinsCreate.toString() ?? "0",
+        rechargeCoinsTraining: user.rechargeCoinsTraining.toString() ?? "0",
+        rechargeCoinsCoaching: user.rechargeCoinsCoaching.toString() ?? "0",
     }
     
-
     try{
 
         // Guardar el objeto desglosado en campos
@@ -91,7 +88,8 @@ export async function setRedisSessionHset(session) {
         lastActiveAt: session.lastActiveAt.toString(),
         ip: session.ip,
         // userAgent: session.userAgent,
-        isValid: session.isValid.toString()
+        isValid: true ? "1" : "0",
+        
     }
 
     try{
@@ -125,14 +123,13 @@ export async function getRedisUser(email) {
         console.log("EL USUARIO NO ESTA EN REDIS ???? ")
         return null;
         }
-    
         // 3. Convertimos los campos necesarios a sus tipos de datos correctos
         // El userId se almaceno en Redis como un String 
         const userIdString = userHash.userId
 
         const user = {
             _id: new ObjectId(userHash._id),
-            userId: new ObjectId(userHash.userid),     // Convertimos a ObjectId()
+            userId: new ObjectId(userHash.userId),     // Convertimos a ObjectId()
             userIdString: userIdString,
             role: userHash.role,
             name: userHash.name,
@@ -142,14 +139,13 @@ export async function getRedisUser(email) {
             nick: userHash.nick || "",
             channelName: userHash.channelName || "",
 
-            createdAt: new Date(userHash.createdAt),
-            updatedAt: new Date(userHash.updatedAt),
+            createdAt: new Date(Number(userHash.createdAt)),
+            updatedAt: new Date(Number(userHash.updatedAt)),
 
             password: userHash.password === '' ? null : userHash.password,
-            isPromoAffiliate: userHash.isPromoAffiliate === "1" ? true : false,
 
-            googleSubId: user.googleSubId,
-            authProviders: JSON.parse(userHash.authProviders || []),
+            googleSubId: userHash.googleSubId,
+            authProviders: JSON.parse(userHash.authProviders),
            
             coinsCreate: Number(userHash.coinsCreate ?? 0),
             coinsTraining: Number(userHash.coinsTraining ?? 0),
@@ -211,7 +207,7 @@ export async function getRedisSession(sessionIdString) {
             lastActiveAt: new Date(sessionHash.lastActiveAt),
             ip: sessionHash.ip,
             // userAgent: sessionHash.userAgent,
-            isValid: Boolean(sessionHash.isValid)
+            isValid: sessionHash.isValid === "1" ? true : false,
         }
 
 
@@ -277,7 +273,7 @@ export async function updateRedisUserCoins(email, data) {
 export async function getRedisUserCoins(email, typeCoins) {
 
     // Obtiene únicamente el saldo (Retorna un String)
-    const saldo = await redis.hget(`user:${email}`, typeCoins);
+    const saldo = await redis.hGet(`user:${email}`, typeCoins);
     const saldoNum = Number(saldo);
 
 }

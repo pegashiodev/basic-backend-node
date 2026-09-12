@@ -7,6 +7,7 @@
 import { redisClient } from './openRedis.js';
 import systemConfig from '../globalData/systemConfig.js';
 import { getDb } from './openDbs.js';
+import { setRedisUserHset } from './redisService.js';
 
 
 export async function syncUsersIndexToRedis() {
@@ -19,18 +20,18 @@ export async function syncUsersIndexToRedis() {
 
         const usersDb = await getDb(systemConfig.DBS.USERS_DATA);
         const collection = systemConfig.COLLECTIONS.USERS_DATA
-        const cursor = usersDb.collection(collection).find({}, { projection: { _id: 1 } });
+        const cursor = usersDb.collection(collection).find();
+        let totalIndexed = 0;
         
         while (await cursor.hasNext()) {
-            const doc = await cursor.next();
-            if (doc && doc._id && doc.email) {
+            const user = await cursor.next();
+            if (user && user._id && user.email) {
 
-                await setRedisUserHset(doc.email, doc)
+                await setRedisUserHset(user)
                 totalIndexed++;
             }
         }
 
-        let totalIndexed = 0;
 
         console.log(`✅ Índice de usuarios sincronizado en Redis (${totalIndexed} usuarios indexados).`);
     } catch (err) {

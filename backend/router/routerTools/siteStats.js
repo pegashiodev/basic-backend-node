@@ -28,7 +28,6 @@
  */
 
 
-import sessionsCached from "../../globalData/sessionsCached.js";
 import siteStatsCatched from "../../globalData/siteStatsCatched.js";
 
 // ALMACENA LA INFO DE LA NAVEGACION EN LA WEB
@@ -42,13 +41,7 @@ export default function(req){
     }
     const endpoint = req.urlData.endpoint
 
-    //SI USER Y SESSION -> ALMACENAMOS NAVEGACION
-    if(req.user){
-        if(sessionsCached[req.user.email]){
-            sessionsCached[req.user.email].navigate.push(req.urlData.endpoint)
-        }
-    }
-        
+   
     if(!siteStatsCatched["hour_" + hour]){
         siteStatsCatched["hour_" + hour] = {
             endpoints : {}

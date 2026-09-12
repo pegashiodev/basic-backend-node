@@ -74,7 +74,7 @@ export default async function(req, res){
         language: lang,
     }
     // sI ES UN USUARIO QUE SE LOGUEA CON GOOGLE LE ENVIAMOS UN CORREO ADVIRTIENDOLO DE ESTA CIRCUSTANCIA
-    if(user.googleSub.length > 3){
+    if(req.user.googleSubId?.length > 3){
         email_data.type = "GOOGLE_AUTH_USER"
     }
     const emailResult = await sendEmail(email_data);

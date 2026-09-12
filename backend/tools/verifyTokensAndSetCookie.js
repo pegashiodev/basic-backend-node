@@ -23,7 +23,7 @@ export default async function verifyTokensAndSetCookie(req, from) {
     const sessionIdString = req.currentSessionIdString || req.our_cookie?.atk_decoded?.sessionId || req.our_cookie?.rtk_decoded?.sessionId;
 
     // 1. NUEVA SESIÓN (Login o Signup)
-    if (from === "SIGNUP-EMAIL" || from === "LOGIN-EMAIL" || from === "SIGNUP-GOOGLE" || from === "LOGIN-GOOGLE") {
+    if (from === "SIGNUP_EMAIL" || from === "LOGIN_EMAIL" || from === "SIGNUP_GOOGLE" || from === "LOGIN_GOOGLE") {
         req.set_new_cookie = true;
         refreshData = generateRefreshToken(userName, userEmail, sessionIdString);
         req.refreshData = refreshData;
@@ -147,14 +147,14 @@ export default async function verifyTokensAndSetCookie(req, from) {
         const cookie_rtk_params = isDev ? systemConfig.COOKIE.PARAMS_RTK_SIGNIN_DEV : systemConfig.COOKIE.PARAMS_RTK_SIGNIN_PROD;
         const cookie_atk_params = isDev ? systemConfig.COOKIE.PARAMS_ATK_SIGNIN_DEV : systemConfig.COOKIE.PARAMS_ATK_SIGNIN_PROD;
         const cookie_stk_params = isDev ? systemConfig.COOKIE.PARAMS_RTK_SIGNIN_DEV : systemConfig.COOKIE.PARAMS_ATK_SIGNIN_PROD;
-        const cookie_deviceId_params = isDev ? systemConfig.COOKIE.PARAMS_DEVIDE_ID_DEV : systemConfig.COOKIE.PARAMS_DEVIDE_ID_PROD;
+        // const cookie_deviceId_params = isDev ? systemConfig.COOKIE.PARAMS_DEVIDE_ID_DEV : systemConfig.COOKIE.PARAMS_DEVIDE_ID_PROD;
 
         if (from === "ACCESS_REMOTE_PANNEL") {
             req.cookie = [`stk=${req.pannelAccessData.securityToken}; ${cookie_stk_params}`];
         } else if (changeOnlyAtk) {
             req.cookie = [`atk=${req.accessData.accessToken}; ${cookie_atk_params}`];
         } else {
-            const devId = req.body?.deviceId || req.our_cookie?.deviceId || '';
+            // const devId = req.body?.deviceId || req.our_cookie?.deviceId || '';
             req.cookie = [
                 `atk=${req.accessData.accessToken}; ${cookie_atk_params}`,
                 `rtk=${req.refreshData.refreshToken}; ${cookie_rtk_params}`,

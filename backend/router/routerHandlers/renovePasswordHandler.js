@@ -169,7 +169,7 @@ async function renovePassword(req, res){
     const data_update_user = {
         task: "UPDATE_USER_PASSWORD",
         password: hashedPassword,
-        googleSubId: user.googleSubId.length > 3 ? true : false,
+        googleSubId: req.user.googleSubId.length > 3 ? true : false,
     }
     const result_updateUserPassword = await userHandler.updateUserData(data_update_user, req.user)
    

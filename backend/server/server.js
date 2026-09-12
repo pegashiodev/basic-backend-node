@@ -75,9 +75,8 @@ export default createServer(async (req, res) => {
 
             '/mis-bots': 'mis-bots.html',
             '/mis-bots.html': 'mis-bots.html',
-
-            '/user': "user.html",
-            "/user.html": "user.html",
+            '/users': "users.html",
+            '/users.html': "users.html", 
 
             '/404-es': '404-es.html',
             '/404-es.html': '404-es.html',
@@ -121,6 +120,9 @@ export default createServer(async (req, res) => {
             '/get-main-menu.html': "get-main-menu.html",
             '/stripe-webhook': "stripe-webhook.html", 
             '/stripe-webhook.html': "srtipe-webhook.html",
+            '/google-oauth': "googleAuth",
+            '/google-oauth.html': "googleAuth",
+
 
         };
 

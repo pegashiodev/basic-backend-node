@@ -46,11 +46,7 @@
                 <button id="btn_signup">ENVIAR CODIGO</button>
             </div>
 
-            <!-- 2. Contenedor visual del botón de Google -->
-            <div id="googleBtnContainer"></div>
-            <!-- Mensajes de feedback -->
-            <div id="authStatusMessage" style="display: none; margin-top: 10px;"></div>
-
+           
 
             <div id="promoCodeWrap">
                 <input id="promoCode" type="text" placeholder="BIENVENIDA">
@@ -60,6 +56,12 @@
                 <button id="btn_verify_signup">CREAR CUENTA</button>
             </div>
         </div>
+
+         <!-- 2. Contenedor visual del botón de Google -->
+         <div id="googleBtnContainer"></div>
+         <!-- Mensajes de feedback -->
+         <div id="authStatusMessage" style="display: none; margin-top: 10px;"></div>
+
     
         <div class="form login_form">
             <div class="top_data">
@@ -365,7 +367,7 @@
 
     <script type="module">
 
-    import { authFetch } from './statics/apiClient.js';
+    // import { authFetch } from './statics/apiClient.js';
 
     // Tu Client ID obtenido en Google Cloud Console
     const GOOGLE_CLIENT_ID = "91494631029-fllv3la87i5h817febl31bsstfjqc277.apps.googleusercontent.com";
@@ -380,7 +382,7 @@
             // Enviamos el JWT firmado por Google a nuestro backend
             const res = await fetch('/google-oauth', {
                 method: 'POST',
-                //credentials: 'include', // Para recibir las cookies de sesión (atk, rtk)
+                credentials: 'include', // Para recibir las cookies de sesión (atk, rtk)
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -396,7 +398,7 @@
                 statusBox.textContent = '¡Inicio de sesión correcto! Redirigiendo...';
                 // Redirigir al panel del usuario o destino previsto
                 console.log(data.location)
-                aler("REdirigimos a: ", data.location)
+                alert("REdirigimos a: ", data.location)
                 window.location.replace(data.location);
             } else {
                 statusBox.textContent = data.message || 'Error al autenticar con Google.';

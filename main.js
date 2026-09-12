@@ -79,8 +79,8 @@ async function gracefulShutdown(signal) {
         console.log('🚪 Servidor HTTP cerrado a nuevas peticiones.');
         
         try {
-            await initControler.closeDbs();
             await initControler.closeRedis();
+            await initControler.closeDbs();
             console.log('✨ Cierre completado con éxito. Saliendo del proceso.\n');
             process.exit(0);
         } catch (err) {

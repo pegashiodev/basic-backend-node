@@ -5,13 +5,11 @@
  */
 
 import { OAuth2Client } from 'google-auth-library';
-import crypto from 'node:crypto';
 import userHandler from '../../users/userHandler.js';
-import sessionHandler from '../../sessions/sessionHandler.js';
-import { verifyTokensAndSetCookie } from '../../tools/verifyTokensAndSetCookie.js';
-import { getDb } from '../../db/openDbs.js';
-import redisClient from '../../db/openRedis.js';
+import {createSession} from '../../sessions/sessionHandler.js';
+import verifyTokensAndSetCookie  from '../../tools/verifyTokensAndSetCookie.js';
 import systemConfig from '../../globalData/systemConfig.js';
+import { validatePromotion } from '../../promotions/promotionsHandler.js';
 process.loadEnvFile();
 
 
@@ -20,7 +18,6 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export default async function googleAuthHandler(req, res) {
     const { id_google_token } = req.body || {};
-
     // 1. Validación básica de entrada
     if (!id_google_token) {
         res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -32,14 +29,14 @@ export default async function googleAuthHandler(req, res) {
     }
 
     // COMPROBAMOS EL CODIGO DE LA PROMO SI EXISTE Y EL SISTEMA LOS ADMITE
-    if(promoCode && promoCode.trim().length > 2){
+    if(req.body.promoCode && req.body.promoCode.trim().length > 2){
 
-        if(promoCode && !systemConfig.HAS_PROMO_CODES_SIGNUP){
+        if(!systemConfig.HAS_PROMO_CODES_SIGNUP){
             res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
             return res.end(JSON.stringify({
                 status: 'error',
                 code: 466,
-                message: 'La plataforma no admite PROMO CODES'
+                message: 'La plataforma no admite PROMO CODES en SIGNUP'
             }));
         }
         
@@ -73,13 +70,14 @@ export default async function googleAuthHandler(req, res) {
             }));
         }
 
-        body.email = payload.email.trim().toLowerCase();
-        body.googleSubId = payload.sub; // Identificador único de usuario en Google
-        body.name = payload.name || payload.given_name || 'Usuario';
-        body.picture = payload.picture || '';
+        req.body.email = payload.email.trim().toLowerCase();
+        req.body.googleSubId = payload.sub; // Identificador único de usuario en Google
+        req.body.name = payload.name || payload.given_name || 'Usuario';
+        req.body.picture = payload.picture || '';
+
 
         // 3. Buscar si el usuario ya existe en nuestro sistema
-        let user = await userHandler.getUserByEmail(normalizedEmail);
+        let user = await userHandler.getUserByEmail(req.body.email);
 
         // 4. Si el usuario NO existe, lo registramos automáticamente (Signup)
         if (!user) {
@@ -94,8 +92,8 @@ export default async function googleAuthHandler(req, res) {
 
             // Crear sesión y generar cookies Set-Cookie
             req.user = userResult.user;
-            req.user.ip = req.ip;
-            let session_result = await createSession(req, 'SIGNUP-GOOGLE');
+            // req.user.ip = req.ip;
+            let session_result = await createSession(req, 'SIGNUP_GOOGLE');
             if(session_result.status !== "ok"){
                 res.writeHead(505, { 'Content-Type': 'application/json; charset=utf-8' });
                 return res.end(JSON.stringify({
@@ -106,7 +104,7 @@ export default async function googleAuthHandler(req, res) {
             }
     
             // Configurar tokens y cookies vinculando el sessionId
-            await verifyTokensAndSetCookie(req, "SIGNUP-GOOGLE");
+            await verifyTokensAndSetCookie(req, "SIGNUP_GOOGLE");
     
             const headers = { 'Content-Type': 'application/json; charset=utf-8' };
             if (req.cookie && Array.isArray(req.cookie)) {
@@ -135,6 +133,7 @@ export default async function googleAuthHandler(req, res) {
            
         }
 
+console.log("Si hay user !!!")
         // 5. Comprobar si la cuenta está bloqueada o suspendida
         if (user.status && user.status !== 'ACTIVE') {
             res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -152,14 +151,15 @@ export default async function googleAuthHandler(req, res) {
         req.body.userAgent = req.headers['user-agent'] || '';
 
         // Crea sesión activa (en Redis y MongoDB)
-        await sessionHandler.addSession(req, 'LOGIN-GOOGLE');
+        await createSession(req, 'LOGIN-GOOGLE');
 
         // Genera access token y refresh token vinculados a la sesión
-        await verifyTokensAndSetCookie(req, req.user, 'LOGIN-GOOGLE');
+        await verifyTokensAndSetCookie(req, 'LOGIN_GOOGLE');
 
         // 7. Preparar cabeceras con las cookies generadas
         const headers = { 'Content-Type': 'application/json; charset=utf-8' };
         if (req.cookie && Array.isArray(req.cookie)) {
+console.log("Añadimos las COOKIES")
             headers['Set-Cookie'] = req.cookie;
         }
 
@@ -169,12 +169,12 @@ export default async function googleAuthHandler(req, res) {
             status: 'ok',
             code: 200,
             message: 'Autenticación con Google completada con éxito.',
-            location: systemConfig.PAGES.URL_AFTER_LOGIN,
+            location: `/${req.urlData.language}${systemConfig.PAGES.URL_AFTER_LOGIN}`,
             data: {
                 //userId: user.userId,
-                name: userResult.user.name,
-                email: userResult.user.email,
-                role: userResult.user.role
+                name: user.name,
+                email: user.email,
+                role: user.role
             }
         }));
 

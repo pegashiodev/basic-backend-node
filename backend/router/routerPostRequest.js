@@ -17,7 +17,6 @@ import checkOutHandler from "./routerHandlers/checkOutHandler.js";
 import forgotPasswordHandler from "./routerHandlers/forgotPasswordHandler.js";
 import remoteControlAccessHandler from "../restrictedEndpoints/remoteControlAccessHandler.js";
 import remoteControlPanelHandler from "../restrictedEndpoints/remoteControlPanelHandler.js";
-import uploadFilesHandler from "./routerHandlers/uploadFilesHandler.js";
 import getMainMenu from "../api/getMainMenu.js";
 import getHtmlItems from "../api/getHtmlItems.js";
 import verifyFromRemotePanel from "../remotePanel/verifyFromRemotePanel.js";
@@ -51,10 +50,6 @@ export default function (req, res){
         
         "forgot-password":      {handler: forgotPasswordHandler, access: systemConfig.HAS_USERS},
         "forgot-password.html": {handler: forgotPasswordHandler, access: systemConfig.HAS_USERS},
-        
-
-        "upload-files.html":    {handler: uploadFilesHandler, access: systemConfig.HAS_USERS},
-        "upload-files":         {handler: uploadFilesHandler, access: systemConfig.HAS_USERS},
 
         "renove-password":      {handler: renovePasswordHandler, access: systemConfig.HAS_USERS},
         "renove-password.html": {handler: renovePasswordHandler, access: systemConfig.HAS_USERS},
@@ -76,8 +71,8 @@ export default function (req, res){
         "refresh-bridge":       {handler: refreshBridgeHandler, access: systemConfig.HAS_USERS},
         "refresh-bridge.html":  {handler: refreshBridgeHandler, access: systemConfig.HAS_USERS},
 
-        "/google-oauth":        {handler: googleAuthHandler, access: systemConfig.HAS_USERS},
-        "/google-oauth.html":   {handler: googleAuthHandler, access: systemConfig.HAS_USERS},
+        "google-oauth":        {handler: googleAuthHandler, access: systemConfig.HAS_USERS},
+        "google-oauth.html":   {handler: googleAuthHandler, access: systemConfig.HAS_USERS},
 
 
     }

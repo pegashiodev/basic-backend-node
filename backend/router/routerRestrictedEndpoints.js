@@ -14,7 +14,6 @@ import userTemplateHandler from '../restrictedEndpoints/userTemplateHandler.js';
 import myBotsTemplateHandler from '../restrictedEndpoints/myBotsTemplateHandler.js';
 import remoteControlPanelHandler from '../restrictedEndpoints/remoteControlPanelHandler.js';
 import remoteControlAccessHandler from '../restrictedEndpoints/remoteControlAccessHandler.js';
-import uploadFilesHandler from './routerHandlers/uploadFilesHandler.js';
 
 import getOurCookie from '../tools/getOurCookie.js';
 import verifyTokensAndSetCookie from '../tools/verifyTokensAndSetCookie.js';
@@ -29,8 +28,7 @@ const endpoints_handlers = {
     'my-bots.html': myBotsTemplateHandler,
     'user': userTemplateHandler,
     'user.html': userTemplateHandler,
-    "upload-files.html": uploadFilesHandler,
-    "upload-files": uploadFilesHandler,
+    
 };
 
 endpoints_handlers[REMOTE_CONTROL_ACCESS_ENDPOINT_GET] = remoteControlAccessHandler;

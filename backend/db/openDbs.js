@@ -68,7 +68,7 @@ export default async function openDbs(dbNames) {
 
             }else if(name === "saas_transactions_2026"){
                 // En el payment ha de haber userId
-                collection = dbInstance.collection(systemConfig.COLLECTIONS.USERS_TRANSACTIONS)
+                collection = dbInstance.collection(systemConfig.COLLECTIONS.SAAS_TRANSACTIONS)
                 // CReamos el indice por userId Para listar el historial de PAGOS del usuario ordenado por fecha
               
                 await collection.createIndex({ userId: 1, createdAt: -1 });
@@ -88,7 +88,7 @@ export default async function openDbs(dbNames) {
 
             } else if(name === "sessions_2026"){
                 collection = dbInstance.collection(systemConfig.COLLECTIONS.SESSIONS)
-                await collection('sessions').createIndex(
+                await collection.createIndex(
                     { expiresAt: 1 }, 
                     { expireAfterSeconds: 0 } // eXPIRA EN EL MISMO SEGUNDO QUE SE CUMPLE EL expriresAt
                 );
@@ -161,7 +161,7 @@ export async function getDb(dbName) {
         await collection.createIndex({ userId: 1, type: 1 });
     
     }else if(dbName.includes("saas_transactions_")){
-        collection = dbInstance.collection(systemConfig.COLLECTIONS.USERS_TRANSACTIONS)
+        collection = dbInstance.collection(systemConfig.COLLECTIONS.SAAS_TRANSACTIONS)
         await collection.createIndex({ userId: 1, createdAt: -1 })
         // Para cuando necesites filtrar solo consumos o solo recargas de Stripe de un usuario (type)
         await collection.createIndex({ userId: 1, type: 1 });
@@ -172,7 +172,7 @@ export async function getDb(dbName) {
 
     }else if(dbName.includes("sessions_")){
         collection = dbInstance.collection(systemConfig.COLLECTIONS.SESSIONS)
-        await collection('sessions').createIndex(
+        await collection.createIndex(
             { expiresAt: 1 }, 
             { expireAfterSeconds: 0 } // eXPIRA EN EL MISMO SEGUNDO QUE SE CUMPLE EL expriresAt
         );

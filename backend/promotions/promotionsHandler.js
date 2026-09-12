@@ -38,7 +38,7 @@ const promotions = [
         type: "DISCOUNT",        
         discountPercent: 25,
         units: 120,
-        
+        mode: "ONCE",
     },
     {
         _id: 'BIENVENIDA',
@@ -62,7 +62,7 @@ const promotions = [
             video: 10
         },
         units: 120,
-       
+        mode: "ONCE",
       },
     
     ]

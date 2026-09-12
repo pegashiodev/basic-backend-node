@@ -40,8 +40,8 @@ export default async function userSchema(body) {
         updatedAt: date,
         createdAtTimestamp: date.getTime(),
         //userDevices: initialDevices,
-        isPromoAffiliate: body.promotion ? "1" : "0" ,
-        affiliateData: body.promotion?.affiliate || {},
+        // isPromoAffiliate: body.promotion ? "1" : "0" ,
+        // affiliateData: body.promotion?.affiliate || {},
 
         coinsCreate: body.promotion?.coins?.create ?? 0,           // CREAR CONTENIDOs: ENTRVISTA, AUDIO, IMAGENES, ....
         coinsTraining: body.promotion?.coins?.training ?? 0,       // ENTRENAR CREAR AUDIOS, ...
@@ -62,12 +62,15 @@ export default async function userSchema(body) {
 
     };
 
-    if(body.authProvider){
-        user.authProviders.push(body.authProvider)
-        if(body.authProvider === "GOOGLE"){
-            user.googleSub = body.googleSubId
-        }
+    if(body.authProvider === "GOOGLE"){
+        user.googleSubId = body.googleSubId
+        user.authProviders.push("GOOGLE")
+    }else{
+        user.authProviders.push("EMAIL")
+
     }
+
+console.log({user})
 
     if(systemConfig.HAS_PROMO_CODES_SIGNUP && body.promotion){
 

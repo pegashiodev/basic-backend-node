@@ -12,10 +12,13 @@ import verifyTokensAndSetCookie from '../../tools/verifyTokensAndSetCookie.js';
 import passwordValidation from '../routerTools/passwordValidation.js';
 import emailValidation from '../routerTools/emailValidation.js';
 import { validatePromotion } from '../../promotions/promotionsHandler.js';
+import { checkValidationToken } from '../../notifications/notificationsTools/generateValidationToken.js';
 
 //const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default async function signUpEmailHandler(req, res) {
+
+    console.log("SIGNUP EMAIL HANDELER !!!!")
     const { email, password, name, code, userAgent, deviceId, language, promoCode } = req.body || {};
 
 // console.log({ email, password, name, code, userAgent, deviceId, language, promoCode })
@@ -157,7 +160,7 @@ export default async function signUpEmailHandler(req, res) {
 
         // Crear sesión y generar cookies Set-Cookie
         req.user = userResult.user;
-        req.user.ip = req.ip;
+        // req.user.ip = req.ip;
         let session_result = await createSession(req, 'SIGNUP-EMAIL');
         if(session_result.status !== "ok"){
             res.writeHead(505, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -169,7 +172,7 @@ export default async function signUpEmailHandler(req, res) {
         }
 
         // Configurar tokens y cookies vinculando el sessionId
-        await verifyTokensAndSetCookie(req, "SIGNUP-EMAIL");
+        await verifyTokensAndSetCookie(req, "SIGNUP_EMAIL");
 
         const headers = { 'Content-Type': 'application/json; charset=utf-8' };
         if (req.cookie && Array.isArray(req.cookie)) {

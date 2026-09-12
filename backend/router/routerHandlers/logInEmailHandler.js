@@ -80,7 +80,7 @@ export default async function logInEmailHandler(req, res) {
         await createSession(req, 'LOGIN-EMAIL');
 
         // 7. Generar tokens vinculados al sessionId y poblar req.cookie con las cabeceras Set-Cookie
-        await verifyTokensAndSetCookie(req, 'LOGIN-EMAIL');
+        await verifyTokensAndSetCookie(req, 'LOGIN_EMAIL');
 
         // 8. Construir cabeceras HTTP y adjuntar Set-Cookie
         const headers = { 'Content-Type': 'application/json; charset=utf-8' };

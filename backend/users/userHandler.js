@@ -13,15 +13,28 @@ import { ObjectId } from 'mongodb';
 import { redisClient } from '../db/openRedis.js';
 
 export const addUser = async (body) => {
+
+    if(!body.authProvider){
+        return { status: 'error', code: 400, message: 'NO HAY AUTH PROVIDER EN LA PETICION DE SIGNUP' };
+    }
+
     try {
         const normalizedEmail = body.email.toLowerCase().trim();
 
-        // 1. Hashear contraseña de forma segura con scrypt
-        const hashedPassword = await hashPassword(body.password);
-        const bodyWithHashedPass = { ...body, email: normalizedEmail, password: hashedPassword };
+        let user;
+        if(body.authProvider === "GOOGLE" ){
+            user = await userSchema(body);
 
-        // 2. Construir el documento con su esquema y _id compuesto
-        const user = await userSchema(bodyWithHashedPass);
+        }else{
+            // 1. Hashear contraseña de forma segura con scrypt
+            const hashedPassword = await hashPassword(body.password);
+            const bodyWithHashedPass = { ...body, email: normalizedEmail, password: hashedPassword };
+
+            // 2. Construir el documento con su esquema y _id compuesto
+            user = await userSchema(bodyWithHashedPass);
+        }
+
+
 
         if(!user){
             return { status: 'error', code: 500, message: 'Error Creando esquema del usuario' };
@@ -60,9 +73,11 @@ export const getUserByEmail = async (email) => {
 
     const userRedis = await getRedisUser(normalizedEmail)
     if (userRedis) {
+console.log("El ususario SIIIII  esta en REDIS")
+
         return userRedis;
     }
-
+console.log("El ususario NOOOO esta en REDIS")
     // 2. Buscar documento exacto en su colección mensual de MongoDB
 
     const dbUsers = await getDb(systemConfig.DBS.USERS_DATA);
@@ -367,8 +382,8 @@ export const updateUserData = async (data, user)=>{
             "_id": user.userId
         }
         let updateData;
+        
         if(data.googleSubId){
-
             updateData =  { "$set": { password: data.password, updatedAt: new Date() }, $addToSet: { authProviders: "EMAIL" } }
         }else{
             updateData =  { "$set": { password: data.password, updatedAt: new Date() }}
@@ -377,25 +392,23 @@ export const updateUserData = async (data, user)=>{
         const dbUsers = await getDb(dbName)
 
         const resultUpdate = await dbUsers.collection(collection).updateOne(filter, updateData)
-
         if(resultUpdate.modifiedCount === 1){
 
             if(data.googleSubId){
                     
                 // 1. Obtenemos la lista actual de proveedores desde el usuario en memoria
 
-                console.log({currentProviders})
-
+                
                 const currentProviders = new Set(user.authProviders || [user.authProvider || 'GOOGLE']);
-                currentProviders.add('EMAIL');
 
-                console.log/({currentProviders})
+                currentProviders.add('EMAIL');
 
                 // 2. Actualizamos atómicamente el Hash en Redis
                 await redisClient.hSet(`user:${user.email}`, {
                     password: data.password,
                     authProviders: JSON.stringify(Array.from(currentProviders))
                 });
+
             }else{
 
                 // ACTUALIZAMOS AHORA EN REDIS
@@ -403,6 +416,11 @@ export const updateUserData = async (data, user)=>{
             }
 
             return { status: 'ok', message: "PASWORD ACTUALIZADO CON EXITO"}
+
+        }else if(resultUpdate.matchedCount === 0){
+
+            console.log("No se ha encontrado EL USUARIO CON ESE ID")
+            return { status: 'error', code: 500, message: 'Error guardando usuario en Base de Datos' };
 
         }else{
             return { status: 'error', code: 500, message: 'Error guardando usuario en Base de Datos' };
