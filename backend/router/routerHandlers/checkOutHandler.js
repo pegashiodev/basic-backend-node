@@ -225,8 +225,8 @@ export default async function checkOutHandler(req, res) {
                 req.order.promotion = {
                     mode: "ONCE",
                     affiliate: {
-                        affiliateId: req.body.promotion.affiliate.userId,
-                        affiliateEmail: req.body.promotion.affiliate.email,
+                        userId: req.body.promotion.affiliate.userId,
+                        email: req.body.promotion.affiliate.email,
                     },
                     user: {
                         email: user.email,
@@ -236,8 +236,10 @@ export default async function checkOutHandler(req, res) {
                     type: req.body.promotion.type,
                     promoCode: promoCode,
                     amountBeforeDiscount: totalAmountInCentsBeforeDiscount,
-                    discountPercent: req.body.promotion.discountPercent
+                    discountPercent: req.body.promotion.discountPercent,
+                    totalAmountInCentsPaid: totalAmountInCents,
                 }
+                
                 req.order.totalAmountInCentsBeforeDiscount = totalAmountInCentsBeforeDiscount
             
             // SI ES UNA SUBSCRIPTION SE TRAMITARA DE FORMA DISTINTA
@@ -246,8 +248,8 @@ export default async function checkOutHandler(req, res) {
                 req.order.promotion = {
                     mode: "SUBSCRIPTION",
                     affiliate: {
-                        affiliateId: req.body.promotion.affiliate.userId,
-                        affiliateEmail: req.body.promotion.affiliate.email,
+                        userId: req.body.promotion.affiliate.userId,
+                        email: req.body.promotion.affiliate.email,
                     },
                     user:{
                         email: user.email,
@@ -358,7 +360,7 @@ export default async function checkOutHandler(req, res) {
         req.order.stripeSessionId = stripeSession.id
 
         //7.- Guardamos el pedido en estado PENDING en MongoDB
-        const result_createOrder = await createOrder(req.user, req.order);
+        const result_createOrder = await createOrder(req);
         if(result_createOrder.status !== 'ok'){
             res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
                 return res.end(JSON.stringify({

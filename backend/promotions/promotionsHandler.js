@@ -50,7 +50,7 @@ const promotions = [
         affiliate: {
           name: 'system',
           email: 'system@gmail.com',
-          userId: '12312nmnmkj123jk'
+          userId: 'SistemId123456'
         },
         type: "COINS",        
         coins:{

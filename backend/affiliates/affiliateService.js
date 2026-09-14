@@ -20,13 +20,29 @@ export const updateAffiliatePromotion = async (promotion)=>{
         // return {status: "error", code: 565, message: "ERROR AL ACCEDER A LA BASE DE DATOS DE LAS PROMOCIONES"}
     }
     const affiliatesCollection = dbAffiliates.collection(systemConfig.COLLECTIONS.PROMOTIONS);
+
+    /* 
+        En db hay ya insertado este objeto del AFILIADO:
+
+        {   _id: affiliateId,
+            email: affiliateEmail,
+            promoCode: "CODIGO PERSONALIZADO PARA ESTE AFILIADO",
+            mode: "ONCE", // [ONCE, SUBSCRIPTION, ...]
+            type: "COINS" , // [COINS, DISCOUNT, ...]
+            createdAt: 
+            expiresAt: 
+            affiliates. []
+        
+        }
+
+    */
+
+console.log({promotion})
+    
+    const affiliateId = promotion.affiliate.userId
+    const affiliateEmail =promotion.affiliate.email;
     
     const affiliate_data = {
-        _id: promotion.affiliate.userId,
-        affiliateId: promotion.affiliate.userId,
-        affiliateEmail: promotion.affiliate.email,
-        
-        promoCode: promotion.promoCode,
         user: {
             email: promotion.user.email,
             userId: promotion.user.userId,
@@ -37,18 +53,22 @@ export const updateAffiliatePromotion = async (promotion)=>{
             month: promotion.endpoint === "SIGNUP" ? months[promotion.user.userId.getTimestamp().getMonth()] : normalizedMonth,
             day: promotion.endpoint === "SIGNUP" ? promotion.user.userId.getTimestamp().getDate(): day
         },
-        mode: promotion.mode,
-        type: promotion.type,
-        amountBeforeDisconunt: promotion.amountBeforeDisconunt ?? 0,
+        // mode: promotion.mode,
+        // type: promotion.type,
         endpoint: promotion.endpoint,
         promoCode: promotion.promoCode,
     }
-    
+    if(promotion.type === "DISCOUNT"){
+        affiliate_data.amountBeforeDiscount = promotion.amountBeforeDiscount
+        affiliate_data.discountPercent = promotion.discountPercent
+        affiliate_data.totalAmountInCentsPaid = promotion.totalAmountInCentsPaid;
+    }
+  
     
 
     // ACTUALIZAMOS LA PROMOCION EN DB
     try{
-        await affiliatesCollection.updateOne({_id:affiliate_data._id}, {$push: {afiliates: affiliate_data}}, {upsert:true});
+        await affiliatesCollection.updateOne({_id:affiliateId}, {$push: {afiliates: affiliate_data}}, {upsert:true});
     }catch(e){
         throw new Error(`Error en "affiliateService.updateAffiliatePromotion"  al Actualizar los datos en la Promocion: ENVIAR A ADMIN ESTA TAREA`);
     }

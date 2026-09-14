@@ -180,7 +180,7 @@ export default async function signUpEmailHandler(req, res) {
         }
 
         // recuperamos la direccion desde la que llego al login si exite
-        let location = systemConfig.PAGES.URL_AFTER_SIGNUP
+        let location = `/${req.urlData.language}${systemConfig.PAGES.URL_AFTER_SIGNUP}`
         if(req.urlData.searchParams?.redirect){
             location = req.urlData.searchParams.redirect
         }

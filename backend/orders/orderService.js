@@ -19,8 +19,11 @@ import { ObjectId } from 'mongodb';
 /**
  * 1. Crea el pedido en estado inicial PENDING
  */
-export async function createOrder(user, order) {
+export async function createOrder(req) {
     
+    const user = req.user;
+    const order = req.order;
+
     const now = new Date();
     const newOrder = {
         _id: order.orderId,
@@ -28,6 +31,7 @@ export async function createOrder(user, order) {
         orderId: order.orderId,
         userId: user.userId,
         email: user.email,
+        ip: req.urlData?.ip || "",
         items: order.verifiedOrderItems,
         totalAmountInCents: order.totalAmountInCents,
         totalAmountInCentsBeforeDiscount: order.totalAmountInCentsBeforeDiscount || order.totalAmountInCents,
@@ -90,42 +94,6 @@ export async function getOrderById(orderId) {
     return await dbOrders.collection(collection).findOne({ "_id.orderId": orderId });
 }
 
-/**
- * 3. Actualiza el stripeSessionId en la orden PENDING
- */
-/*
-export async function updateOrderStripeSession(orderId, stripeSessionId) {
-
-    let validOrderId;
-    
-    if (orderId instanceof ObjectId) {
-        validOrderId = orderId
-    } else if (typeof orderId === 'string') {
-        validOrderId = new ObjectId(orderId)
-    }
-    // A Partir del orderId obtenemos el Año de creacion del pedido para acceder a la base de datos
-    const fechaCreacion = validOrderId.getTimestamp(); 
-    // 2. Extraer el año para tu base de datos dinámica
-    const year= fechaCreacion.getFullYear(); 
-    const dbName = systemConfig.DBS.ORDERS +  year
-    const collection = systemConfig.COLLECTIONS.ORDERS
-    
-    const dbOrders = await getDb(dbName);
-
-    try{
-
-        await dbOrders.collection(collection).updateOne(
-            { "_id.orderId": orderId },
-            { $set: { stripeSessionId: stripeSessionId, updatedAt: new Date() } }
-        );
-        return {status: "ok"}
-
-    }catch(e){
-        console.log(`❌ ERROR Actualizando Stripe-sessionId  en DB`)
-        return {status: "error"}
-    }
-}
-*/
 
 /**
  * 4. Pasa el pedido a SUCCESS (Con control de Idempotencia)
@@ -290,7 +258,7 @@ console.log({deliveryResults})
         // Bloque independiente para el envio de notificacion final al usuario por email
         try{
             await sendEmail(
-                {   email: order._id.email, 
+                {   email: order.email, 
                     type: "SUCCESS_PAYMENT", 
                     language: order.language, 
                     customData:{},
@@ -303,7 +271,7 @@ console.log({deliveryResults})
         if(order.promotion){
             // Obtengo el user con el email que esta en el order
             try {
-                const user = await getUserByEmail(order._id.email)
+                const user = await getUserByEmail(order.email)
                 if(!user){
                     throw new Error(" ERROr en orderService.processOrderDelivery. No hemos podido acceder al usuario para gestionar la promocion del pedido: -> ENVIAR A ADMIN LA TAREA PENDIENTE");
                 }
@@ -314,7 +282,7 @@ console.log({deliveryResults})
         }
 
     }catch(e){
-        console.error(`❌ Error Añadiendo Pago a DB users-accounting. -> NOTIFICAR A ADMIN: -> `, e);
+        console.error(`❌ Error Añadiendo Pago a DB saas_transactions. -> NOTIFICAR A ADMIN: -> `, e);
     }
 
     

@@ -185,6 +185,8 @@ export const addUserPaymentToTransactions = async (order)=>{
         _id: validOrderId,
         transactionId: validOrderId,
         userId: order.userId,
+        email: order.email,
+        ip: order.ip,
         orderId: validOrderId,
         createdAt: order.createdAt,
         coins: totalCoins,
@@ -200,7 +202,7 @@ export const addUserPaymentToTransactions = async (order)=>{
 
     }
     if(order.promotion){
-        transaction.dataPayment.promotion = order.promotion;
+        transaction.promotion = order.promotion;
     }
 
 
@@ -260,6 +262,8 @@ export const addItemToUserActivity = async(order, type)=>{
             _id: validOrderId,
             activityId: validOrderId,
             userId: validUserId,
+            email: order.email,
+            ip: order.ip,
             orderId: validOrderId,
             createdAt: order.createdAt,
             coins: totalCoins,
@@ -274,7 +278,7 @@ export const addItemToUserActivity = async(order, type)=>{
     
         }
         if(order.promotion){
-            payment.dataPayment.promotion = order.promotion;
+            activity.promotion = order.promotion;
         }
 
     // SE HAN DESCONTADO COINS DE LA CUENTA DEL USUARIO POR CONSUMO EN LA PLATAFORMA
@@ -350,7 +354,7 @@ export const addItemToUserActivity = async(order, type)=>{
             orderId: validOrderId,
             createdAt: order.createdAt,
             coins: totalCoins,
-            type: "mocropayment",
+            type: "micropayment",
             serviceName: "new-podcast",         // [personaje, podcast, trailer, entrevista, ...]
             dataPayment: {
                 

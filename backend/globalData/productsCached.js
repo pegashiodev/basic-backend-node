@@ -15,6 +15,7 @@ export default [
         poster: '',
         priceInCents: 500,
         coins:{
+            create: 300,
             generator: 100,
             training: 100,
             coaching: 100,
@@ -39,6 +40,7 @@ export default [
         poster: '',
         priceInCents: 1000,
         coins:{
+            create: 300,
             generator: 100,
             training: 100,
             coaching: 100,
@@ -65,6 +67,7 @@ export default [
         poster: '',
         priceInCents: 2000,
         coins:{
+            create: 300,
             generator: 100,
             training: 100,
             coaching: 100,

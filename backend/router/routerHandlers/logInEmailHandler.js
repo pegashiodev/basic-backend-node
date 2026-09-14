@@ -91,7 +91,7 @@ export default async function logInEmailHandler(req, res) {
         // 9. Enviar respuesta exitosa al cliente
 
         // recuperamos la direccion desde la que llego al login si exite
-        let location = systemConfig.PAGES.URL_AFTER_LOGIN
+        let location = `/${req.urlData.language}${systemConfig.PAGES.URL_AFTER_LOGIN}`
         if(req.urlData.searchParams?.redirect){
             location = `${systemConfig.PAGES.URL_AFTER_LOGIN}/?${req.urlData.searchParams.redirect}`
         }
