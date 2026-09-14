@@ -87,7 +87,10 @@ export default async function openDbs(dbNames) {
                 await collection.createIndex({ email: 1, createdAt: -1 }, { unique: true });
 
             } else if(name === "sessions_2026"){
+
                 collection = dbInstance.collection(systemConfig.COLLECTIONS.SESSIONS)
+                await collection.createIndex({ email: 1, createdAt: -1 }, { unique: true });
+                // Creamos este indice para que las sessiones expiren justo cuando lo indica su fecha interna
                 await collection.createIndex(
                     { expiresAt: 1 }, 
                     { expireAfterSeconds: 0 } // eXPIRA EN EL MISMO SEGUNDO QUE SE CUMPLE EL expriresAt

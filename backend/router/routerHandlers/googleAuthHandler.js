@@ -133,7 +133,6 @@ export default async function googleAuthHandler(req, res) {
            
         }
 
-console.log("Si hay user !!!")
         // 5. Comprobar si la cuenta está bloqueada o suspendida
         if (user.status && user.status !== 'ACTIVE') {
             res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -151,7 +150,7 @@ console.log("Si hay user !!!")
         req.body.userAgent = req.headers['user-agent'] || '';
 
         // Crea sesión activa (en Redis y MongoDB)
-        await createSession(req, 'LOGIN-GOOGLE');
+        await createSession(req, 'LOGIN_GOOGLE');
 
         // Genera access token y refresh token vinculados a la sesión
         await verifyTokensAndSetCookie(req, 'LOGIN_GOOGLE');
@@ -159,7 +158,6 @@ console.log("Si hay user !!!")
         // 7. Preparar cabeceras con las cookies generadas
         const headers = { 'Content-Type': 'application/json; charset=utf-8' };
         if (req.cookie && Array.isArray(req.cookie)) {
-console.log("Añadimos las COOKIES")
             headers['Set-Cookie'] = req.cookie;
         }
 

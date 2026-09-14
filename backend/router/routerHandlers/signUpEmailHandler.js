@@ -161,7 +161,7 @@ export default async function signUpEmailHandler(req, res) {
         // Crear sesión y generar cookies Set-Cookie
         req.user = userResult.user;
         // req.user.ip = req.ip;
-        let session_result = await createSession(req, 'SIGNUP-EMAIL');
+        let session_result = await createSession(req, 'SIGNUP_EMAIL');
         if(session_result.status !== "ok"){
             res.writeHead(505, { 'Content-Type': 'application/json; charset=utf-8' });
             return res.end(JSON.stringify({

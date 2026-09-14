@@ -2,7 +2,7 @@
 
 import { redisClient } from '../db/openRedis.js';
 import { getDb } from '../db/openDbs.js';
-import { createSessionObject } from './sessionSchema.js';
+import { sessionSchema } from './sessionSchema.js';
 import systemConfig from '../globalData/systemConfig.js';
 import { ObjectId } from 'mongodb';
 import { setRedisSessionHset } from '../db/redisService.js';
@@ -20,7 +20,7 @@ export async function createSession(req, from) {
     // const [, month, , year] = new Date().toString().split(' ');
     const year = new Date().getFullYear();
     // Creamos la session sobre el schema establecido
-    const session = createSessionObject(req, user);
+    const session = sessionSchema(req, user);
     const { sessionIdString, sessionId } = session
     req.currentSessionId = sessionId;
     req.currentSessionIdString = sessionIdString;

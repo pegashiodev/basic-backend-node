@@ -89,6 +89,7 @@ export async function setRedisSessionHset(session) {
         ip: session.ip,
         // userAgent: session.userAgent,
         isValid: true ? "1" : "0",
+        activity: JSON.stringify(session.activity),
         
     }
 
@@ -208,6 +209,7 @@ export async function getRedisSession(sessionIdString) {
             ip: sessionHash.ip,
             // userAgent: sessionHash.userAgent,
             isValid: sessionHash.isValid === "1" ? true : false,
+            activity: JSON.parse(sessionHash.activity),
         }
 
 

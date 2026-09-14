@@ -14,7 +14,7 @@ import {ObjectId} from "mongodb"
  * @param {Object} [params.extraData={}]
  * @returns {Object} Estructura normalizada de sesión
  */
-export function createSessionObject(req, user) {
+export function sessionSchema(req, user) {
 
     const { userId, email, role = 'USER', extraData = {} } = user
     const {ip, userAgent} = req
@@ -43,5 +43,6 @@ export function createSessionObject(req, user) {
         ip: ip,
         // userAgent: userAgent || "",
         isValid: true,
+        activity: [],
     };
 }
